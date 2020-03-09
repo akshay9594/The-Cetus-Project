@@ -1,7 +1,7 @@
-# The-Cetus-Project
+# The Cetus Project
 Cetus Source to Source compiler improvements being done at University of Delaware
 
-## Bug Fixes
+## Bug Fixes and added features
 
 ### 1. Handling of loop index initializations within FOR loop declaration-
         When for loops are declared as- for(int i = 0; i < n; i++), 
