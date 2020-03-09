@@ -75,6 +75,14 @@ public class SimpleExpression implements
 
     // Debug flag
     protected static final int verbosity = PrintTools.getVerbosity();
+    
+    // Flag to handle logical bitwise reductions
+
+    boolean logical_bitwise_reduction = false;
+
+    // Reduction operation flag for logical and bitwise reductions
+
+   
 
     // Masks for each options
     protected static final int
@@ -136,8 +144,10 @@ public class SimpleExpression implements
     // Constructs an empty simple expression with the given expression copying
     // the expr reference.
     protected SimpleExpression(SimpleExpression se) {
+        
         this(se.sop);
         this.expr = se.expr;
+
     }
 
     // Constructs a simple expression with the given operator and operands.
@@ -151,19 +161,52 @@ public class SimpleExpression implements
     // Constructs a simple expression from the given Cetus expression
     protected SimpleExpression(Expression e) {
         this();
+        
         if (e instanceof UnaryExpression) {
             parse((UnaryExpression)e);
+           
         } else if (e instanceof BinaryExpression) {
             parse((BinaryExpression)e);
+           
         } else if (e.getChildren() != null && !e.getChildren().isEmpty()) {
+            
             parseTree(e);
         } else {
+         
             parseLeaf(e);
         }
     }
 
+    //Following implemented to address logical and bitwise reductions
+
+    protected SimpleExpression(Expression e , boolean flag) {
+
+        this();
+
+        if(flag){
+
+            logical_bitwise_reduction = flag;
+        }
+        
+        if (e instanceof UnaryExpression) {
+            parse((UnaryExpression)e);
+           
+        } else if (e instanceof BinaryExpression) {
+            parse((BinaryExpression)e);
+           
+        } else if (e.getChildren() != null && !e.getChildren().isEmpty()) {
+            
+            parseTree(e);
+        } else {
+         
+            parseLeaf(e);
+        }
+
+    }
+
     // Parses a unary expression
     private void parse(UnaryExpression ue) {
+       
         UnaryOperator uop = ue.getOperator();
         SimpleExpression child = new SimpleExpression(ue.getExpression());
         contains_side_effect |= child.contains_side_effect;
@@ -188,27 +231,43 @@ public class SimpleExpression implements
 
     // Parses a binary expression
     private void parse(BinaryExpression be) {
+        
         BinaryOperator bop = be.getOperator();
         SimpleExpression lhs = new SimpleExpression(be.getLHS());
         SimpleExpression rhs = new SimpleExpression(be.getRHS());
+    
         contains_side_effect |=
             (lhs.contains_side_effect || rhs.contains_side_effect);
+
+
         if (bop == BinaryOperator.SUBTRACT) {
+
             sop = ADD;
             SimpleExpression new_rhs = new SimpleExpression(MUL);
             new_rhs.add(getInt(-1));
             new_rhs.add(rhs);
+
+            if(logical_bitwise_reduction){
+                sop = lhs.sop;
+            }
             add(lhs);
             add(new_rhs);
+            
         } else {
+
             sop = cop.indexOf(bop);
+
             if (sop == -1) {
                 sop = TREE;
                 expr = be;
+                
             }
+          
             add(lhs);
             add(rhs);
         }
+
+       
     }
 
     // Parses a generic expression and returns true if it contains side effect.
@@ -258,9 +317,11 @@ public class SimpleExpression implements
     // Adds the given simple expression to the list of children while flattening
     // commutative/associative operations.
     protected void add(SimpleExpression se) {
+
         if (isCommAssoc() && sop == se.sop) {
             addAll(se);
         } else {
+           
             children.add(se);
             order += se.order;
         }
@@ -268,15 +329,18 @@ public class SimpleExpression implements
 
     // Adds the given collection of simple expressions to the list of children.
     protected void addAll(Collection<SimpleExpression> ses) {
+       
         for (SimpleExpression se : ses) {
             children.add(se);
             order += se.order;
+          
         }
     }
 
     // Adds the children of the given simple expression to the list of children.
     protected void addAll(SimpleExpression se) {
         addAll(se.children);
+
     }
 
     // Returns a simple expression from the given integer number
@@ -316,6 +380,7 @@ public class SimpleExpression implements
             ret = expr.clone();
         } else if (sop == TREE) {
             ret = expr.clone();
+           
             for (int i = 0; i < children.size(); ++i) {
                 ret.setChild(i, getChild(i).getExpression());
             }
@@ -367,7 +432,7 @@ public class SimpleExpression implements
     // Checks if the operator is commutative and associative
     protected boolean isCommAssoc() {
         return (sop == ADD || sop == MUL || sop == AND || sop == OR
-                || sop == MIN || sop == MAX);
+                || sop == MIN || sop == MAX || sop == BAND || sop == BOR || sop == BXOR);
     }
 
     // Checks if the operator is a comparison operator.
@@ -553,9 +618,10 @@ public class SimpleExpression implements
         if (se1.sop == LIT && se2.sop == LIT) {
             Double result = null, v1 = se1.getValue(), v2 = se2.getValue();
             switch (op) {
-            case ADD:
+            case ADD:{
                 result = v1 + v2;
                 break;
+            }
             case MUL:
                 result = v1 * v2;
                 break;
@@ -596,6 +662,8 @@ public class SimpleExpression implements
     // already simplified.
     protected SimpleExpression getCoef() {
         SimpleExpression ret = null;
+        
+        
         if (sop == LIT) {
             ret = this;
         } else if (sop != MUL || getChild(0).sop != LIT) {
@@ -603,15 +671,18 @@ public class SimpleExpression implements
         } else {
             ret = getChild(0);
         }
+      
         return ret;
     }
 
     // Normalizes this simple expression recursively.
     protected SimpleExpression normalize() {
         SimpleExpression ret = new SimpleExpression(this);
+
         for (int i = 0; i < children.size(); i++) {
             ret.add(children.get(i).normalize());
         }
+
         if (contains_side_effect) {
             return ret;
         }
@@ -622,8 +693,11 @@ public class SimpleExpression implements
             ret = this;
             break;
         case ADD:
+        {
+
             ret = ret.normalizeADD();
             break;
+        }
         case MUL:
             ret = ret.normalizeMUL();
             break;
@@ -638,15 +712,19 @@ public class SimpleExpression implements
         case BAND:
         case BOR:
         case BXOR:
+        {
             ret = ret.normalizeBitOperation();
             break;
+        }
         case BCMP:
             ret = ret.normalizeBCMP();
             break;
         case AND:
         case OR:
+        {
             ret = ret.normalizeLogic();
             break;
+        }
         case EQ:
         case NE:
         case LE:
@@ -667,8 +745,48 @@ public class SimpleExpression implements
         if (ret.isCommAssoc()) {
             ret.sort();
         }
+
         return ret;
     }
+
+
+    // Normalizes logical and bitwise reductions. For now, only logical operations - && , || are supported
+
+    protected SimpleExpression normalizelogicalbitwisereduction() {
+        SimpleExpression ret = new SimpleExpression(this);
+
+        for (int i = 0; i < children.size(); i++) {
+            ret.add(children.get(i).normalizelogicalbitwisereduction());
+        }
+
+        if (contains_side_effect) {
+            return ret;
+        }
+
+        switch(ret.sop){
+
+            case AND:
+            case OR:
+            case BAND:
+            case BOR:
+            case BXOR:
+            {
+                ret = normalizelogicbitreduction();
+                break;
+            }
+        }
+
+        if (ret.isCommAssoc()) {
+            ret.sort();
+        }
+
+
+        return ret;
+
+    }
+
+
+   
 
     // Normalizes an ADD expression
     private SimpleExpression normalizeADD() {
@@ -680,24 +798,34 @@ public class SimpleExpression implements
         for (int i = 0; i < children.size(); i++) {
             SimpleExpression child = children.get(i);
             SimpleExpression term = child.getTerm(), coef = child.getCoef();
+
             if (terms.containsKey(term)) {
+
                 terms.put(term, add(terms.get(term), coef));
+                
             } else {
                 terms.put(term, coef);
             }
+           
         }
+
+
         SimpleExpression ret = new SimpleExpression(ADD);
+
         for (SimpleExpression term : terms.keySet()) {
             SimpleExpression coef = terms.get(term);
+
             if (!coef.equals(szero)) {
                 ret.add((coef.equals(sone)) ? term : multiply(coef, term));
             }
         }
+       
         if (ret.children.size() == 0) {
             ret = szero;
         } else if (ret.children.size() == 1) {
             ret = ret.getChild(0);
         }
+
         return ret;
     }
 
@@ -795,6 +923,8 @@ public class SimpleExpression implements
         }
         int lhs = getChild(0).getValue().intValue();
         int rhs = getChild(1).getValue().intValue();
+
+       
         switch (sop) {
         case SFTL:
             return getInt(lhs << rhs);
@@ -829,6 +959,8 @@ public class SimpleExpression implements
         TreeSet<SimpleExpression> set = new TreeSet<SimpleExpression>(children);
         TreeSet<SimpleExpression> neg = new TreeSet<SimpleExpression>();
         SimpleExpression ret = new SimpleExpression(sop);
+      
+
         for (SimpleExpression child : set) {
             if (sop == AND) {
                 if (child.equals(szero) || neg.contains(child)) {
@@ -854,6 +986,56 @@ public class SimpleExpression implements
         // invokes smart folding operations.
         ret = foldLogic();
         return ret;
+    }
+
+     // Normalizes logical AND , OR reductions
+
+     private SimpleExpression normalizelogicbitreduction(){
+
+        if (!allow(FOLD)) {
+            return this;
+        }
+
+        TreeMap<SimpleExpression,SimpleExpression> terms = 
+                                new TreeMap<SimpleExpression,SimpleExpression>();
+
+        for(int i = 0; i < children.size() ;i++){
+
+            SimpleExpression childexpr = children.get(i);
+            SimpleExpression term = childexpr.getTerm(), coef = childexpr.getCoef();
+
+            if (terms.containsKey(term)) {
+
+                terms.put(term, add(terms.get(term), coef));
+                
+            } else {
+                terms.put(term, coef);
+            }
+
+
+        }
+
+
+        SimpleExpression ret = new SimpleExpression(sop);
+
+        for(SimpleExpression term : terms.keySet()){
+
+             SimpleExpression coef = terms.get(term);
+
+            if (!coef.equals(szero)) {
+                ret.add((coef.equals(sone)) ? term : multiply(coef, term));
+            }
+        }
+
+         
+        if (ret.children.size() == 0) {
+            ret = szero;
+        } else if (ret.children.size() == 1) {
+            ret = ret.getChild(0);
+        }
+
+        return ret;
+
     }
 
     // Driver for smart logic folding.
@@ -1493,4 +1675,5 @@ public class SimpleExpression implements
     protected static Object getCetusOP(int op) {
         return cop.get(op);
     }
+
 }

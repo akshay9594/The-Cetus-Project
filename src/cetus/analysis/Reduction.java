@@ -160,9 +160,11 @@ public class Reduction extends AnalysisPass {
             PrintTools.printlnStatus(9, pass_name, "[expr]", ++expr_cnt, ":",
                     expr, "(", expr.getClass().getName(), ")");
             if (expr instanceof AssignmentExpression) {
+                
                 AssignmentExpression assign_expr = (AssignmentExpression)expr;
                 findReduction(assign_expr, rmap, cmap);
             } else if (expr instanceof UnaryExpression) {
+                
                 UnaryExpression unary_expr = (UnaryExpression)expr;
                 findReduction(unary_expr, rmap, cmap);
             } else if (expr instanceof FunctionCall) {
@@ -487,27 +489,38 @@ public class Reduction extends AnalysisPass {
             if (assign_op == AssignmentOperator.NORMAL) {
                 // at this point either "lhse = expr;" or "lhse = lhse + expr;"
                 // is possible
+              
                 Expression simplified_rhse = Symbolic.simplify(rhse);
-                Expression lhse_in_rhse =
-                        IRTools.findExpression(simplified_rhse, lhse);
+                Expression lhse_in_rhse = IRTools.findExpression(simplified_rhse, lhse);
+            
                 // if it is null, then it is not a reduction statement
+
+
                 if (lhse_in_rhse == null) {
                     return;
                 }
                 Expression parent_expr = (Expression)lhse_in_rhse.getParent();
+
                 if (parent_expr instanceof BinaryExpression) {
+                  
                     reduction_op =
                       ((BinaryExpression)parent_expr).getOperator().toString();
+
                     if (reduction_op.equals("+")) {
+                       
                         lhse_removed_rhse = Symbolic.subtract(rhse, lhse);
+
                     } else if (reduction_op.equals("*")) {
                         lhse_removed_rhse = Symbolic.divide(rhse, lhse);
+                       
                     } else {
-                        // operators, such as {&, |, ^, &&, ||}
-                        // are not supported
-                        return;
+                        // Added support for logical and bitwise operators : {&& , || , & ,| , ^}
+                       
+                        lhse_removed_rhse = Symbolic.subtract(rhse, lhse,true);  
+                       
                     }
                 } else {
+                   
                     return;
                 }
             } else if ((assign_op == AssignmentOperator.ADD) ||
@@ -528,13 +541,18 @@ public class Reduction extends AnalysisPass {
             } else {
                 return;
             }
+
+    
             if (debug_level > 1) {
                 if (lhse_removed_rhse == null) {
                     System.out.println("[ERROR] rhse_removed_rhse is null");
                 }
-                System.out.println("lhse_removed_rhse=" + lhse_removed_rhse);
+                
             }
+
+
             if (lhse instanceof Identifier) {
+
                 Identifier id = (Identifier)lhse;
                 if (!IRTools.containsSymbol(lhse_removed_rhse, id.getSymbol())){
                     isReduction = true;

@@ -8,11 +8,15 @@ import java.util.List;
 * symbolically. This class holds only wrapper methods that utilizes the
 * normalization functionalities in SimpleExpression.
 */
+
+
 public class Symbolic extends SimpleExpression {
 
     private static final IntegerLiteral zero = new IntegerLiteral(0);
 
     private static final IntegerLiteral one = new IntegerLiteral(1);
+
+   
 
     // No instantiation is used.
     private Symbolic() {
@@ -25,8 +29,26 @@ public class Symbolic extends SimpleExpression {
     * @return the simplified expression.
     */
     public static Expression simplify(Expression e) {
+
         SimpleExpression se = new SimpleExpression(e);
         Expression ret = se.normalize().getExpression();
+        ret.setParens(e.needsParens());
+        return ret;
+    }
+
+  /**
+    * Returns a simplified expression of the given expression with the default
+    * option which turns on every suboptions. Implemented for simplification of logical and bitwise reductions.
+    * @param e the given expression.
+    * @return the simplified expression.
+    */
+
+
+    public static Expression simplify(Expression e , boolean logicalbitwisereductionflag){
+        
+
+        SimpleExpression se = new SimpleExpression(e, logicalbitwisereductionflag);
+        Expression ret = se.normalizelogicalbitwisereduction().getExpression();                                // To be changed
         ret.setParens(e.needsParens());
         return ret;
     }
@@ -51,6 +73,7 @@ public class Symbolic extends SimpleExpression {
     * Returns addition of the two expressions with simplification.
     */
     public static Expression add(Expression e1, Expression e2) {
+        
         return binary(e1, BinaryOperator.ADD, e2);
     }
 
@@ -58,7 +81,18 @@ public class Symbolic extends SimpleExpression {
     * Returns subtraction of two expressions with simplification.
     */
     public static Expression subtract(Expression e1, Expression e2) {
+       
         return binary(e1, BinaryOperator.SUBTRACT, e2);
+    }
+
+    /**
+    * Returns subtraction of two expressions with simplification. Used For logical and bitwise reductions
+    */
+
+    public static Expression subtract(Expression e1 , Expression e2 , boolean logicalbitwise_reduction){
+
+        return binary(e1 , BinaryOperator.SUBTRACT , e2 , logicalbitwise_reduction);
+
     }
 
     /**
@@ -86,6 +120,7 @@ public class Symbolic extends SimpleExpression {
     * Returns and of two expressions with simplification.
     */
     public static Expression and(Expression e1, Expression e2) {
+       
         return binary(e1, BinaryOperator.LOGICAL_AND, e2);
     }
 
@@ -625,6 +660,15 @@ public class Symbolic extends SimpleExpression {
         binary(Expression e1, BinaryOperator op, Expression e2) {
         Expression e = new BinaryExpression(e1.clone(), op, e2.clone());
         return simplify(e);
+    }
+
+
+    //Implemented to take care of specific reduction operations.
+
+    private static Expression
+        binary(Expression e1, BinaryOperator op, Expression e2 , boolean reduction_flag) {
+        Expression e = new BinaryExpression(e1.clone(), op, e2.clone());
+        return simplify(e , reduction_flag);
     }
 
     // Common wrapper method for unary operations.

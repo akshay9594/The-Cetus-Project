@@ -6,7 +6,7 @@
 */
 int main(){
 
-  float a[10000], sum[1000];
+  float a[10000], sum[10000];
   int i, n, tab[10000];
   
   /* define content of sum and a */

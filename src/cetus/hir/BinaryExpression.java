@@ -125,6 +125,7 @@ public class BinaryExpression extends Expression {
     * @return the righthand expression.
     */
     public Expression getRHS() {
+        
         return (Expression)children.get(1);
     }
 

@@ -43,44 +43,25 @@ wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
 */
 /* We do not support C11 <threads.h>.  */
 /*
-Scalar, Additive Reduction
+Scalar Reduction
 
-  The loop contains a scalar, additive reduction operation.
+  The loop contains a scalar reduction operation.
 
 
 */
 int main()
 {
-	float a[10000], max_val, sum;
-	int i, n;
+	int a[10000], c[10000];
+	int b, i;
 	int _ret_val_0;
-	sum=0.0;
-	n=10000;
+	b=1;
 	#pragma cetus private(i) 
 	#pragma loop name main#0 
 	#pragma cetus parallel 
 	#pragma omp parallel for private(i)
 	for (i=0; i<10000; i ++ )
 	{
-		a[i]=(i/2);
-	}
-	#pragma cetus private(i) 
-	#pragma loop name main#1 
-	#pragma cetus reduction(+: sum) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(i) reduction(+: sum)
-	for (i=0; i<10000; i ++ )
-	{
-		sum=(sum+a[i]);
-	}
-	#pragma cetus private(i) 
-	#pragma loop name main#2 
-	for (i=0; i<n; i ++ )
-	{
-		if (a[i]>max_val)
-		{
-			max_val=a[i];
-		}
+		c[i]=(c[i]&&i);
 	}
 	_ret_val_0=0;
 	return _ret_val_0;

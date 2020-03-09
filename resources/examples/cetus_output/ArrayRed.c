@@ -43,26 +43,25 @@ wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
 */
 /* We do not support C11 <threads.h>.  */
 /*
-Scalar Reduction
+Array Reduction
 
-  The loop contains a scalar reduction operation.
+  The loop contains an array reduction operation, 
+  a.k.a irregular reduction or histogram reduction
 
 
 */
 int main()
 {
-	int a[10000], c[10000];
-	int b, i;
+	float a[10000], sum[10000];
+	int i, n, tab[10000];
+	/* define content of sum and a */
 	int _ret_val_0;
-	b=1;
 	#pragma cetus private(i) 
 	#pragma loop name main#0 
-	#pragma cetus reduction(||: b) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(i) reduction(||: b)
-	for (i=0; i<10000; i ++ )
+	/* #pragma cetus reduction(&&: sum[tab[i]])  */
+	for (i=1; i<10000; i ++ )
 	{
-		b=(b||a[i]);
+		sum[tab[i]]=(sum[tab[i]]&&a[i]);
 	}
 	_ret_val_0=0;
 	return _ret_val_0;
