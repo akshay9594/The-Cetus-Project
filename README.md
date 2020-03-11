@@ -15,6 +15,13 @@ Cetus Source to Source compiler improvements being done at University of Delawar
 ### 2. Added support for logical and bitwise scalar reductions
         Scalar reductions of the form x = x op expr, where op is any of:
         {logical AND - && , logical OR- || , Bitwise OR - | , Biwise AND- & , Bitwise XOR - ^}. 
+        Also added support for Bitwise assignment operators of the form: 
+        {Bitwise AND - &= , Bitwise OR - |= , Bitwise XOR - ^=}
+        
+### 3. Support for Min and Max Reductions
+       OpenMP added the reduction-identifiers "min" and "max" to the reduction clause from OpenMP 3.1.
+       Cetus can now recognize Min and Max reductions implemented using an if-statement or using the
+       Conditional operator (?).
     
 
     
