@@ -43,6 +43,8 @@ import cetus.exec.Driver;
 import cetus.hir.*;
 import java.util.*;
 
+
+
 /**
 * Performs reduction variable analysis to detect and annotate statements like
 * x = x + i in loops. An Annotation is added right before loops that contain
@@ -59,6 +61,8 @@ public class Reduction extends AnalysisPass {
     private AliasAnalysis alias;
 
     private int option;
+
+    private Expression loop_index;
 
     private static final String pass_name = "[Reduction]";
 
@@ -87,6 +91,9 @@ public class Reduction extends AnalysisPass {
                 new DFIterator<ForLoop>(program, ForLoop.class);
         while (iter.hasNext()) {
             ForLoop loop = iter.next();
+
+            BinaryExpression b = (BinaryExpression)loop.getCondition();
+            loop_index = b.getLHS();
             // find reduction variables in a loop
             Map<String, Set<Expression>> reduce_map = analyzeStatement(loop);
             // Insert reduction Annotation to the current loop
@@ -155,7 +162,6 @@ public class Reduction extends AnalysisPass {
         iter.pruneOn(SizeofExpression.class);
         while (iter.hasNext()) {
             Expression expr = iter.next();
-
            
             PrintTools.printlnStatus(9, pass_name, "[expr]", ++expr_cnt, ":",
                     expr, "(", expr.getClass().getName(), ")");
@@ -174,7 +180,94 @@ public class Reduction extends AnalysisPass {
                            func_side_effect);
                 side_effect_set.addAll(func_side_effect);
             }
+
+
         }
+
+
+    //Following code block is for detecting possible MIN or MAX reductions in if-statements
+
+
+        ArrayList<BinaryExpression> IfExprList = new ArrayList<BinaryExpression>();
+        ArrayList<Expression> LoopExprList = new ArrayList<Expression>();
+
+
+        DFIterator<Expression> loopexpriter =
+        new DFIterator<Expression>(istmt, Expression.class);
+
+
+        while(loopexpriter.hasNext()){
+
+            Expression loopexpr = loopexpriter.next();
+
+            if( loopexpr instanceof BinaryExpression || 
+                loopexpr instanceof UnaryExpression ||
+                loopexpr instanceof ConditionalExpression )
+                LoopExprList.add(loopexpr);
+
+        }
+
+
+        DFIterator<IfStatement> it =
+        new DFIterator<IfStatement>(istmt, IfStatement.class);
+
+
+        IfStatement ifstmt = null;
+
+        while(it.hasNext()){
+
+            ifstmt =  it.next();
+
+        }
+
+
+        BinaryExpression ifCondition = null;
+
+
+        if(ifstmt != null){
+
+            DFIterator<Expression> Ifexpressioniter = new DFIterator<Expression>(ifstmt , Expression.class);
+
+            while(Ifexpressioniter.hasNext()){
+
+                Expression ifexpr = Ifexpressioniter.next();
+
+                if(ifexpr instanceof BinaryExpression){
+
+                    BinaryExpression ifbe = (BinaryExpression)ifexpr;
+
+                    if(ifbe.getOperator().toString().equals(">") || ifbe.getOperator().toString().equals("<")){
+
+                        ifCondition = ifbe;
+                    }
+                    else
+                        IfExprList.add(ifbe);
+
+
+                }
+
+            }
+
+            findReduction(ifCondition, LoopExprList ,IfExprList ,rmap, cmap);
+
+        }
+
+        DFIterator<Expression> expriter = new DFIterator<Expression>(istmt , Expression.class);
+
+        // Following code block is to find min or max reduction using the conditional operator.
+
+        while(expriter.hasNext()){
+
+            Expression tempexpr = expriter.next();
+
+             if( tempexpr instanceof ConditionalExpression){
+               
+                ConditionalExpression cond_expr = (ConditionalExpression)tempexpr;
+                findReduction(cond_expr, LoopExprList,rmap, cmap); 
+            }
+
+        }
+
 
       
         // if the lhse of the reduction candidate statement is not in the
@@ -194,6 +287,9 @@ public class Reduction extends AnalysisPass {
                 referenceSet.removeAll(reduceSet);
             }
         }
+
+    
+        //System.out.println("Return Ref Map: " + RefMap +"\n");
         // final reduction map that maps a reduction operator to a set of
         // reduction variables
         Map<String, Set<Expression>> fmap =
@@ -207,8 +303,8 @@ public class Reduction extends AnalysisPass {
                 if (RefMap.get(candidate_symbol) == null) {
                     continue;
                 }
-                if (!RefMap.get(candidate_symbol).isEmpty()) {
-                    PrintTools.printlnStatus(2, pass_name, candidate,
+                if (!RefMap.get(candidate_symbol).isEmpty() && !op.equals("max") && !op.equals("min")) {                // Reference of min max candidate are checked in find_reduction
+                    PrintTools.printlnStatus(2, pass_name, candidate,                                                   // for min , max
                             "is referenced in the non-reduction statement!");
                     remove_flag = true;
                 }
@@ -279,6 +375,7 @@ public class Reduction extends AnalysisPass {
                     "------------ analyzeStatement done ------------\n");
         }
         debug_tab--;
+
         return fmap;
     }
 
@@ -538,7 +635,24 @@ public class Reduction extends AnalysisPass {
                     System.out.println("[*=] rhse_removed_rhse is null");
                 }
                 reduction_op = "*";
-            } else {
+            } else if ((assign_op == AssignmentOperator.BITWISE_AND)) {
+
+                lhse_removed_rhse = Symbolic.simplify(rhse);
+
+                reduction_op = "&";
+            } else if( assign_op == AssignmentOperator.BITWISE_EXCLUSIVE_OR){
+
+                lhse_removed_rhse = Symbolic.simplify(rhse);
+
+                reduction_op = "^";
+            }else if( assign_op == AssignmentOperator.BITWISE_INCLUSIVE_OR){
+
+                    lhse_removed_rhse = Symbolic.simplify(rhse);
+    
+                    reduction_op = "|";
+            }
+            
+            else {
                 return;
             }
 
@@ -582,6 +696,270 @@ public class Reduction extends AnalysisPass {
             PrintTools.printlnStatus(2, pass_name,
                     "candidate = (", reduction_op, ":", lhse, ")");
         }
+    }
+
+
+    /* Method to find Min or MAX reductions. Uses a different way to check if the min or max candidate variable are
+    used in Non-reduction expressions.
+    */
+
+    private void findReduction(BinaryExpression condexpr, ArrayList<Expression> LoopExpressionList,
+                               ArrayList<BinaryExpression> Ifexprlist,
+                               Map<String, Set<Expression>> rmap,
+                               Map<Symbol, Set<Integer>> cmap
+                               )
+    {
+
+       
+        int i;
+
+        String reduction_operator = null;
+        boolean isreduction = false;
+        Expression condlhs = condexpr.getLHS();
+        Expression condrhs = condexpr.getRHS();
+        Expression reduction_candidate = null;
+        Expression reduction_expr = null;
+    
+
+        condlhs = Symbolic.simplify(condlhs);
+        condrhs = Symbolic.simplify(condrhs);
+
+        // Loop to check the if-condition. If the if-condition contains the loop index or an integer, return.
+
+        for( i = 0 ; i < condexpr.getChildren().size(); i++){
+      
+            if(condexpr.getChildren().get(i).toString().matches("-?\\d+(\\.\\d+)?"))
+                return;
+
+        }
+
+
+        for( i = 0 ; i < Ifexprlist.size() ;i++){
+
+            BinaryExpression tempexpr = Ifexprlist.get(i);
+
+            if(tempexpr instanceof AssignmentExpression && (tempexpr.getOperator() == AssignmentOperator.NORMAL)){
+
+                    Expression tempexprlhs = tempexpr.getLHS();
+                    tempexprlhs = Symbolic.simplify(tempexprlhs);
+
+                    Expression tempexprrhs = tempexpr.getRHS();
+                    tempexprrhs = Symbolic.simplify(tempexprrhs);
+
+                  if(tempexprlhs.equals(condlhs) && tempexprrhs.equals(condrhs)){
+
+                    isreduction = true;
+
+                    reduction_candidate = tempexprlhs;
+
+                    reduction_expr = tempexpr;
+
+                  }             
+
+            }
+
+
+
+        }
+
+
+         //Following is the algorithm to check if the reduction candidate is present in any non-reduction statement
+
+         // First step is to remove the  reduction expressions
+
+        Expression IfAssignment = (Expression) reduction_expr;
+
+        LoopExpressionList.remove(IfAssignment);
+
+        LoopExpressionList.remove(condexpr);
+
+        // The actual check of the reduction candidate
+
+        for(i =0 ; i < LoopExpressionList.size() ; i++){
+
+            DFIterator<Expression> Loopexpiter = new DFIterator<Expression>(LoopExpressionList.get(i));
+
+            
+            while(Loopexpiter.hasNext()){
+
+                if(Loopexpiter.next().equals(reduction_candidate)){
+
+                    isreduction = false;
+                    reduction_candidate = null;
+                    break;
+                }
+                
+            }
+
+        }
+      
+        if(isreduction){
+
+            if(condexpr.getOperator().toString().equals("<"))
+                reduction_operator = "max";
+            else if(condexpr.getOperator().toString().equals(">"))
+                reduction_operator = "min";
+        }
+
+        if (isreduction) {
+            add_to_rmap(rmap, reduction_operator, reduction_candidate);
+
+            for (Expression e : IRTools.findExpressions(reduction_expr, reduction_candidate)) {
+                add_to_cmap(cmap, SymbolTools.getSymbolOf(reduction_candidate),
+                        System.identityHashCode(e));
+            }
+            PrintTools.printlnStatus(2, pass_name,
+                    "candidate = (", reduction_operator, ":", reduction_candidate, ")");
+        }
+        
+       
+    }
+
+
+    /*
+    Method to find Min and Max reductions in loops with Conditional Expressions. Similar as the previous method.
+
+    Slightly different method to check if the reduction candidate is present in a non-reduction statement.    
+    */
+
+    private void findReduction(ConditionalExpression expr,
+                                ArrayList<Expression>loopexprlist,
+                                Map<String, Set<Expression>> rmap,
+                                Map<Symbol, Set<Integer>> cmap)
+    {
+
+        int i;
+        String reduction_operator = null;
+        boolean isreduction = false;
+        Expression true_expr = expr.getTrueExpression();
+        Expression false_expr = expr.getFalseExpression();
+        Expression condition = expr.getCondition();
+        BinaryExpression Binary_cond_expr = null;
+        Expression reduction_candidate = null;
+
+        Expression lhs_cond_expr = null;
+        Expression rhs_cond_expr = null;
+        
+
+        for( i = 0 ; i < expr.getChildren().size(); i++){
+      
+            if(expr.getChildren().get(i).toString().matches("-?\\d+(\\.\\d+)?"))
+                return;
+
+        }
+
+
+        if(condition instanceof BinaryExpression){
+
+            Binary_cond_expr = (BinaryExpression)condition;
+
+            if(Binary_cond_expr.getOperator().toString().equals(">") ||
+              Binary_cond_expr.getOperator().toString().equals("<")){
+
+                lhs_cond_expr = Binary_cond_expr.getLHS();
+                rhs_cond_expr = Binary_cond_expr.getRHS();
+              }
+
+        }
+
+        if(true_expr instanceof AssignmentExpression){
+
+            AssignmentExpression true_assign_expr = (AssignmentExpression)true_expr;
+
+            if(true_assign_expr.getLHS().equals(lhs_cond_expr) &&
+               true_assign_expr.getRHS().equals(rhs_cond_expr) &&
+               false_expr.equals(lhs_cond_expr)){
+
+                isreduction = true;
+                reduction_candidate = lhs_cond_expr;
+            }
+            
+            else{
+                isreduction = false;
+            }
+
+        }
+
+
+        //Following is used to check if the reduction candidate is present in any non-reduction statement
+
+        //First step is to remove the parent conditional Expression and it's children.
+
+        Expression conditional_expression = (Expression)expr;
+
+        loopexprlist.remove(conditional_expression);
+
+
+
+       for(i = 0 ; i < loopexprlist.size() ;i++){
+
+         if(loopexprlist.get(i) instanceof AssignmentExpression){
+
+                AssignmentExpression temp = (AssignmentExpression) loopexprlist.get(i);
+
+                if(temp.getRHS() instanceof ConditionalExpression &&
+                   temp.getRHS().equals(expr)){
+  
+                    Expression ParentCond = (Expression) temp.getRHS();
+
+                    for(int j = 0 ; j < ParentCond.getChildren().size();j++){
+
+                            loopexprlist.remove(ParentCond.getChildren().get(j));
+
+                    }
+
+                    loopexprlist.remove(i);
+
+                }
+          }
+
+
+       }
+
+
+       //The actual check of the reduction candidate
+
+       for(i =0 ; i < loopexprlist.size() ; i++){
+
+        DFIterator<Expression> Loopexpiter = new DFIterator<Expression>(loopexprlist.get(i));
+
+        
+        while(Loopexpiter.hasNext()){
+
+            if(Loopexpiter.next().equals(reduction_candidate)){
+
+                isreduction = false;
+                reduction_candidate = null;
+                break;
+            }
+            
+        }
+
+    }
+
+
+       if(isreduction){
+
+        if(Binary_cond_expr.getOperator().toString().equals("<"))
+            reduction_operator = "max";
+        else if(Binary_cond_expr.getOperator().toString().equals(">"))
+            reduction_operator = "min";
+
+    }
+
+
+    if (isreduction) {
+        add_to_rmap(rmap, reduction_operator, reduction_candidate);
+
+        for (Expression e : IRTools.findExpressions(expr, reduction_candidate)) {
+            add_to_cmap(cmap, SymbolTools.getSymbolOf(reduction_candidate),
+                    System.identityHashCode(e));
+        }
+        PrintTools.printlnStatus(2, pass_name,
+                "candidate = (", reduction_operator, ":", reduction_candidate, ")");
+    }
+
+   
     }
 
     public void print_reduction(Map<String, Set<Expression>> map) {

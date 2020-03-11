@@ -52,16 +52,38 @@ Scalar Reduction
 int main()
 {
 	int a[10000], c[10000];
-	int b, i;
+	int b, i, maxl, minl;
 	int _ret_val_0;
 	b=1;
+	maxl=1;
+	minl=1000;
 	#pragma cetus private(i) 
 	#pragma loop name main#0 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(i)
 	for (i=0; i<10000; i ++ )
 	{
-		c[i]=(c[i]&&i);
+		b&=a[i];
+		c[i]=b;
+	}
+	#pragma cetus private(i) 
+	#pragma loop name main#1 
+	#pragma cetus reduction(max: maxl) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(i) reduction(max: maxl)
+	for (i=0; i<10000; i ++ )
+	{
+		if (maxl<a[i])
+		{
+			maxl=a[i];
+		}
+	}
+	#pragma cetus private(i) 
+	#pragma loop name main#2 
+	#pragma cetus reduction(max: maxl) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(i) reduction(max: maxl)
+	for (i=0; i<10000; i ++ )
+	{
+		maxl=((maxl<a[i]) ? (maxl=a[i]) : maxl);
 	}
 	_ret_val_0=0;
 	return _ret_val_0;
