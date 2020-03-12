@@ -24,9 +24,10 @@ Cetus Source to Source compiler improvements being done at University of Delawar
        Conditional operator (?). Some expression restrictions apply.
        
 ### 4. Support for Multiple reductions using different operators
-       Cetus had no issue recognizing multiple unique reduction statements within the same loop. But Cetus couldn't
-       create a separate reduction clause for each reduction-identifier within the same directive as per the latest
-       OpenMP specification. The support for the same has now has been added. The directive would look something like:
+       Cetus had no issue recognizing multiple unique reduction statements within the same loop. But Cetus could
+       not create a separate reduction clause for each reduction-identifier within the same directive as per the
+       lates OpenMP specification. The support for the same has now has been added. 
+       The directive would look something like:
        
        Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(*: e)reduction(+: d)
     
