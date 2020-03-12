@@ -53,13 +53,35 @@ public class OmpAnnotation extends PragmaAnnotation {
             return;
         }
         sb.append("(");
+
+        int count = 0;
         if (key.equals("reduction")) {
+
             Map<String, Set> reduction_map = get(key);
+
+
             for (String op : reduction_map.keySet()) {
                 sb.append(op);
                 sb.append(": ");
+
+
+                if(reduction_map.size() > 1){
+                    
+                    sb.append(PrintTools.collectionToString(
+                        reduction_map.get(op), ", "));
+
+                        if(count < reduction_map.size()-1){
+                            sb.append(")reduction(");
+                            count++;
+                        }
+
+                }
+
+                else
                 sb.append(PrintTools.collectionToString(
                         reduction_map.get(op), ", "));
+        
+
             }
         } else if (value instanceof Collection) {
             sb.append(PrintTools.collectionToString((Collection) value, ", "));

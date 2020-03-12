@@ -52,17 +52,21 @@ Scalar Reduction
 int main()
 {
 	int a[10000], c[10000];
-	int b, i, maxl, minl;
+	int b, i, maxl, minl, d, e;
 	int _ret_val_0;
 	b=1;
 	maxl=1;
 	minl=1000;
 	#pragma cetus private(i) 
 	#pragma loop name main#0 
+	#pragma cetus reduction(&: b) reduction(*: e) reduction(+: d) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(i) reduction(&: b)reduction(*: e)reduction(+: d)
 	for (i=0; i<10000; i ++ )
 	{
 		b&=a[i];
-		c[i]=b;
+		d+=a[i];
+		e*=a[i];
 	}
 	#pragma cetus private(i) 
 	#pragma loop name main#1 
@@ -71,10 +75,7 @@ int main()
 	#pragma omp parallel for private(i) reduction(max: maxl)
 	for (i=0; i<10000; i ++ )
 	{
-		if (maxl<a[i])
-		{
-			maxl=a[i];
-		}
+		maxl=((maxl>a[i]) ? maxl : a[i]);
 	}
 	#pragma cetus private(i) 
 	#pragma loop name main#2 
@@ -83,7 +84,20 @@ int main()
 	#pragma omp parallel for private(i) reduction(max: maxl)
 	for (i=0; i<10000; i ++ )
 	{
-		maxl=((maxl<a[i]) ? (maxl=a[i]) : maxl);
+		if (a[i]>maxl)
+		{
+			maxl=a[i];
+		}
+		/* c[i] = minl; */
+	}
+	#pragma cetus private(i) 
+	#pragma loop name main#3 
+	#pragma cetus reduction(min: minl) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(i) reduction(min: minl)
+	for (i=0; i<10000; i ++ )
+	{
+		minl=((minl<a[i]) ? minl : a[i]);
 	}
 	_ret_val_0=0;
 	return _ret_val_0;

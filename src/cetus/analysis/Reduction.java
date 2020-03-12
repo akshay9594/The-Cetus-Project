@@ -203,6 +203,7 @@ public class Reduction extends AnalysisPass {
             if( loopexpr instanceof BinaryExpression || 
                 loopexpr instanceof UnaryExpression ||
                 loopexpr instanceof ConditionalExpression )
+
                 LoopExprList.add(loopexpr);
 
         }
@@ -754,7 +755,17 @@ public class Reduction extends AnalysisPass {
 
                     reduction_expr = tempexpr;
 
-                  }             
+                  }
+                  
+                  else if (tempexprlhs.equals(condrhs) && tempexprrhs.equals(condlhs)){
+
+                    isreduction = true;
+
+                    reduction_candidate = tempexprlhs;
+
+                    reduction_expr = tempexpr;
+
+                  }
 
             }
 
@@ -795,10 +806,20 @@ public class Reduction extends AnalysisPass {
       
         if(isreduction){
 
-            if(condexpr.getOperator().toString().equals("<"))
+            if(condexpr.getLHS().equals(reduction_candidate) && 
+                condexpr.getOperator().toString().equals("<") )
                 reduction_operator = "max";
-            else if(condexpr.getOperator().toString().equals(">"))
-                reduction_operator = "min";
+
+            else if(condexpr.getRHS().equals(reduction_candidate)&&
+                    condexpr.getOperator().toString().equals(">"))
+                    reduction_operator = "max";
+
+            else if( condexpr.getLHS().equals(reduction_candidate) &&
+                    condexpr.getOperator().toString().equals(">"))
+                    reduction_operator = "min";
+            else if(condexpr.getRHS().equals(reduction_candidate) &&
+                    condexpr.getOperator().toString().equals("<"))
+                    reduction_operator = "min";
         }
 
         if (isreduction) {
@@ -862,17 +883,28 @@ public class Reduction extends AnalysisPass {
 
         }
 
-        if(true_expr instanceof AssignmentExpression){
+        AssignmentExpression reduction_parent = (AssignmentExpression)expr.getParent();
 
-            AssignmentExpression true_assign_expr = (AssignmentExpression)true_expr;
+        if(true_expr instanceof Expression){
 
-            if(true_assign_expr.getLHS().equals(lhs_cond_expr) &&
-               true_assign_expr.getRHS().equals(rhs_cond_expr) &&
+
+            if(true_expr.equals(rhs_cond_expr) &&
                false_expr.equals(lhs_cond_expr)){
 
                 isreduction = true;
-                reduction_candidate = lhs_cond_expr;
+
+                reduction_candidate = reduction_parent.getLHS();
             }
+
+            else if(true_expr.equals(lhs_cond_expr)&&
+                    false_expr.equals(rhs_cond_expr)){
+
+
+                    isreduction = true;
+                    reduction_candidate = reduction_parent.getLHS();
+
+            }
+
             
             else{
                 isreduction = false;
@@ -938,17 +970,38 @@ public class Reduction extends AnalysisPass {
     }
 
 
+// Restriction on reduction: True expression has to be the reduction candidate
+
        if(isreduction){
 
-        if(Binary_cond_expr.getOperator().toString().equals("<"))
-            reduction_operator = "max";
-        else if(Binary_cond_expr.getOperator().toString().equals(">"))
-            reduction_operator = "min";
+            if(true_expr.equals(reduction_candidate) &&
+               lhs_cond_expr.equals(reduction_candidate) &&
+               Binary_cond_expr.getOperator().toString().equals(">"))
+               reduction_operator = "max";
+
+            else if(true_expr.equals(reduction_candidate) &&
+                    rhs_cond_expr.equals(reduction_candidate)&&
+                    Binary_cond_expr.getOperator().toString().equals("<"))
+                    reduction_operator = "max";
+
+            else if(true_expr.equals(reduction_candidate) &&
+                    lhs_cond_expr.equals(reduction_candidate) &&
+                    Binary_cond_expr.getOperator().toString().equals("<"))
+                    reduction_operator = "min";
+
+            else if(true_expr.equals(reduction_candidate) &&
+                    rhs_cond_expr.equals(reduction_candidate) &&
+                    Binary_cond_expr.getOperator().toString().equals(">"))
+                    reduction_operator = "min";
+
+           
+            
 
     }
 
+      
 
-    if (isreduction) {
+    if (isreduction && reduction_operator != null) {
         add_to_rmap(rmap, reduction_operator, reduction_candidate);
 
         for (Expression e : IRTools.findExpressions(expr, reduction_candidate)) {
