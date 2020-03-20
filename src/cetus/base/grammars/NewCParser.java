@@ -44,6 +44,7 @@ Declaration loop_decl = null;
 Declarator decl_for_global = null;
 ArrayList<IDExpression> loop_idex_list = new ArrayList<IDExpression>();
 ArrayList<Declaration> loop_decl_list = new ArrayList<Declaration>();
+Boolean extern_decl = false;
 
 public void getPreprocessorInfoChannel(PreprocessorInfoChannel preprocChannel)
 {
@@ -284,7 +285,7 @@ public NewCParser(ParserSharedInputState state) {
 		else
 		tunit = init_tunit;
 		enterSymtab(tunit);
-		
+
 		
 		try {      // for error handling
 			{
@@ -294,11 +295,11 @@ public NewCParser(ParserSharedInputState state) {
 			case LITERAL_asm:
 			case LITERAL_volatile:
 			case LITERAL_struct:
+			case LITERAL_extern:
 			case LITERAL_union:
 			case LITERAL_enum:
 			case LITERAL_auto:
 			case LITERAL_register:
-			case LITERAL_extern:
 			case LITERAL_static:
 			case LITERAL_inline:
 			case LITERAL_const:
@@ -323,7 +324,7 @@ public NewCParser(ParserSharedInputState state) {
 			case LITERAL___asm:
 			case STAR:
 			{
-				
+		
 				externalList(tunit);
 				break;
 			}
@@ -331,8 +332,10 @@ public NewCParser(ParserSharedInputState state) {
 			{
 				break;
 			}
+		
 			default:
 			{
+				
 				throw new NoViableAltException(LT(1), getFilename());
 			}
 			}
@@ -409,63 +412,87 @@ public NewCParser(ParserSharedInputState state) {
 			}
 			default:
 				boolean synPredMatched8 = false;
+
+
 				if (((_tokenSet_2.member(LA(1))) && (_tokenSet_3.member(LA(2))))) {
 					int _m8 = mark();
 					synPredMatched8 = true;
 					inputState.guessing++;
 					try {
+				
 						{
 						if ((LA(1)==LITERAL_typedef) && (true)) {
 							match(LITERAL_typedef);
 						}
+						
 						else if ((_tokenSet_2.member(LA(1))) && (_tokenSet_3.member(LA(2)))) {
+
 							declaration();
+
 						}
+				
 						else {
+
 							throw new NoViableAltException(LT(1), getFilename());
 						}
 						
 						}
 					}
 					catch (RecognitionException pe) {
+						
 						synPredMatched8 = false;
 					}
 					rewind(_m8);
 inputState.guessing--;
 				}
+				
+				
 				if ( synPredMatched8 ) {
+					
+					extern_decl = true;
 					decl=declaration();
+
 					if ( inputState.guessing==0 ) {
 						
 						if (decl != null) {
 						//PrintTools.printStatus("Adding Declaration: ",3);
 						//PrintTools.printlnStatus(decl,3);
 						
-						
 						tunit.addDeclaration(decl);
+
+						extern_decl = false;
 						}
 						
 					}
 				}
 				else {
 					boolean synPredMatched10 = false;
+				
 					if (((_tokenSet_4.member(LA(1))) && (_tokenSet_5.member(LA(2))))) {
+					
 						int _m10 = mark();
 						synPredMatched10 = true;
 						inputState.guessing++;
+
 						try {
 							{
+							
 							functionPrefix();
 							}
 						}
 						catch (RecognitionException pe) {
+						
 							synPredMatched10 = false;
 						}
 						rewind(_m10);
 inputState.guessing--;
 					}
+				
+					
 					if ( synPredMatched10 ) {
+
 						decl=functionDef();
+
 						if ( inputState.guessing==0 ) {
 							
 							//PrintTools.printStatus("Adding Declaration: ",3);
@@ -485,7 +512,7 @@ inputState.guessing--;
 						}
 					}
 				else {
-					
+				
 					throw new NoViableAltException(LT(1), getFilename());
 				}
 				}
@@ -509,6 +536,7 @@ inputState.guessing--;
 		
 		try {      // for error handling
 			dspec=declSpecifiers();
+			
 			{
 			switch ( LA(1)) {
 			case ID:
@@ -517,6 +545,7 @@ inputState.guessing--;
 			case LITERAL___asm:
 			case STAR:
 			{
+			
 				idlist=initDeclList();
 				break;
 			}
@@ -530,6 +559,8 @@ inputState.guessing--;
 			}
 			}
 			}
+
+			//System.out.println("idlist: " + idlist +"\n");
 			if ( inputState.guessing==0 ) {
 				
 				if (idlist != null) {
@@ -547,7 +578,6 @@ inputState.guessing--;
 				} else
 				bdecl = new VariableDeclaration(dspec,idlist);
 
-		
 				prev_decl = null;
 				} else {
 				// Looks like a forward declaration
@@ -591,6 +621,7 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+	
 		return bdecl;
 	}
 	
@@ -598,6 +629,7 @@ inputState.guessing--;
 		
 		Token  flcurly = null;
 		Declarator decl = null;
+		
 		
 		try {      // for error handling
 			{
@@ -608,26 +640,33 @@ inputState.guessing--;
 				inputState.guessing++;
 				try {
 					{
-					functionDeclSpecifiers();
+					  functionDeclSpecifiers();
+
 					}
 				}
 				catch (RecognitionException pe) {
+	
 					synPredMatched14 = false;
 				}
 				rewind(_m14);
 inputState.guessing--;
 			}
+
 			if ( synPredMatched14 ) {
 				functionDeclSpecifiers();
 			}
 			else if ((_tokenSet_6.member(LA(1))) && (_tokenSet_5.member(LA(2)))) {
+				
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
 			}
 			
 			}
+			
 			decl=declarator();
+
+			
 			{
 			_loop16:
 			do {
@@ -640,11 +679,13 @@ inputState.guessing--;
 				
 			} while (true);
 			}
+		
 			{
 			switch ( LA(1)) {
 			case VARARGS:
 			{
 				match(VARARGS);
+				
 				break;
 			}
 			case SEMI:
@@ -684,6 +725,7 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+		
 	}
 	
 	public final Procedure  functionDef() throws RecognitionException, TokenStreamException {
@@ -1014,6 +1056,7 @@ inputState.guessing--;
 						rewind(_m166);
 inputState.guessing--;
 					}
+					
 					if ( synPredMatched166 ) {
 						tspec=typeSpecifier();
 						if ( inputState.guessing==0 ) {
@@ -1039,6 +1082,7 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+		
 		return dspec;
 	}
 	
@@ -1060,9 +1104,10 @@ inputState.guessing--;
 		List llist = new ArrayList();
 		List tlist = null;
 		
-		
+	
 		try {      // for error handling
 			{
+
 			switch ( LA(1)) {
 			case STAR:
 			{
@@ -1096,6 +1141,7 @@ inputState.guessing--;
 			case ID:
 			case LPAREN:
 			{
+				
 				break;
 			}
 			default:
@@ -1105,16 +1151,20 @@ inputState.guessing--;
 			}
 			}
 			{
+		
 			switch ( LA(1)) {
 			case ID:
 			{
 				id = LT(1);
 				match(ID);
+			
 				if ( inputState.guessing==0 ) {
 					
 					putPragma(id,symtab);
 					declName = id.getText();
 					idex = new NameID(declName);
+				
+	
 					if(hastypedef) {
 
 					typetable.put(declName,"typedef");
@@ -1125,6 +1175,7 @@ inputState.guessing--;
 			}
 			case LPAREN:
 			{
+				
 				match(LPAREN);
 				tdecl=declarator();
 				match(RPAREN);
@@ -1150,10 +1201,13 @@ inputState.guessing--;
 			{
 			_loop137:
 			do {
+		
 				switch ( LA(1)) {
 				case LPAREN:
 				{
+				
 					plist=declaratorParamaterList();
+
 					break;
 				}
 				case LBRACKET:
@@ -1234,7 +1288,10 @@ inputState.guessing--;
 				decl = new NestedDeclarator(bp,tdecl,plist,tlist);
 				} else {
 				if (plist != null) // assume tlist == null
-				decl = new ProcedureDeclarator(bp,idex,plist);
+				{
+					decl = new ProcedureDeclarator(bp,idex,plist);
+				
+				}
 				else {
 				if (tlist != null)
 				decl = new VariableDeclarator(bp,idex,tlist);
@@ -1253,6 +1310,8 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+		
+	
 		return decl;
 	}
 	
@@ -1267,6 +1326,7 @@ inputState.guessing--;
 		try {      // for error handling
 
 			decl=initDecl();
+
 		
 			if ( inputState.guessing==0) {
 				
@@ -1374,11 +1434,14 @@ inputState.guessing--;
 		
 		decls = new ArrayList(); Specifier spec = null; Specifier temp=null;
 		
+		
 		try {      // for error handling
 			{
 			int _cnt33=0;
 			_loop33:
 			do {
+
+			
 				switch ( LA(1)) {
 				case LITERAL_typedef:
 				case LITERAL_auto:
@@ -1387,9 +1450,12 @@ inputState.guessing--;
 				case LITERAL_static:
 				case LITERAL_inline:
 				{
+				
 					spec=storageClassSpecifier();
+	
 					if ( inputState.guessing==0 ) {
 						decls.add(spec);
+						
 					}
 					break;
 				}
@@ -1398,6 +1464,7 @@ inputState.guessing--;
 				case LITERAL_restrict:
 				{
 					spec=typeQualifier();
+	
 					if ( inputState.guessing==0 ) {
 						decls.add(spec);
 					}
@@ -1411,6 +1478,7 @@ inputState.guessing--;
 				default:
 					boolean synPredMatched32 = false;
 					if (((_tokenSet_12.member(LA(1))) && (_tokenSet_19.member(LA(2))))) {
+					
 						int _m32 = mark();
 						synPredMatched32 = true;
 						inputState.guessing++;
@@ -1429,6 +1497,7 @@ inputState.guessing--;
 								typeSpecifier();
 							}
 							else {
+		
 								throw new NoViableAltException(LT(1), getFilename());
 							}
 							
@@ -1440,10 +1509,16 @@ inputState.guessing--;
 						rewind(_m32);
 inputState.guessing--;
 					}
+				
+
 					if ( synPredMatched32 ) {
-						temp=typeSpecifier();
+
+						temp=typeSpecifier();		
+
 						if ( inputState.guessing==0 ) {
+							
 							decls.add(temp);
+							
 						}
 					}
 					else if ((LA(1)==LITERAL___attribute||LA(1)==LITERAL___asm) && (LA(2)==LPAREN)) {
@@ -1509,6 +1584,7 @@ inputState.guessing--;
 			case LITERAL_inline:
 			{
 				cspec=functionStorageClassSpecifier();
+				
 				break;
 			}
 			default:
@@ -1581,7 +1657,7 @@ inputState.guessing--;
  ****************************************************/
 	public final Specifier  typeSpecifier() throws RecognitionException, TokenStreamException {
 		Specifier types;
-		
+		Specifier struct_specifier = null;
 		
 		types = null;
 		String tname = null;
@@ -1625,6 +1701,7 @@ inputState.guessing--;
 				match(LITERAL_int);
 				if ( inputState.guessing==0 ) {
 					types = Specifier.INT;
+				
 				}
 				break;
 			}
@@ -1717,7 +1794,9 @@ inputState.guessing--;
 			}
 			case ID:
 			{
+			
 				types=typedefName();
+			
 				break;
 			}
 			case LITERAL___complex:
@@ -1746,6 +1825,10 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+
+		
+		
+		
 		return types;
 	}
 	
@@ -1840,8 +1923,10 @@ inputState.guessing--;
 			case LITERAL_extern:
 			{
 				match(LITERAL_extern);
+			
 				if ( inputState.guessing==0 ) {
 					type= Specifier.EXTERN;
+					
 				}
 				break;
 			}
@@ -1929,6 +2014,9 @@ inputState.guessing--;
 					decls = new ClassDeclaration(ClassDeclaration.UNION, new NameID(name));
 					spec = new UserSpecifier(new NameID("union "+name));
 					}
+
+
+
 					
 				}
 				{
@@ -2084,6 +2172,8 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+
+		
 		return spec;
 	}
 	
@@ -2204,6 +2294,7 @@ inputState.guessing--;
 			match(ID);
 			if ( inputState.guessing==0 ) {
 				name = new UserSpecifier(new NameID(i.getText()));
+				
 			}
 		}
 		catch (RecognitionException ex) {
@@ -3074,8 +3165,7 @@ inputState.guessing--;
 			
 			if ( inputState.guessing==0 ) {
 				
-				if (binit instanceof Expression && decl != null && binit != null){
-
+				if (binit instanceof Expression && decl != null && binit != null && !extern_decl){
 
 					lhsID = new NameID(decl.toString());
 
@@ -3083,10 +3173,8 @@ inputState.guessing--;
 
 					curr_cstmt.addStatement(new ExpressionStatement(initial_expr));
 					
-				
 				}
-				
-				
+
 			}
 		}
 		catch (RecognitionException ex) {
@@ -3098,7 +3186,12 @@ inputState.guessing--;
 			}
 		}
 	
-		//System.out.println(init_var_value+"\n");
+		if(extern_decl && binit != null) {
+
+			binit = new Initializer((Expression) binit);
+			decl.setInitializer((Initializer)binit);
+
+		}
 		
 		return decl;
 		
@@ -3735,10 +3828,12 @@ inputState.guessing--;
 				inputState.guessing++;
 				try {
 					{
+					
 					declSpecifiers();
 					}
 				}
 				catch (RecognitionException pe) {
+				
 					synPredMatched141 = false;
 				}
 				rewind(_m141);
@@ -3746,6 +3841,7 @@ inputState.guessing--;
 			}
 			if ( synPredMatched141 ) {
 				plist=parameterTypeList();
+
 			}
 			else if ((_tokenSet_57.member(LA(1))) && (_tokenSet_13.member(LA(2)))) {
 				{
@@ -3773,6 +3869,7 @@ inputState.guessing--;
 			
 			}
 			{
+
 			switch ( LA(1)) {
 			case COMMA:
 			{
@@ -3781,6 +3878,7 @@ inputState.guessing--;
 			}
 			case RPAREN:
 			{
+				
 				break;
 			}
 			default:
@@ -3799,6 +3897,7 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+		
 		return plist;
 	}
 	
@@ -3917,6 +4016,7 @@ inputState.guessing--;
 					}
 				}
 				catch (RecognitionException pe) {
+				
 					synPredMatched153 = false;
 				}
 				rewind(_m153);

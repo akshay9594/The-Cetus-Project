@@ -38,6 +38,7 @@ public class LoopParallelizationPass extends AnalysisPass {
     */
     public LoopParallelizationPass(Program program) {
         super(program);
+
         parallelization_level = Integer.valueOf
             (Driver.getOptionValue("parallelize-loops")).intValue();
         // adjust the number if "report" is requested.
@@ -86,7 +87,8 @@ public class LoopParallelizationPass extends AnalysisPass {
         DFIterator<Loop> iter = new DFIterator<Loop>(program, Loop.class);
         iter.pruneOn(Loop.class);
         while (iter.hasNext()) {
-            parallelizeLoopNest(iter.next());
+            Loop nextloop = iter.next();
+            parallelizeLoopNest(nextloop);
         }
     }
 
@@ -181,11 +183,15 @@ public class LoopParallelizationPass extends AnalysisPass {
     */
     private void parallelizeLoopNest(Loop enclosing_loop) {
         boolean is_parallel;
+
         DDGraph dependence_graph = program.getDDGraph();
+        
         List<Loop> eligible_loops = LoopTools.
                 extractOutermostDependenceTestEligibleLoops(enclosing_loop);
+                
         for (int i = 0; i < eligible_loops.size(); i++) {
             Loop outer_loop = eligible_loops.get(i);
+
             DDGraph nest_ddgraph = dependence_graph.getSubGraph(outer_loop);
             List<Loop> contained_nest = 
                     LoopTools.calculateInnerLoopNest(outer_loop);
@@ -215,6 +221,8 @@ public class LoopParallelizationPass extends AnalysisPass {
                 }
                 Set<Expression> scalar_deps =
                         LoopTools.collectScalarDependences(l);
+                    
+            
                 if (!scalar_deps.isEmpty()) {
                     is_parallel = false;
                     addReport(l, "contains scalar dependences on {" +
@@ -235,6 +243,8 @@ public class LoopParallelizationPass extends AnalysisPass {
                         dv.getDirection(l) == DependenceVector.nil) {
                         continue;
                     }
+
+                  
                     ArrayAccess src_access = row.getSource().getArrayAccess();
                     Symbol src_symbol =
                             SymbolTools.getSymbolOf((Expression)src_access);

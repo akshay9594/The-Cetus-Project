@@ -63,6 +63,7 @@ public class DDTDriver extends AnalysisPass {
         DDGraph ddg = program.getDDGraph();
         // Run Alias Analysis as currently it has been implemented as whole
         // program analysis
+
         alias_analysis = new AliasAnalysis(program);
         AnalysisPass.run(alias_analysis);
         // Obtain a list of loops that enclose eligible nests for dependence
@@ -78,6 +79,8 @@ public class DDTDriver extends AnalysisPass {
         // TODO: replace with generic metric
         //PrintTools.println("Size of data dependence graph = " +
         //                   (ddg.getAllArcs()).size(), 1);
+
+        
     }
 
     public String getPassName() {
@@ -373,6 +376,7 @@ public class DDTDriver extends AnalysisPass {
             loop_iter.pruneOn(ReturnStatement.class);
             while (loop_iter.hasNext()) {
                 Statement stmt = loop_iter.next();
+
                 if (stmt instanceof ExpressionStatement ||
                     stmt instanceof DeclarationStatement ||
                     stmt instanceof ReturnStatement) {

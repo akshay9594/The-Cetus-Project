@@ -173,6 +173,7 @@ public class CetusCParser implements CetusParser {
         try {
             InputStream istream =
                     new DataInputStream(new ByteArrayInputStream(barray));
+            
             NewCLexer lexer = new NewCLexer(istream);
             lexer.setOriginalSource(filename);
             lexer.setTokenObjectClass("cetus.base.grammars.CToken");

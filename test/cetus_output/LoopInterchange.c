@@ -44,7 +44,7 @@ wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
 /* We do not support C11 <threads.h>.  */
 int main()
 {
-	int a[10000], c[10000], b[10000][10000];
+	int a[10000], c[10000], b[10000][10000], d[10000][10000];
 	int i, j;
 	int _ret_val_0;
 	#pragma cetus private(i, j) 
@@ -58,6 +58,19 @@ int main()
 		for (i=0; i<10000; i ++ )
 		{
 			b[j][i+1]=(2*b[j][i-1]);
+		}
+	}
+	#pragma cetus private(i, j) 
+	#pragma loop name main#1 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(i, j)
+	for (i=0; i<10000; i ++ )
+	{
+		#pragma cetus private(j) 
+		#pragma loop name main#1#0 
+		for (j=0; j<10000; j ++ )
+		{
+			d[i][j+1]=(2*d[i][j-1]);
 		}
 	}
 	_ret_val_0=0;

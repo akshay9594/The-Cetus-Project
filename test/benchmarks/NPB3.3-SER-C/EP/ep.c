@@ -44,15 +44,15 @@
 //  not affect the results.
 //--------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <math.h>
 
-#include "type.h"
+#include "../common/type.h"
 #include "npbparams.h"
-#include "randdp.h"
-#include "timers.h"
-#include "print_results.h"
+#include "../common/randdp.h"
+#include "../common/timers.h"
+#include "../common/print_results.h"
 
 #define MAX(X,Y)  (((X) > (Y)) ? (X) : (Y))
 

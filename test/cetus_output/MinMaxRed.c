@@ -42,23 +42,51 @@ wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
    - 3 additional Zanabazar Square characters
 */
 /* We do not support C11 <threads.h>.  */
+int x = 1;
+float y = 0.0;
 int main()
 {
-	int a[10000], c[10000], b[10000][10000];
-	int i, j;
+	int a[10000], c[10000];
+	int b, i, maxl, minl, d, e;
+	int x1, x2, t1, t2, t3, t4, l, sx, sy;
+	int j;
 	int _ret_val_0;
-	#pragma cetus private(i, j) 
+	b=1;
+	maxl=1;
+	minl=1000;
+	#pragma cetus private(i) 
 	#pragma loop name main#0 
+	#pragma cetus reduction(max: maxl) reduction(&: b) reduction(*: e) reduction(+: d) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(*: e)reduction(+: d)
+	for (i=0; i<10000; i ++ )
+	{
+		b&=a[i];
+		d+=a[i];
+		e*=a[i];
+		maxl=((maxl>a[i]) ? maxl : a[i]);
+	}
+	#pragma cetus private(j) 
+	#pragma loop name main#1 
+	#pragma cetus reduction(max: maxl) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(j) reduction(max: maxl)
 	for (j=0; j<10000; j ++ )
 	{
-		#pragma cetus private(j) 
-		#pragma loop name main#0#0 
-		#pragma cetus parallel 
-		#pragma omp parallel for private(j)
-		for (i=0; i<10000; i ++ )
+		if (a[j]>maxl)
 		{
-			b[j][i+1]=(2*b[j][i-1]);
+			maxl=a[j];
 		}
+		/* c[i] = minl; */
+	}
+	#pragma cetus private(i) 
+	#pragma loop name main#2 
+	#pragma cetus reduction(min: minl) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(i) reduction(min: minl)
+	for (i=0; i<10000; i ++ )
+	{
+		minl=((minl<a[i]) ? minl : a[i]);
 	}
 	_ret_val_0=0;
 	return _ret_val_0;

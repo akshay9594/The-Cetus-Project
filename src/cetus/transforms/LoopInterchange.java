@@ -1,6 +1,8 @@
 package cetus.transforms;
 
+import cetus.analysis.AnalysisPass;
 import cetus.analysis.DDGraph;
+import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
 import cetus.hir.*;
@@ -44,6 +46,8 @@ public class LoopInterchange extends TransformPass
                 outer_loops.add((Statement)o);
         }
 
+      
+
         for(i = outer_loops.size()-1; i >= 0; i--)
         {
             if(!LoopTools.isOutermostLoop((ForLoop)outer_loops.get(i)))
@@ -84,6 +88,7 @@ public class LoopInterchange extends TransformPass
                     }
                 }
 
+
                 int r = 0,j,until = loops.size();
                 int target_index = 0;
                 boolean icFlag = true;
@@ -114,6 +119,7 @@ public class LoopInterchange extends TransformPass
                         ///////////////////////////////////////////////////////////////////////////////////
 
                         if(expList.size() < until) until = expList.size();
+
                         for(int k = r+1; k < until; k++)
                         {
                             if(isLegal(loops, r, k))
@@ -135,12 +141,14 @@ public class LoopInterchange extends TransformPass
             }
         }
 
-        System.out.println("Target loops : " + target_loops);
-        System.out.println("Non Perfect loops : " + num_non_perfect);
-        System.out.println("Single loops : " + num_single);
-        System.out.println("Contain Function : " + num_contain_func);
-        System.out.println("Loop Interchanged : " + num_loop_interchange);
+        // System.out.println("Target loops : " + target_loops);
+        // System.out.println("Non Perfect loops : " + num_non_perfect);
+        // System.out.println("Single loops : " + num_single);
+        // System.out.println("Contain Function : " + num_contain_func);
+        // System.out.println("Loop Interchanged : " + num_loop_interchange);
 
+
+      
         return;
     }
 
@@ -254,6 +262,7 @@ public class LoopInterchange extends TransformPass
         Traversable parentTemp;
         Expression lhs, rhs;
 
+    
 
         for(i = 0; i < expList.size(); i++)
         {
@@ -265,6 +274,7 @@ public class LoopInterchange extends TransformPass
                 ArrayAccess f = array.get(j);
                 if(f.getNumIndices() >= n) {
                     temp = f.getIndex(f.getNumIndices()-1-n).findExpression(e);
+    
                     if(temp.size() >= 1) {
                         cur_exp+=2;
                         parentTemp = (temp.get(0)).getParent();
@@ -291,6 +301,7 @@ public class LoopInterchange extends TransformPass
             } else if (cur_exp == max)
                 result.add(i);
         }
+     
         return result;
     }
 
@@ -327,6 +338,7 @@ public class LoopInterchange extends TransformPass
         DependenceVector dd;
         ddg = program.getDDGraph();
         dpv = ddg.getDirectionMatrix(nest);
+
 
         if(src == target) return true;
         if(src > target) {

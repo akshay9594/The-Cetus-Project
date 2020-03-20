@@ -35,9 +35,9 @@
 // NPB CG serial version      
 //---------------------------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <math.h>
 #include "globals.h"
 #include "../common/randdp.h"
 #include "../common/timers.h"

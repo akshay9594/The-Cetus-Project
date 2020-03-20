@@ -249,6 +249,7 @@ public class Reduction extends AnalysisPass {
 
             }
 
+            if(ifCondition!= null)
             findReduction(ifCondition, LoopExprList ,IfExprList ,rmap, cmap);
 
         }
@@ -257,14 +258,20 @@ public class Reduction extends AnalysisPass {
 
         // Following code block is to find min or max reduction using the conditional operator.
 
+
         while(expriter.hasNext()){
 
             Expression tempexpr = expriter.next();
 
-             if( tempexpr instanceof ConditionalExpression){
+             if( tempexpr instanceof ConditionalExpression ){
                
                 ConditionalExpression cond_expr = (ConditionalExpression)tempexpr;
+
+                if(!cond_expr.equals(null) ){
+
                 findReduction(cond_expr, LoopExprList,rmap, cmap); 
+
+                }
             }
 
         }
@@ -714,6 +721,15 @@ public class Reduction extends AnalysisPass {
        
         int i;
 
+        for( i = 0 ; i < condexpr.getChildren().size(); i++){
+      
+            if(condexpr.getChildren().get(i).toString().matches("-?\\d+(\\.\\d+)?"))
+                return;
+
+        }
+
+
+
         String reduction_operator = null;
         boolean isreduction = false;
         Expression condlhs = condexpr.getLHS();
@@ -727,12 +743,7 @@ public class Reduction extends AnalysisPass {
 
         // Loop to check the if-condition. If the if-condition contains the loop index or an integer, return.
 
-        for( i = 0 ; i < condexpr.getChildren().size(); i++){
       
-            if(condexpr.getChildren().get(i).toString().matches("-?\\d+(\\.\\d+)?"))
-                return;
-
-        }
 
 
         for( i = 0 ; i < Ifexprlist.size() ;i++){
@@ -869,6 +880,8 @@ public class Reduction extends AnalysisPass {
 
         }
 
+        AssignmentExpression reduction_parent = (AssignmentExpression)expr.getParent();
+
 
         if(condition instanceof BinaryExpression){
 
@@ -883,8 +896,7 @@ public class Reduction extends AnalysisPass {
 
         }
 
-        AssignmentExpression reduction_parent = (AssignmentExpression)expr.getParent();
-
+      
         if(true_expr instanceof Expression){
 
 
@@ -993,11 +1005,13 @@ public class Reduction extends AnalysisPass {
                     rhs_cond_expr.equals(reduction_candidate) &&
                     Binary_cond_expr.getOperator().toString().equals(">"))
                     reduction_operator = "min";
+     
+            else{
 
-           
-            
+                reduction_operator = null;
+            }
 
-    }
+         }
 
       
 
