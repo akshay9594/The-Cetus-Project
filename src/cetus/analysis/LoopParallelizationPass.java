@@ -3,6 +3,7 @@ package cetus.analysis;
 import cetus.exec.Driver;
 import cetus.hir.*;
 import cetus.transforms.TransformPass;
+import cetus.transforms.LoopInterchange;
 import cetus.transforms.ReductionTransform;
 
 import java.util.*;
@@ -184,22 +185,30 @@ public class LoopParallelizationPass extends AnalysisPass {
     private void parallelizeLoopNest(Loop enclosing_loop) {
         boolean is_parallel;
 
+
+        // Re running the Data dependence test if loop interchange has been enabled (Pre-parallelization Interchange)
+
+
+    
         DDGraph dependence_graph = program.getDDGraph();
-        
+
         List<Loop> eligible_loops = LoopTools.
                 extractOutermostDependenceTestEligibleLoops(enclosing_loop);
-                
+
         for (int i = 0; i < eligible_loops.size(); i++) {
             Loop outer_loop = eligible_loops.get(i);
 
             DDGraph nest_ddgraph = dependence_graph.getSubGraph(outer_loop);
+
             List<Loop> contained_nest = 
                     LoopTools.calculateInnerLoopNest(outer_loop);
+
             // Records loops that are already scheduled for parallelization.
             List<Loop> scheduled = new ArrayList<Loop>(contained_nest.size());
             for (int j = 0; j < contained_nest.size(); j++) {
                 boolean has_scheduled_outer_loop = false;
                 Loop l = contained_nest.get(j);
+
                 for (int k = 0; k < scheduled.size(); k++) {
                     if (IRTools.isAncestorOf(scheduled.get(k), l)) {
                         has_scheduled_outer_loop = true;
@@ -211,6 +220,14 @@ public class LoopParallelizationPass extends AnalysisPass {
                     !nested_parallelism) {
                     continue;
                 }
+
+
+                // Do not try to parallelize loops determined "Not to parallelize" by the Loop
+                // Loop Interchange pass based on profitability test
+                if(LoopInterchange.LoopsNottoParallelize.contains(l)){
+                    continue;
+                }
+               
                 is_parallel = true;
                 if (LoopTools.containsBreakStatement(l)) {
                     is_parallel = false;
@@ -288,16 +305,19 @@ public class LoopParallelizationPass extends AnalysisPass {
                 }
                 if (is_parallel) {
                     addReport(l, "is parallel");
+
                     if (nested_parallelism || !has_scheduled_outer_loop) {
                         addCetusAnnotation(l, true);
                         addReport(l, "is scheduled for parallelization");
                         scheduled.add(l);
+                    
                     }
                 } else {
                     addReport(l, "is serial");
                 }
             }
         }
+
     }
 
     /**
@@ -351,6 +371,7 @@ public class LoopParallelizationPass extends AnalysisPass {
         System.out.println(sb + "");
     }
 
+  
     /**
     * Prints summary of loop parallelization pass.
     */

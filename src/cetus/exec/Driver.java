@@ -803,18 +803,19 @@ public class Driver {
         if (getOptionValue("openmp") != null) {
             AnalysisPass.run(new OmpAnalysis(program));
         }
-
-        
+      
 */
         if (getOptionValue("loop-interchange") != null) {
             TransformPass.run(new LoopInterchange(program));
         }
+
         if (getOptionValue("parallelize-loops") != null && !getOptionValue("parallelize-loops").equals("0")) {
             AnalysisPass.run(new LoopParallelizationPass(program));
         }
         if (getOptionValue("ompGen") != null && !getOptionValue("ompGen").equals("0")) {
             CodeGenPass.run(new ompGen(program));
         }
+      
 
 /*
         if (getOptionValue("loop-tiling") != null) {

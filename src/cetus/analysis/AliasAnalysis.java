@@ -140,9 +140,11 @@ public class AliasAnalysis extends AnalysisPass {
     * @return alias set for symbol, which includes the input symbol itself.
     */
     public Set get_alias_set(Statement cur_stmt, Symbol symbol) {
+
         if (alias_level == NO_ALIAS) {
             return null;
         } else if (alias_level == ADVANCED_INTERPROC) {
+       
             if (cur_stmt == null) {
                 return all_set;
             }
@@ -163,8 +165,10 @@ public class AliasAnalysis extends AnalysisPass {
                 return (aliased_symbols);
             }
         } else if (alias_level == NO_ALIAS_FORCED && all_aliased) {
+         
             return null;
         } else {
+           
             return all_set;
         }
     }

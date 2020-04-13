@@ -1,23 +1,37 @@
 package cetus.transforms;
 
+import cetus.analysis.AliasAnalysis;
 import cetus.analysis.AnalysisPass;
+import cetus.analysis.ArrayPrivatization;
+import cetus.analysis.DDArrayAccessInfo;
 import cetus.analysis.DDGraph;
 import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
+import cetus.analysis.LoopParallelizationPass;
 import cetus.analysis.LoopTools;
+import cetus.analysis.DDGraph.Arc;
+import cetus.exec.Driver;
 import cetus.hir.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Exchange loops if they are perfect nested loop.
  */
+
+
 public class LoopInterchange extends TransformPass
 {
-//    protected Program program;
+
+    //    protected Program program;
 
     public LoopInterchange(Program program)
     {
@@ -31,14 +45,23 @@ public class LoopInterchange extends TransformPass
 
     public void start()
     {
+    
         LinkedList<Loop> loops = new LinkedList<Loop>();
         List<Statement> outer_loops = new ArrayList<Statement>();
         List<DependenceVector> depVec = new ArrayList<DependenceVector>();
         DepthFirstIterator iter = new DepthFirstIterator(program);
         List<Expression> expList = new LinkedList<Expression>();
+        List<AssignmentExpression> LoopAssnExprs = new ArrayList<AssignmentExpression>();
+
         int i;
         int target_loops = 0;
         int num_single = 0, num_non_perfect = 0, num_contain_func = 0, num_loop_interchange=0;
+        boolean synchronized_access = false;
+       
+        HashMap<ForLoop,Boolean> loopMap = new HashMap<ForLoop,Boolean>();
+        HashMap<ForLoop,Boolean> Synchronized_accessMap = new HashMap<ForLoop,Boolean>();
+
+    
 
         while(iter.hasNext()) {
             Object o = iter.next();
@@ -46,22 +69,33 @@ public class LoopInterchange extends TransformPass
                 outer_loops.add((Statement)o);
         }
 
-      
 
+        for(i = 0 ; i < outer_loops.size(); i++){
+
+            ForLoop l = (ForLoop)outer_loops.get(i);
+
+            CetusAnnotation annotation = l.getAnnotation(CetusAnnotation.class, "private");
+            l.getAnnotations().remove(annotation);
+        }
+
+        
         for(i = outer_loops.size()-1; i >= 0; i--)
         {
-            if(!LoopTools.isOutermostLoop((ForLoop)outer_loops.get(i)))
+            ForLoop program_loop = (ForLoop)outer_loops.get(i);
+            if(!LoopTools.isOutermostLoop(program_loop))
             {
                 outer_loops.remove(i);
             }
+            
         }
 
-        System.out.println("# of Outermost Loop: " + outer_loops.size());
-
+       
+     
         for(i = outer_loops.size()-1; i >= 0; i--)
         {
             iter = new DepthFirstIterator(outer_loops.get(i));
             loops.clear();
+            LoopAssnExprs.clear();
             while(iter.hasNext()) {
                 Object o = iter.next();
                 if(o instanceof ForLoop)
@@ -79,15 +113,28 @@ public class LoopInterchange extends TransformPass
                 List<ArrayAccess> arrays = new ArrayList<ArrayAccess>();  // Arrays in loop body
                 DepthFirstIterator iter2 = new DepthFirstIterator(stm);
 
+                
+
                 while(iter2.hasNext())
                 {
                     Object child = iter2.next();
                     if(child instanceof ArrayAccess)
                     {
-                        arrays.add((ArrayAccess)child);
+
+                        ArrayAccess array = (ArrayAccess)child;
+                        arrays.add(array);
                     }
+
+                    if(child instanceof AssignmentExpression)
+                    {
+                        LoopAssnExprs.add((AssignmentExpression)child);
+                    }
+
                 }
 
+                               
+                //Result of reusability test is the loop index of the loop that should be innermost for max reusability
+                Expression InnerLoop = ReusabilityTest(program ,loops.get(0), LoopAssnExprs , arrays);
 
                 int r = 0,j,until = loops.size();
                 int target_index = 0;
@@ -105,31 +152,83 @@ public class LoopInterchange extends TransformPass
                         if(exp != null)
                             expList.add(exp);
                     }
+
+
                     rank = getRank(arrays, expList, target_index);
+
                     rankSize = rank.size();
                     for(j = 0; j < rankSize; j++) 
                     {
                         r = getRank2(rank, expList, loops);
+    
                         rank.remove(rank.indexOf(r));
-                        ///////////////////////////////////////////////////////////////////////////////////
-                        // FIXME: requested by SY Lee                                                    //
-                        // If the list "rank" consists of r1 and r2 (r1 < r2), and if getRank2() returns //
-                        // r1 first, the loop pointed by r2 will be moved upward by 1. Thus r2 in the    //
-                        // list "rank" should be changed with r2-1.                                      //
-                        ///////////////////////////////////////////////////////////////////////////////////
+                    
 
                         if(expList.size() < until) until = expList.size();
 
+
                         for(int k = r+1; k < until; k++)
                         {
+
+                                  
                             if(isLegal(loops, r, k))
                             {
-                                swapLoop((ForLoop)loops.get(r), (ForLoop)loops.get(k));
-                                num_loop_interchange++;
-                                Collections.swap(expList, r, k);
-                                r = k;
+                                ForLoop l = (ForLoop)loops.get(0);
+                               
+                               if(isprofitable((ForLoop)loops.get(r), (ForLoop)loops.get(k),loops.get(0), InnerLoop))
+                               {
+
+                                    ForLoop loop1 = (ForLoop)loops.get(r);
+                                    ForLoop loop2 = (ForLoop)loops.get(k);
+                                   
+                                    swapLoop( loop1 , loop2);
+                                    num_loop_interchange++;
+                                    Collections.swap(expList, r, k);
+                                    r = k;
+                                    
+                                    DDTDriver ddt = new DDTDriver(program);
+                                    ddt.alias_analysis = new AliasAnalysis(program);
+                                    DDGraph loopddg = ddt.analyzeLoopsForDependence(l);
+                                    ForLoop outermostLoop = (ForLoop)LoopTools.getOutermostLoop(l);
+                                    
+                                    if(loopddg.checkLoopCarriedDependence(outermostLoop)){
+
+                                        LinkedList innerLoops = LoopTools.calculateInnerLoopNest(outermostLoop);
+
+                                        if(innerLoops.size() == 2){
+
+                                          ForLoop OuterLoop_doubleNest = (ForLoop)innerLoops.get(0);
+
+                                          LoopsNottoParallelize.add((ForLoop)innerLoops.get(1));
+                                       
+
+                                          System.out.println("\n[LoopInterchange] Loop: " + LoopTools.getLoopName(outermostLoop) + 
+                                                                " has loop carried dependencies , profitable not to parallelize loop: " +
+                                                                 LoopTools.getLoopName((ForLoop)innerLoops.get(1)));    
+                                           loopMap.put(l, true);    
+                                        }
+                                        
+
+                                        else{
+                                       
+                                            System.out.println("\n[LoopInterchange] In Loop " + LoopTools.getLoopName(outermostLoop) +
+                                                                " : Loop carried dependencies w.r.t: " + LoopTools.getIndexVariable(outermostLoop) +" loop" +
+                                                                " , cannot be made outermost") ;
+                                            swapLoop( loop1 , loop2);
+
+                                        }
+                                    }
+
+                                    
+                                    loopMap.put(l, true);
+
+                                     
+                               }
+                             
 
                             } else {
+
+                                loopMap.put((ForLoop)loops.get(0), false);
                                 break;
                             }
                         }        
@@ -141,18 +240,47 @@ public class LoopInterchange extends TransformPass
             }
         }
 
-        // System.out.println("Target loops : " + target_loops);
-        // System.out.println("Non Perfect loops : " + num_non_perfect);
-        // System.out.println("Single loops : " + num_single);
-        // System.out.println("Contain Function : " + num_contain_func);
-        // System.out.println("Loop Interchanged : " + num_loop_interchange);
-
-
       
+        System.out.print("\n");
+
+       DFIterator<ForLoop> ForLoopIter =
+                        new DFIterator<ForLoop>(program, ForLoop.class);
+
+       while(ForLoopIter.hasNext()){
+
+        ForLoop forloop = ForLoopIter.next();
+
+            if(loopMap.containsKey(forloop)){      
+                
+                if(loopMap.get(forloop)){
+
+                    System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) +
+                                    " have been Interchanged"+"\n");
+
+                }
+
+                else 
+                    System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) +
+                                    " cannot be Interchanged"+"\n");
+
+            }
+
+        }
+
+
+        //Running Array privatization to get the correct cetus private pragma for the loop
+
+        AnalysisPass.run( new DDTDriver(program));
+
+        AnalysisPass.run(new ArrayPrivatization(program));
+
+         if(loopMap.isEmpty())
+            System.out.println("[LoopInterchange] No loops have been interchanged\n");
+
         return;
     }
 
-    // Find out which loops could legally interchanged with innermost loop.
+    // Find out which loops could legally be interchanged with innermost loop.
     protected List<Integer> rankByMaxInterchange(List<Integer> rank, List<Loop> loops)
     {
         int i, j, legal, max = 0, cur;
@@ -189,6 +317,567 @@ public class LoopInterchange extends TransformPass
         if(result.size() == 0) return rank;
         return result;
     }
+
+
+    /*
+        Reusability Test to determine the innermost loop in the nest for Max reusability.
+        1. Loop which has the Max reusability score should be the innermost loop.
+        2. To find reusability score, for a loop in the nest:
+           a) Count the number of array accesses with the loop index variable on the rightmost dimension.
+              This is because of the row-major access of C/C++. (Spatial Reuse)
+           b) Count the number of loop independent array accesses. (Temporal reuse)
+           c) Add the counts in (a) and (b)
+           d) Multiply the count with the Loop Iteration count.
+           e) The score you get is the reusability score
+           f) Find out the reusability score of all the loops in the nest
+    */
+
+    public Expression ReusabilityTest(Program OriginalProgram, Loop LoopNest ,
+                            List<AssignmentExpression> LoopExprs, List<ArrayAccess> LoopArrays ){
+
+        int i , j ,k , l;
+
+        long count;
+    
+       List<Expression> LoopNestOrder = new ArrayList<Expression>();
+      
+       HashMap<Expression,Long> ReuseScoreMap = new HashMap<Expression,Long>();
+       List<Long> scores = new ArrayList<>(); 
+       Expression IndexOfInnerLoop = null;
+
+       DepthFirstIterator LoopNestiter = new DepthFirstIterator(LoopNest);
+
+       while(LoopNestiter.hasNext()){
+
+            Object LoopObj = LoopNestiter.next();
+
+            if(LoopObj instanceof ForLoop){
+
+            LoopNestOrder.add(LoopTools.getIndexVariable((ForLoop)LoopObj));
+
+            }
+
+       }
+
+       DDGraph OrigProgramddg = OriginalProgram.getDDGraph();
+
+     
+       HashMap LoopNestIterationMap = LoopIterationMap(LoopNest);
+
+       //Getting reusability score
+
+       DFIterator<ForLoop> forloopiter = new DFIterator<>(LoopNest, ForLoop.class);
+
+       ArrayList<Long> RefGroupCost = new ArrayList<Long>();
+       ArrayList<Expression> LHSDim = new ArrayList<Expression>();
+       ArrayList<Expression> RHSDim = new ArrayList<Expression>();
+
+            while(forloopiter.hasNext()){
+
+                ForLoop loop = forloopiter.next();
+
+                Expression LoopIdx = LoopTools.getIndexVariable(loop);
+
+                List ReferenceGroups =  RefGroup(OrigProgramddg , LoopNest , loop , LoopArrays , LoopNestOrder);
+ 
+                long trip_currentLoop = (long)LoopNestIterationMap.get(LoopIdx);
+
+                RefGroupCost = new ArrayList<>();
+
+                for( i = 0 ; i < ReferenceGroups.size(); i++){
+
+                    ArrayList Group = (ArrayList)ReferenceGroups.get(i);
+
+                    for( j = 0; j < Group.size() ; j++){
+
+                        count = 0;
+
+                        ArrayAccess Array = (ArrayAccess)Group.get(j);
+
+                        List<Expression> ArrayDims = Array.getIndices();
+
+                        LHSDim = new ArrayList<>();
+
+                        RHSDim = new ArrayList<>();
+
+                        for( k = 0 ; k < ArrayDims.size() ;k++){
+
+                            if( k == 0)
+                              LHSDim.add(ArrayDims.get(k));
+                            else
+                              RHSDim.add(ArrayDims.get(k));
+
+                        }
+                    
+                        
+                        for(l =0 ; l < RHSDim.size();l++){
+
+                            if(RHSDim.get(l).toString().contains(LoopIdx.toString())){
+                                count += (long)(trip_currentLoop/64);
+                                break;
+                            }
+
+                        }
+
+                        if(LHSDim.get(0).toString().contains(LoopIdx.toString()))
+                            count += trip_currentLoop;
+
+                        else if (count == 0)
+                            count += 1;
+
+                        // Add cost expression for array access with stride > 1                     ************************************************
+
+                        //System.out.println("Array: " + Array + " , Cost: " + count + "\n");
+                        RefGroupCost.add(count);
+
+                    }
+
+
+                }
+
+               long TotalLoopCost =  LoopCost(RefGroupCost, LoopNestIterationMap , LoopIdx);
+
+               scores.add(TotalLoopCost);
+
+                ReuseScoreMap.put(LoopIdx, TotalLoopCost);
+
+             }
+        
+
+
+           // System.out.println("Reuse Score: \n" + ReuseScoreMap +"\n");
+
+
+            long MaxScore = Collections.min(scores);
+
+        
+            for(Expression key : ReuseScoreMap.keySet()){
+
+                if(ReuseScoreMap.get(key).equals(MaxScore)){
+
+                IndexOfInnerLoop = key;
+
+            }
+
+            }
+
+
+        return  IndexOfInnerLoop;
+
+
+    }
+
+
+    /*
+    Following test determines if in the candidate loop permutation, the loop with max reuse is at the 
+    innermost position. If that's the case, the loop permutation is profitable.
+    */
+
+    private boolean isprofitable(ForLoop loop1 , ForLoop loop2 , Loop LoopNest , Expression InnerLoopidx){
+
+        int i;
+      
+        List<Expression> CandidateReverseorder = new ArrayList<Expression>();
+        List<Expression> modifiedLoopNest = new ArrayList<Expression>();
+        DepthFirstIterator Nestiter = new DepthFirstIterator(LoopNest);
+        List<Expression> NestOrder = new ArrayList<Expression>();
+
+        CandidateReverseorder.add(LoopTools.getIndexVariable(loop1));
+        CandidateReverseorder.add(LoopTools.getIndexVariable(loop2));
+
+        Collections.reverse(CandidateReverseorder); 
+        
+        
+        while(Nestiter.hasNext()){
+
+            Object LoopObj = Nestiter.next();
+
+            if(LoopObj instanceof ForLoop){
+
+            NestOrder.add(LoopTools.getIndexVariable((ForLoop)LoopObj));
+
+            }
+
+       }
+        
+        for(i = 0 ; i < CandidateReverseorder.size() ;i++){
+
+            modifiedLoopNest.add(CandidateReverseorder.get(i));
+        }
+        
+       for(i = 0 ; i < NestOrder.size(); i++){
+
+        Expression loopidx = NestOrder.get(i);
+
+        if(!CandidateReverseorder.contains(loopidx)){
+
+                int index = NestOrder.indexOf(loopidx);
+                modifiedLoopNest.add(index, loopidx);
+
+        }
+
+       }
+
+       Expression Idx = modifiedLoopNest.get(modifiedLoopNest.size()-1);
+
+
+       if(Idx.equals(InnerLoopidx)){
+
+        return true;
+
+       }
+        else
+        return false;
+
+
+    }
+
+    protected long LoopCost(ArrayList ReferenceCosts , HashMap LoopNestIterCount , Expression CurrentLoop){
+
+      
+        long RestOfLoops_Iterations = 1 , SumOfRefCosts = 0;
+
+        int i;
+
+        for(Object key : LoopNestIterCount.keySet()){
+
+            if(!CurrentLoop.equals(key))
+              RestOfLoops_Iterations *= (long)LoopNestIterCount.get(key);
+
+        }
+
+        for(i =0 ; i < ReferenceCosts.size(); i++){
+
+            SumOfRefCosts += (long)ReferenceCosts.get(i);
+
+        }
+
+
+
+        return (SumOfRefCosts * RestOfLoops_Iterations);
+
+    }
+
+
+    /*
+
+        Following method forms reference groups of Array Accesses for each loop in the Nest.
+        1. Criteria for 2 references to be in the same group depend on whether they have dependencies (Loop carrried and Non Loop Carried).
+        2. Criteria for forming groups have been derived from K.S McKinley's model. ( Refer her papers on locality)
+
+    */
+
+    private static List RefGroup(DDGraph ProgramDDG , Loop OriginalLoopNest , Loop CandidateLoop,
+                                 List<ArrayAccess> LoopBodyArrays , List<Expression> OriginalLoopNestOrder){
+            
+        int i , j ,k;
+    
+        List ReferenceGroupsDuplicates = new ArrayList<>();
+        List FinalRefGroups = new ArrayList<>();
+        ArrayList temp = new ArrayList<>();
+        ArrayList<Expression> ParentArrays = new ArrayList<Expression>();
+
+      
+        // Following needs fixing. Dependence Arcs need to be found out w.r.t the loop                  ***************************************************
+
+        DDGraph loopddg = ProgramDDG.getSubGraph(OriginalLoopNest);
+
+            DDGraph ddg = loopddg.getSubGraph(CandidateLoop);
+
+            ArrayList<Arc> LoopDDGArcs = ddg.getAllArcs();
+
+            for( i = 0 ; i < LoopBodyArrays.size();i++){
+
+                ParentArrays.add(LoopBodyArrays.get(i).getArrayName());
+
+            }
+
+
+            LinkedHashSet<Expression> hashSet = new LinkedHashSet<>(ParentArrays);
+
+            ParentArrays = new ArrayList<>(hashSet);
+
+            ArrayList<Expression> Dependent_Exprs = new ArrayList<Expression>();
+            ArrayList<Expression> Independent_Exprs = new ArrayList<Expression>();
+
+            //If the Loop Nest has dependencies (Loop Carried and Non-Loop Carried)
+
+            if(!LoopDDGArcs.isEmpty()){
+       
+                for(i = 0 ; i < ParentArrays.size() ;i++){
+
+                    Expression ArrayName = ParentArrays.get(i);
+
+                    ArrayList Arraygroups = new ArrayList<>();
+
+                    for( j = 0 ; j < LoopDDGArcs.size(); j++){
+                
+                        Arc DDGArc = LoopDDGArcs.get(j);
+        
+                        DDArrayAccessInfo DDSource = DDGArc.getSource();
+        
+                        DDArrayAccessInfo DDSink = DDGArc.getSink();
+
+                        Expression SourceName = DDSource.getArrayAccessName();
+                        Expression SinkName = DDSink.getArrayAccessName();
+
+
+                        if(SourceName.equals(ArrayName) && SinkName.equals(ArrayName)){
+        
+                            if(DDSource.getArrayAccess().equals(DDSink.getArrayAccess()))
+                                Arraygroups.add(DDSource.getArrayAccess());
+            
+                            else{
+            
+                                Arraygroups.add(DDSource.getArrayAccess());
+                                Arraygroups.add(DDSink.getArrayAccess());
+            
+                            }
+                        }
+        
+        
+                    }
+
+                    if(!Arraygroups.isEmpty())
+                    ReferenceGroupsDuplicates.add(Arraygroups);
+
+                }
+
+
+                for( i = 0 ; i < ReferenceGroupsDuplicates.size();i++){
+
+                    ArrayList Refgrp = (ArrayList)ReferenceGroupsDuplicates.get(i);
+
+                    LinkedHashSet tempHashSet = new LinkedHashSet<>(Refgrp);
+
+                    Refgrp = new ArrayList<>(tempHashSet);
+
+                    ArrayAccess access = (ArrayAccess)Refgrp.get(i);
+
+                    Dependent_Exprs.add(access.getArrayName());
+
+                    FinalRefGroups.add(Refgrp);
+
+                }
+            }
+
+
+            for(i = 0 ; i < ParentArrays.size() ;i++){
+
+                Expression e = ParentArrays.get(i);
+
+                if(!Dependent_Exprs.contains(e)){
+
+                    Independent_Exprs.add(e);
+
+                }
+
+            }
+
+
+            if(!Dependent_Exprs.isEmpty()){
+                for( i = 0 ; i < LoopBodyArrays.size();i++){
+
+                    Expression e = LoopBodyArrays.get(i).getArrayName();
+
+                    ArrayList tempList = new ArrayList<>();
+
+                    if(Independent_Exprs.contains(e)){
+
+                        tempList.add(LoopBodyArrays.get(i));
+
+                    }
+
+                    if(!tempList.isEmpty())
+                    FinalRefGroups.add(tempList);
+
+                }
+            }
+
+            // If the Loop Nest does not have dependencies- Loop carried as well as Non-loop carried
+
+
+            List<Expression> LoopIndexExpressions = new ArrayList<Expression>();
+            List<Integer> LoopIndexExprcoeff = new ArrayList<Integer>();
+            Expression CandidateLoopid = LoopTools.getIndexVariable(CandidateLoop);
+
+            if(LoopDDGArcs.isEmpty()){
+
+                for(i = 0 ; i < LoopBodyArrays.size(); i++){
+
+                    ArrayAccess a = LoopBodyArrays.get(i);
+
+                    List<Expression> IndicesExprs =  a.getIndices();
+
+                    for( j = 0 ; j < IndicesExprs.size(); j++){
+
+                        Expression e = IndicesExprs.get(j);
+
+                        for( k = 0 ; k < OriginalLoopNestOrder.size() ;k++){
+
+                            Expression id = OriginalLoopNestOrder.get(k);
+
+                            if(e.getChildren().contains(id) && 
+                            !id.equals(CandidateLoopid)){
+                                LoopIndexExpressions.add(e);
+                            }
+
+                            else if(e.getChildren().isEmpty() &&
+                                    !e.equals(CandidateLoopid) &&
+                                    !LoopIndexExpressions.contains(e)){
+                                    LoopIndexExpressions.add(e);
+                                }
+
+                        }
+                    }
+
+                }
+
+
+                ArrayList<ArrayAccess> References = new ArrayList<ArrayAccess>();
+
+                for(i = 0 ; i < ParentArrays.size() ;i++){
+
+                    Expression expr = ParentArrays.get(i);
+
+
+                    for(j = 0 ; j < LoopIndexExpressions.size() ; j++){
+
+                        Expression IdxExpr = LoopIndexExpressions.get(j);
+
+                        References = new ArrayList<>();
+                            for(k =0 ; k < LoopBodyArrays.size(); k++ ){
+
+                                ArrayAccess loopArray = LoopBodyArrays.get(k);
+
+                                if(loopArray.getIndices().contains(IdxExpr) &&
+                                loopArray.getArrayName().equals(expr)){
+
+                                    References.add(loopArray);
+
+                                }
+
+
+                            }
+
+                            if(!References.isEmpty())
+                            FinalRefGroups.add(References);
+
+                    }
+
+
+
+                }
+            }
+
+            LinkedHashSet tempHashSet = new LinkedHashSet<>(FinalRefGroups);
+
+            FinalRefGroups = new ArrayList<>(tempHashSet);
+
+         
+            // Uncomment the following for testing
+
+            // System.out.println("Loop: " + CandidateLoopid +"\n");
+            // System.out.println("Ref groups: " + FinalRefGroups +"\n");
+      
+
+        return FinalRefGroups;
+
+    }
+
+
+
+    private static ArrayList NormalizeDimension(ArrayList DimList , List<Expression> NestOrder ){
+
+        ArrayList normalize = new ArrayList<>();
+
+        int i,j,k;
+
+
+        for( i = 0 ; i < DimList.size(); i++){
+
+            ArrayList temp = (ArrayList)DimList.get(i);
+
+            for( j = 0 ; j < temp.size(); j++){
+
+                Object o = temp.get(j);
+
+                if(o instanceof BinaryExpression){
+
+                    Expression expr = (Expression)o;
+                    ArrayList children = (ArrayList)expr.getChildren();
+                    int index = temp.indexOf(expr);
+
+                    for(k = 0 ; k < children.size(); k++){
+
+                        Expression e = (Expression)children.get(k);
+                        if(NestOrder.contains(e)){
+                            temp.remove(expr);
+                            temp.add(index, e);
+                        }
+                    }
+                    
+                }
+
+                else{
+
+                    if(!NestOrder.contains(o))
+                        temp.remove(o);
+                }
+
+
+
+            }
+
+            normalize.add(temp);
+
+        }
+
+        return normalize;
+
+
+    }
+
+
+    private HashMap LoopIterationMap(Loop LoopNest)
+
+    {
+
+        HashMap<Expression, Long> LoopIterationCount = new HashMap<Expression , Long>();
+
+        DFIterator<ForLoop> forloopiter = new DFIterator<>(LoopNest, ForLoop.class);        
+
+        long numLoopiter = 0;
+
+            while(forloopiter.hasNext()){
+
+                ForLoop loop = forloopiter.next();
+
+ 
+                     Expression upperbound = LoopTools.getUpperBoundExpression(loop);
+ 
+                     Expression lowerbound = LoopTools.getLowerBoundExpression(loop);
+ 
+                     Expression incExpr = LoopTools.getIncrementExpression(loop);
+ 
+                     long LoopUpperBound = ((IntegerLiteral)upperbound).getValue();
+ 
+                     long LoopLowerBound = ((IntegerLiteral)lowerbound).getValue();
+ 
+                     long Loopstride = ((IntegerLiteral)incExpr).getValue();
+ 
+                     numLoopiter = ((LoopUpperBound - LoopLowerBound + Loopstride) / Loopstride);
+                
+                    LoopIterationCount.put(LoopTools.getIndexVariable(loop), numLoopiter);
+
+            }
+
+            return LoopIterationCount;
+
+
+    }
+
+  
 
     /* if all upperbound, lowerbound and increment are constnant, we can decide by number of iterations */
     protected List<Integer> rankByNumOfIteration(List<Integer> rank, List<Loop> loops)
@@ -243,7 +932,7 @@ public class LoopInterchange extends TransformPass
         if(rank.size() == 1) {
             return rank.get(0);
         }
-
+     
         result = rankByMaxInterchange(rank, loops);
         if(result.size() == 1) return result.get(0);
 
@@ -253,7 +942,10 @@ public class LoopInterchange extends TransformPass
         return result.get(result.size()-1);
     }
 
-    /* if n = 0, it means right most index in array. */
+   
+   
+      //  Safe to say that this method is used to determine number of loop interchanges possible in a loop nest
+    
     protected List<Integer> getRank(List<ArrayAccess> array , List<Expression> expList, int n)
     {
         int i, j, max = 0, cur_exp;
@@ -274,7 +966,7 @@ public class LoopInterchange extends TransformPass
                 ArrayAccess f = array.get(j);
                 if(f.getNumIndices() >= n) {
                     temp = f.getIndex(f.getNumIndices()-1-n).findExpression(e);
-    
+
                     if(temp.size() >= 1) {
                         cur_exp+=2;
                         parentTemp = (temp.get(0)).getParent();
@@ -301,7 +993,8 @@ public class LoopInterchange extends TransformPass
             } else if (cur_exp == max)
                 result.add(i);
         }
-     
+
+
         return result;
     }
 
@@ -321,13 +1014,20 @@ public class LoopInterchange extends TransformPass
 
     public void swapLoop(ForLoop loop1, ForLoop loop2) 
     {
+
+      
         loop1.getInitialStatement().swapWith(loop2.getInitialStatement());
         loop1.getCondition().swapWith(loop2.getCondition());
         loop1.getStep().swapWith(loop2.getStep());
 
+
         return;
     }
 
+
+  
+
+   
     /* Check legality of loop interchange between src and target. Both src and target are in nest loops and src is outer than target */
     public boolean isLegal(LinkedList<Loop> nest, int src, int target)
     {
@@ -338,9 +1038,9 @@ public class LoopInterchange extends TransformPass
         DependenceVector dd;
         ddg = program.getDDGraph();
         dpv = ddg.getDirectionMatrix(nest);
-
-
+    
         if(src == target) return true;
+
         if(src > target) {
             i = src;
             src = target;
@@ -358,7 +1058,11 @@ public class LoopInterchange extends TransformPass
                 else next = j;
 
                 if(next < str.length()) {
-                    if(str.charAt(next) == '>') return false;
+
+                    if(str.charAt(next) == '>' ||
+                        str.charAt(next) == '*') {
+                        return false;
+                    }
                     if(str.charAt(next) == '<') break;
                 }
             }

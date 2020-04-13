@@ -445,4 +445,19 @@ public final class TranslationUnit implements SymbolTable, Traversable {
         return symbol_table.containsValue(decl);
     }
 
+
+    public TranslationUnit clone()
+    { 
+        TranslationUnit o;
+        try {
+            o = (TranslationUnit)super.clone();
+        } catch(CloneNotSupportedException e) {
+            throw new InternalError();
+        }
+
+        return o;
+    
+    }
+
+
 }

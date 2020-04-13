@@ -212,9 +212,10 @@ public class ArrayPrivatization extends AnalysisPass {
     * Creates a cetus private annotation for each loop and inserts it before
     * the loop.
     */
-    private void addAnnotation(Procedure proc) {
+    public void addAnnotation(Procedure proc) {
         // Union private variables for all loops while checking the alias
         // information
+
         Set<Symbol> pri_set = new LinkedHashSet<Symbol>();
         for (Loop loop : pri_map.keySet()) {
             Set<Symbol> loop_pri_set = pri_map.get(loop);

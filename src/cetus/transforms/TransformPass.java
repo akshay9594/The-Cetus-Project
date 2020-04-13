@@ -2,6 +2,9 @@ package cetus.transforms;
 
 import cetus.analysis.IPPointsToAnalysis;
 import cetus.analysis.IPRangeAnalysis;
+
+import java.util.ArrayList;
+
 import cetus.analysis.ArrayParameterAnalysis;
 import cetus.analysis.RangeAnalysis;
 import cetus.hir.*;
@@ -21,12 +24,16 @@ public abstract class TransformPass {
     /** Flags for skipping analysis invalidation */
     protected boolean disable_invalidation;
 
+    public static ArrayList LoopsNottoParallelize; 
+
     /** Constructs a transform pass with the given program */
     protected TransformPass(Program program) {
         this.program = program;
         disable_protection = false;
         disable_invalidation = false;
     }
+
+    public static boolean loop_interchange_pass = false; 
 
     /** Returns the name of the transform pass */
     public abstract String getPassName();
@@ -38,6 +45,13 @@ public abstract class TransformPass {
     public static void run(TransformPass pass) {
         double timer = Tools.getTime();
         PrintTools.println(pass.getPassName() + " begin", 0);
+
+        if(pass.getPassName().equals("[LoopInterchange]")){
+            loop_interchange_pass = true;
+            LoopsNottoParallelize = new ArrayList<ForLoop>();
+        }
+
+
         pass.start();
         PrintTools.println(pass.getPassName() + " end in " +
                 String.format("%.2f seconds", Tools.getTime(timer)), 0);

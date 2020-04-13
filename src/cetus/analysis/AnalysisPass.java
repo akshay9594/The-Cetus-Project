@@ -1,6 +1,10 @@
 package cetus.analysis;
 
+import java.util.ArrayList;
+
+import antlr.collections.List;
 import cetus.hir.IRTools;
+import cetus.hir.Loop;
 import cetus.hir.PrintTools;
 import cetus.hir.Program;
 import cetus.hir.Tools;
@@ -8,10 +12,13 @@ import cetus.hir.Tools;
 public abstract class AnalysisPass
 {
   protected Program program;
-
+  
+  public static ArrayList parallel_looplist;
+  
   protected AnalysisPass(Program program)
   {
     this.program = program;
+  
   }
 
   public abstract String getPassName();
@@ -20,7 +27,8 @@ public abstract class AnalysisPass
   {
 		double timer = Tools.getTime();
     PrintTools.println(pass.getPassName() + " begin", 0);
-    pass.start();
+
+     pass.start();
     PrintTools.println(pass.getPassName() + " end in " +
 			String.format("%.2f seconds", Tools.getTime(timer)), 0);
     if (!IRTools.checkConsistency(pass.program))
@@ -28,4 +36,9 @@ public abstract class AnalysisPass
   }
 
   public abstract void start();
+
+    public static ArrayList getParallelLooplist(){
+
+      return parallel_looplist;
+    }
 }

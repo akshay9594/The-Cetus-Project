@@ -42,7 +42,7 @@ public class DDTDriver extends AnalysisPass {
     private static final String pass_name = "[DDT]";
 
     /* Alias analysis related to Dependence testing */
-    private AliasAnalysis alias_analysis;
+    public AliasAnalysis alias_analysis;
 
     /* verbosity */
     private int verbosity = PrintTools.getVerbosity();
@@ -66,12 +66,14 @@ public class DDTDriver extends AnalysisPass {
 
         alias_analysis = new AliasAnalysis(program);
         AnalysisPass.run(alias_analysis);
+
         // Obtain a list of loops that enclose eligible nests for dependence
         // testing
         List<Loop> eligible_loops =
                 LoopTools.extractOutermostDependenceTestEligibleLoops(program);
         PrintTools.printlnStatus(1, pass_name,
                 "Number of eligible outermost loops =", eligible_loops.size());
+     
         for (Loop loop : eligible_loops) {
             DDGraph dependence_graph = analyzeLoopsForDependence(loop);
             ddg.addAllArcs(dependence_graph.getAllArcs());
@@ -152,6 +154,7 @@ public class DDTDriver extends AnalysisPass {
             HashMap<Symbol, ArrayList<DDArrayAccessInfo>> loopArrayAccessMap) {
         // Gather loop information and store it in a map with the loop as the
         // key
+
         LoopInfo loop_info = new LoopInfo(currentLoop);
         // Use range analysis information to remove symbolic values from loop
         // information
@@ -180,11 +183,14 @@ public class DDTDriver extends AnalysisPass {
                     curr_inc, loop_stmt_symbols);
             loop_info.setLoopIncrement(new_inc);
         }
+
         // Finally, attach updated loop info to the map
         loopInfoMap.put(currentLoop, loop_info);
+
         // get write and read array accesses only for this loop body
         addWriteAccesses(currentLoop,loopArrayAccessMap,currentLoop.getBody());
         addReadAccesses(currentLoop,loopArrayAccessMap,currentLoop.getBody());
+
     }
 
     private void addWriteAccesses(
@@ -380,7 +386,9 @@ public class DDTDriver extends AnalysisPass {
                 if (stmt instanceof ExpressionStatement ||
                     stmt instanceof DeclarationStatement ||
                     stmt instanceof ReturnStatement) {
+
                     Set aliases = alias_analysis.get_alias_set(stmt, name);
+
                     if (aliases != null) {
                         alias_set.addAll(aliases);
                     }
@@ -391,6 +399,7 @@ public class DDTDriver extends AnalysisPass {
                 addAliasesAnnotation((Statement)loop, name, alias_set);
             }
             if ((alias_set != null) && !(alias_set.isEmpty())) {
+               
                 if (alias_set.contains("*")) {
                     // Add all other symbols to the second iterator
                     for (Symbol s : loopArrayAccessMap.keySet()) {
@@ -436,6 +445,7 @@ public class DDTDriver extends AnalysisPass {
                     LinkedList<Loop> common_nest = LoopTools.getCommonNest(
                             expr1_info.getAccessLoop(),
                             expr2_info.getAccessLoop());
+                    
                     // Find the intersection of the common enclosing loops
                     // with the current nest we're testing with respect to
                     for (Loop l : common_nest) {
@@ -443,6 +453,7 @@ public class DDTDriver extends AnalysisPass {
                             common_eligible_nest.add(l);
                         }
                     }
+                
                     // If the two expressions being considered are aliased
                     // (as identified by alias analysis) i.e. they have
                     // different symbols, don't even perform dependence
@@ -452,6 +463,7 @@ public class DDTDriver extends AnalysisPass {
                     Symbol s2 = SymbolTools.getSymbolOf(
                             expr2_info.getArrayAccess());
                     if (s1.equals(s2)) {
+
                         ///////////////////////////////////////////////////
                         // Substitute range information if possible in test
                         // expressions
@@ -473,8 +485,10 @@ public class DDTDriver extends AnalysisPass {
                             expr1_symbols.remove(index_sym);
                             expr2_symbols.remove(index_sym);
                         }
+                      
                         if (!(expr1_symbols.isEmpty()) ||
                             !(expr2_symbols.isEmpty())) {
+                            
                             RangeDomain stmt_e1_range = RangeAnalysis.query(
                                     expr1_info.getParentStatement());
                             RangeDomain stmt_e2_range = RangeAnalysis.query(
@@ -486,6 +500,8 @@ public class DDTDriver extends AnalysisPass {
                         } else {
                             e1 = expr1_info.getArrayAccess().clone();
                             e2 = expr2_info.getArrayAccess().clone();
+
+        
                         }
                         // Modify the DDArrayAccessInfo objects before
                         // passing to DDTest
@@ -497,13 +513,16 @@ public class DDTDriver extends AnalysisPass {
                         // subscripts, testing for dependence, and returning
                         // an entire set of dependence vectors for the two
                         // array accesses
+
                         DDTestWrapper ddt = new DDTestWrapper(
                                 expr1_info, expr2_info,
                                 common_eligible_nest, loopInfoMap);
                         DVset = new ArrayList<DependenceVector>();
                         // Pass pair of accesses to dependence test and
                         // store resulting direction vector set in DVset
+
                         depExists = ddt.testAccessPair(DVset);
+                       
                     }
                     // The expressions are conservatively aliased, we cannot
                     // assume details about aliasing. Hence, conservatively

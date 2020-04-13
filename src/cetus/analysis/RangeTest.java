@@ -1,6 +1,7 @@
 package cetus.analysis;
 
 import cetus.hir.*;
+import cetus.transforms.TransformPass;
 
 import java.util.*;
 
@@ -113,10 +114,13 @@ public class RangeTest implements DDTest {
         signature.add(pair.getStatement1());
         signature.add(pair.getStatement2());
         RangeTest ret = rtest_cache.get(signature);
-        if (ret == null) {
+
+        if (ret == null || TransformPass.loop_interchange_pass) {
             ret = new RangeTest(pair);
             rtest_cache.put(signature, ret);
+
         }
+      
         return ret;
     }
 
@@ -125,6 +129,7 @@ public class RangeTest implements DDTest {
     * @param pair the subscript pair to be tested for dependency.
     */
     public RangeTest(SubscriptPair pair) {
+
         f = pair.getSubscript1();
         g = pair.getSubscript2();
         f_stmt = pair.getStatement1();
@@ -143,17 +148,22 @@ public class RangeTest implements DDTest {
         //common_loops = pair.getEnclosingLoopsList();
         f_loops.removeAll(common_loops);
         g_loops.removeAll(common_loops);
+
         // Relevant loops belong to a subset of the common loops.
         relevant_loops = new LinkedHashSet<Loop>();
         for (int i = 0; i < common_loops.size(); i++) {
             Loop loop = common_loops.get(i);
             Identifier index = (Identifier)LoopTools.getIndexVariable(loop);
             Symbol index_sym = index.getSymbol();
+
             if (IRTools.containsSymbol(f, index_sym) ||
                 IRTools.containsSymbol(g, index_sym)) {
+                
                 relevant_loops.add(loop);
             }
         }
+
+    
         parallel_loops = new LinkedHashMap<Loop, String>();
         independent_vectors = new int[common_loops.size()];
         // Pseudo-common loops; will be considered in the future if profitable.
@@ -276,6 +286,7 @@ public class RangeTest implements DDTest {
     */
     public boolean testDependence(DependenceVector dvec) {
         boolean ret = false;
+
         solve();
         for (int i = 0; i < common_loops.size() && !ret; i++) {
             switch (dvec.getDirection(common_loops.get(i))) {
@@ -317,12 +328,15 @@ public class RangeTest implements DDTest {
 
     // Driver for a single range test problem.
     private void solve() {
-        // Return quickly if the problem was already solved.
+
+
+        //Return quickly if the problem was already solved.
         if (was_solved) {
             return;
         }
         List<Loop> permuted = new ArrayList<Loop>(4);
         // Iterate from innermost to outermost
+
         for (int i = common_loops.size() - 1; i >= 0; i--) {
             Loop loop = common_loops.get(i);
             Set<Loop> inner_permuted = new LinkedHashSet<Loop>(permuted);
@@ -331,12 +345,15 @@ public class RangeTest implements DDTest {
                 PrintTools.printlnStatus(3, tag, "for", loopToString(loop));
             }
             // Exclude non-relevant loops in the permuted loops.
+
             if (!relevant_loops.contains(loop)) {
                 if (test1(loop, inner_permuted)) {
                     parallel_loops.put(loop, TEST1_PASS);
                 }
                 placed = true;
             }
+
+
             Iterator perm_iter = permuted.iterator();
             while (perm_iter.hasNext() && !placed) {
                 Loop perm_loop = (Loop)perm_iter.next();
@@ -371,6 +388,8 @@ public class RangeTest implements DDTest {
                 permuted.add(loop);
             }
         }
+
+
         was_solved = true;
         setIndependentVectors();
         PrintTools.printlnStatus(2, tag, this);

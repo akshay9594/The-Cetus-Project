@@ -8,11 +8,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 /**
 * Represents the entire program.
 */
-public final class Program implements Traversable {
+public final class Program implements Traversable,Cloneable,Serializable {
 
     private static Method class_print_method;
 
@@ -213,4 +219,9 @@ public final class Program implements Traversable {
         return ddgraph;
     }
 
+    
+  
+
 }
+
+
