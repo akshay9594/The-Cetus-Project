@@ -132,8 +132,13 @@ public class LoopInterchange extends TransformPass
 
                 }
 
-                               
-                //Result of reusability test is the loop index of the loop that should be innermost for max reusability
+                   
+                /*              
+                    Begin reusability test to determine Reusability for each loop in the Nest
+                    Result of reusability test is the loop index of the loop that should be innermost for max reusability
+
+                */
+
                 Expression InnerLoop = ReusabilityTest(program ,loops.get(0), LoopAssnExprs , arrays);
 
                 int r = 0,j,until = loops.size();
@@ -321,16 +326,28 @@ public class LoopInterchange extends TransformPass
 
     /*
         Reusability Test to determine the innermost loop in the nest for Max reusability.
-        1. Loop which has the Max reusability score should be the innermost loop.
-        2. To find reusability score, for a loop in the nest:
-           a) Count the number of array accesses with the loop index variable on the rightmost dimension.
-              This is because of the row-major access of C/C++. (Spatial Reuse)
-           b) Count the number of loop independent array accesses. (Temporal reuse)
-           c) Add the counts in (a) and (b)
-           d) Multiply the count with the Loop Iteration count.
-           e) The score you get is the reusability score
-           f) Find out the reusability score of all the loops in the nest
+        1. Loop which accesses the least number of cache lines should be the innermost loop.
+        2. To find reusability score , for a loop:
+            (a) Form Reference groups with array accesses
+            (b) Array accesses can be of following types:
+                - Accesses with loop carried or non-loop carried dependencies
+                - Accesses with no loop dependencies
+                - Loop invariant accesses
+            * Refer to K.S. McKinley's paper - 'Optimizing for parallelism and locality' on how the ref groups are formed
+        3. Add the costs in terms of cache lines for each reference group
+           - For an array access w.r.t. candidate innermost loop
+             (a) The array access requires 'trip/Cache Line size' no. of cache lines if the loop index of the 
+                 candidate innermost loop appears on the rightmost dimension of the access(row-major access)
+             (b) The array access requires 1 cache line if it is loop invariant and
+             (c) The array access requires 'trip' no. of cache lines if the loop index of the candidate innermost loop
+                 appears on the leftmost dimension of the access(Column-major access)
+            *trip : Number of iterations of the candidate innermost loop.
+        4. Multiply the Reference group costs with the number of iterations of loops other than the candidate innnermost loop
+        5. Here Cache line size is assumed to be 64.
     */
+
+
+    //Add support for symbolic loop bounds                                                              *********************************************************************
 
     public Expression ReusabilityTest(Program OriginalProgram, Loop LoopNest ,
                             List<AssignmentExpression> LoopExprs, List<ArrayAccess> LoopArrays ){
@@ -376,9 +393,17 @@ public class LoopInterchange extends TransformPass
 
                 ForLoop loop = forloopiter.next();
 
+                //Collecting Looop Information
                 Expression LoopIdx = LoopTools.getIndexVariable(loop);
 
+                Expression LoopIncExpr = LoopTools.getIncrementExpression(loop);
+
+                long LoopstrideValue = ((IntegerLiteral)LoopIncExpr).getValue();
+
+
                 List ReferenceGroups =  RefGroup(OrigProgramddg , LoopNest , loop , LoopArrays , LoopNestOrder);
+
+                //System.out.println("Loop: " + LoopIdx + "\nGroups: " + ReferenceGroups +"\n");
  
                 long trip_currentLoop = (long)LoopNestIterationMap.get(LoopIdx);
 
@@ -409,25 +434,63 @@ public class LoopInterchange extends TransformPass
 
                         }
                     
+
+                        /*
+                         Cost = (trip)/cache line size if:
+                         (a) Loop index variable is present in the right hand side dimension of the array access
+                         (b) The Dimension has a unit stride and
+                         (c) The loop also has a unit stride
+
+                        */
                         
+                        Expression RHSExprWithLoopID = null;
+
                         for(l =0 ; l < RHSDim.size();l++){
 
-                            if(RHSDim.get(l).toString().contains(LoopIdx.toString())){
-                                count += (long)(trip_currentLoop/64);
+                            Expression Expr = RHSDim.get(l);
+                                           
+                            if(Expr.toString().contains(LoopIdx.toString())){
+
+                                RHSExprWithLoopID = Expr;
                                 break;
+
                             }
+      
 
                         }
+                      
+            
+                        Expression LHSExpr = LHSDim.get(0);
 
-                        if(LHSDim.get(0).toString().contains(LoopIdx.toString()))
+                        if(RHSExprWithLoopID!= null && UnitStride(RHSExprWithLoopID, LoopIdx) && LoopstrideValue == 1)
+                            count += (trip_currentLoop/64);
+
+                        /*
+
+                         Cost = 1 if:
+                          Array access is loop invariant                    
+
+                        */
+
+                        else if(!LHSExpr.toString().contains(LoopIdx.toString()) && RHSExprWithLoopID == null ){
+                            count += 1;
+                        }
+      
+
+                          /*
+                         Cost = (trip) if:
+                         (a) Loop index variable is present in the left hand side dimension of the array access
+                         (b) The Dimension has a non- unit stride or
+                         (c) The loop candidate loop has a non-unit stride
+
+                        */
+
+                        else 
                             count += trip_currentLoop;
 
-                        else if (count == 0)
-                            count += 1;
 
                         // Add cost expression for array access with stride > 1                     ************************************************
 
-                        //System.out.println("Array: " + Array + " , Cost: " + count + "\n");
                         RefGroupCost.add(count);
 
                     }
@@ -445,7 +508,7 @@ public class LoopInterchange extends TransformPass
         
 
 
-           // System.out.println("Reuse Score: \n" + ReuseScoreMap +"\n");
+           //System.out.println("Reuse Score: \n" + ReuseScoreMap +"\n");
 
 
             long MaxScore = Collections.min(scores);
@@ -734,7 +797,13 @@ public class LoopInterchange extends TransformPass
                 }
 
 
+                //System.out.println("Loop: " + CandidateLoopid + " LoopIndexExprs: " + LoopIndexExpressions +"\n");
+
+         
+
                 ArrayList<ArrayAccess> References = new ArrayList<ArrayAccess>();
+
+                ArrayList<ArrayAccess> ArraysAssignedToGroups = new ArrayList<ArrayAccess>();
 
                 for(i = 0 ; i < ParentArrays.size() ;i++){
 
@@ -751,14 +820,19 @@ public class LoopInterchange extends TransformPass
                                 ArrayAccess loopArray = LoopBodyArrays.get(k);
 
                                 if(loopArray.getIndices().contains(IdxExpr) &&
-                                loopArray.getArrayName().equals(expr)){
+                                   loopArray.getArrayName().equals(expr)   &&
+                                   !ArraysAssignedToGroups.contains(loopArray)){
 
                                     References.add(loopArray);
+
+                                    ArraysAssignedToGroups.add(loopArray);
 
                                 }
 
 
                             }
+
+                            //System.out.println("References: " + References +"\n");
 
                             if(!References.isEmpty())
                             FinalRefGroups.add(References);
@@ -787,58 +861,7 @@ public class LoopInterchange extends TransformPass
 
 
 
-    private static ArrayList NormalizeDimension(ArrayList DimList , List<Expression> NestOrder ){
-
-        ArrayList normalize = new ArrayList<>();
-
-        int i,j,k;
-
-
-        for( i = 0 ; i < DimList.size(); i++){
-
-            ArrayList temp = (ArrayList)DimList.get(i);
-
-            for( j = 0 ; j < temp.size(); j++){
-
-                Object o = temp.get(j);
-
-                if(o instanceof BinaryExpression){
-
-                    Expression expr = (Expression)o;
-                    ArrayList children = (ArrayList)expr.getChildren();
-                    int index = temp.indexOf(expr);
-
-                    for(k = 0 ; k < children.size(); k++){
-
-                        Expression e = (Expression)children.get(k);
-                        if(NestOrder.contains(e)){
-                            temp.remove(expr);
-                            temp.add(index, e);
-                        }
-                    }
-                    
-                }
-
-                else{
-
-                    if(!NestOrder.contains(o))
-                        temp.remove(o);
-                }
-
-
-
-            }
-
-            normalize.add(temp);
-
-        }
-
-        return normalize;
-
-
-    }
-
-
+ 
     private HashMap LoopIterationMap(Loop LoopNest)
 
     {
@@ -998,19 +1021,55 @@ public class LoopInterchange extends TransformPass
         return result;
     }
 
-    private List<Expression> getIndex(List<ArrayAccess> array, int n)
-    {
-        int i;
-        List<Expression> result = new LinkedList<Expression>();
+   
 
-        for(i = 0; i < array.size(); i++)
-        {
-            ArrayAccess f = array.get(i);
-            if(f.getNumIndices()-n-1 > 0) result.add(f.getIndex(f.getNumIndices()-n-1));
+
+    private boolean UnitStride(Expression Expr , Expression Var)
+
+    {
+
+        boolean IsStrideOneAccess = false;
+        
+        Expression LHS = null;
+
+        Expression RHS = null;
+
+        if(Expr.equals(Var)){
+
+            return true;
+           
         }
-        return result;
+
+
+        if( Expr instanceof BinaryExpression ){
+
+          BinaryExpression BinaryExpr = (BinaryExpression) Expr;
+
+          LHS = BinaryExpr.getLHS();
+
+          RHS = BinaryExpr.getRHS();
+
+          if(BinaryExpr.getOperator().toString().equals("*"))
+             IsStrideOneAccess = false;
+
+          else if(LHS.getChildren().contains(Var) && LHS.toString().contains("*"))
+              IsStrideOneAccess = false;
+
+          else if(RHS.getChildren().contains(Var) && RHS.toString().contains("*"))
+              IsStrideOneAccess = false;                
+
+          else
+              IsStrideOneAccess = true;
+             
+
+        }
+
+        return IsStrideOneAccess;
+
 
     }
+
+    
 
     public void swapLoop(ForLoop loop1, ForLoop loop2) 
     {
