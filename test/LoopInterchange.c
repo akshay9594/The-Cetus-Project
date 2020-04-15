@@ -17,7 +17,7 @@ int main(){
 
       for( j = 0 ; j < 10000 ;j++){
 
-        b[j][i] = 2 * b[j][i-1];
+        b[j][i] = 2 * b[j+1][i-1];
 
       }
     }
@@ -26,14 +26,14 @@ int main(){
     
    
     //Taken from ARC2D (Perfect Benchmarks)
-      for(k = 0 ; k < 10000 ;k++){
+      // for(k = 0 ; k < 10000 ;k++){
 
-          for(j = 0 ; j < 10000; j++){
+      //     for(j = 0 ; j < 10000; j++){
 
-            work[j][k][3] = coef2[j][k] * work[j][k][1] - coef4[j][k] * work[j][k][2];
+      //       work[j][k][3] = coef2[j][k] * work[j][k][1] - coef4[j][k] * work[j][k][2];
 
-          }
-      }
+      //     }
+      // }
 
     
     // From ARC2D Perfect benchmarks
@@ -62,6 +62,7 @@ int main(){
           for( k = 0 ; k < 1800; k++){
 
               d[i][j] = d[i][j] + a[i][k] * b[k][j];
+
 
           }
 

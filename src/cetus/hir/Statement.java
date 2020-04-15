@@ -165,6 +165,7 @@ public abstract class Statement implements Cloneable, Traversable, Annotatable {
     *
     * @param o the target print writer.
     */
+
     public void print(PrintWriter o) {
         if (object_print_method == null) {
             return;

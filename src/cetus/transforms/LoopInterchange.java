@@ -3,25 +3,22 @@ package cetus.transforms;
 import cetus.analysis.AliasAnalysis;
 import cetus.analysis.AnalysisPass;
 import cetus.analysis.ArrayPrivatization;
-import cetus.analysis.DDArrayAccessInfo;
 import cetus.analysis.DDGraph;
 import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
-import cetus.analysis.LoopParallelizationPass;
 import cetus.analysis.LoopTools;
-import cetus.analysis.DDGraph.Arc;
-import cetus.exec.Driver;
+
+
 import cetus.hir.*;
 
+
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
+
 
 /**
  * Exchange loops if they are perfect nested loop.
@@ -48,20 +45,18 @@ public class LoopInterchange extends TransformPass
     
         LinkedList<Loop> loops = new LinkedList<Loop>();
         List<Statement> outer_loops = new ArrayList<Statement>();
-        List<DependenceVector> depVec = new ArrayList<DependenceVector>();
         DepthFirstIterator iter = new DepthFirstIterator(program);
         List<Expression> expList = new LinkedList<Expression>();
         List<AssignmentExpression> LoopAssnExprs = new ArrayList<AssignmentExpression>();
 
+
         int i;
         int target_loops = 0;
         int num_single = 0, num_non_perfect = 0, num_contain_func = 0, num_loop_interchange=0;
-        boolean synchronized_access = false;
-       
+             
         HashMap<ForLoop,Boolean> loopMap = new HashMap<ForLoop,Boolean>();
-        HashMap<ForLoop,Boolean> Synchronized_accessMap = new HashMap<ForLoop,Boolean>();
-
-    
+        HashMap<ForLoop,Boolean> AlreadyInOrder = new HashMap<ForLoop,Boolean>();
+        
 
         while(iter.hasNext()) {
             Object o = iter.next();
@@ -93,13 +88,18 @@ public class LoopInterchange extends TransformPass
      
         for(i = outer_loops.size()-1; i >= 0; i--)
         {
+           
             iter = new DepthFirstIterator(outer_loops.get(i));
             loops.clear();
             LoopAssnExprs.clear();
+            List<Expression> OriginalLoopOrder = new ArrayList<>();
             while(iter.hasNext()) {
                 Object o = iter.next();
-                if(o instanceof ForLoop)
+                if(o instanceof ForLoop){
+
+                    OriginalLoopOrder.add(LoopTools.getIndexVariable((ForLoop)o));
                     loops.add((Loop)o);
+                }
             }
             if(loops.size() < 2) {
                 num_single++;
@@ -112,7 +112,7 @@ public class LoopInterchange extends TransformPass
                 Statement stm = ((ForLoop)loops.get(loops.size()-1)).getBody();
                 List<ArrayAccess> arrays = new ArrayList<ArrayAccess>();  // Arrays in loop body
                 DepthFirstIterator iter2 = new DepthFirstIterator(stm);
-
+                List<Expression> PermutedLoopOrder = new ArrayList<>();
                 
 
                 while(iter2.hasNext())
@@ -135,11 +135,21 @@ public class LoopInterchange extends TransformPass
                    
                 /*              
                     Begin reusability test to determine Reusability for each loop in the Nest
-                    Result of reusability test is the loop index of the loop that should be innermost for max reusability
+                    Result of reusability test is the Order of the loops in the nest for max reusability
 
                 */
 
-                Expression InnerLoop = ReusabilityTest(program ,loops.get(0), LoopAssnExprs , arrays);
+               
+                List<Expression> MemoryOrder = ReusabilityTest(program , loops.get(0), LoopAssnExprs , arrays);
+
+
+                //If the Original Nest is already in the desired order, no need for further analysis. 
+             
+                if(OriginalLoopOrder.equals(MemoryOrder)){
+
+                    AlreadyInOrder.put((ForLoop)loops.get(0), true);
+                    continue;
+                }
 
                 int r = 0,j,until = loops.size();
                 int target_index = 0;
@@ -147,6 +157,8 @@ public class LoopInterchange extends TransformPass
                 List<Integer> rank;
                 int rankSize;
 
+
+OuterWhileLoop:                
                 while(icFlag)
                 {
                     Expression exp;
@@ -162,12 +174,13 @@ public class LoopInterchange extends TransformPass
                     rank = getRank(arrays, expList, target_index);
 
                     rankSize = rank.size();
+
                     for(j = 0; j < rankSize; j++) 
                     {
                         r = getRank2(rank, expList, loops);
     
                         rank.remove(rank.indexOf(r));
-                    
+                
 
                         if(expList.size() < until) until = expList.size();
 
@@ -175,74 +188,88 @@ public class LoopInterchange extends TransformPass
                         for(int k = r+1; k < until; k++)
                         {
 
-                                  
+                            ForLoop l = (ForLoop)loops.get(0);
+                            ForLoop outermostLoop = (ForLoop)LoopTools.getOutermostLoop(l);
+                            LinkedList innerLoops = LoopTools.calculateInnerLoopNest(outermostLoop);
+
                             if(isLegal(loops, r, k))
                             {
-                                ForLoop l = (ForLoop)loops.get(0);
                                
-                               if(isprofitable((ForLoop)loops.get(r), (ForLoop)loops.get(k),loops.get(0), InnerLoop))
-                               {
-
                                     ForLoop loop1 = (ForLoop)loops.get(r);
                                     ForLoop loop2 = (ForLoop)loops.get(k);
-                                   
+
+
                                     swapLoop( loop1 , loop2);
                                     num_loop_interchange++;
                                     Collections.swap(expList, r, k);
                                     r = k;
-                                    
-                                    DDTDriver ddt = new DDTDriver(program);
-                                    ddt.alias_analysis = new AliasAnalysis(program);
-                                    DDGraph loopddg = ddt.analyzeLoopsForDependence(l);
-                                    ForLoop outermostLoop = (ForLoop)LoopTools.getOutermostLoop(l);
-                                    
-                                    if(loopddg.checkLoopCarriedDependence(outermostLoop)){
 
-                                        LinkedList innerLoops = LoopTools.calculateInnerLoopNest(outermostLoop);
+                                     PermutedLoopOrder = new ArrayList<>();
 
-                                        if(innerLoops.size() == 2){
+                                    for(int q = 0 ; q < loops.size(); q++){
 
-                                          ForLoop OuterLoop_doubleNest = (ForLoop)innerLoops.get(0);
+                                        PermutedLoopOrder.add(LoopTools.getIndexVariable(loops.get(q)));
 
-                                          LoopsNottoParallelize.add((ForLoop)innerLoops.get(1));
-                                       
-
-                                          System.out.println("\n[LoopInterchange] Loop: " + LoopTools.getLoopName(outermostLoop) + 
-                                                                " has loop carried dependencies , profitable not to parallelize loop: " +
-                                                                 LoopTools.getLoopName((ForLoop)innerLoops.get(1)));    
-                                           loopMap.put(l, true);    
-                                        }
-                                        
-
-                                        else{
-                                       
-                                            System.out.println("\n[LoopInterchange] In Loop " + LoopTools.getLoopName(outermostLoop) +
-                                                                " : Loop carried dependencies w.r.t: " + LoopTools.getIndexVariable(outermostLoop) +" loop" +
-                                                                " , cannot be made outermost") ;
-                                            swapLoop( loop1 , loop2);
-
-                                        }
                                     }
-
                                     
-                                    loopMap.put(l, true);
+                            
+                                    /*
 
-                                     
-                               }
-                             
+                                    For a Loop Nest of any depth, the innermost loop should not be parallelized under any scenario for
+                                    profitability. The profitability test needs to recognize this. Currently, for a loop nest of depth 2,
+                                    the the loop parallelization pass is trying to parallelize the innermost loop if the outermost loops
+                                    is not parallelizable. This needs to be changed.
 
-                            } else {
+                                    */
 
-                                loopMap.put((ForLoop)loops.get(0), false);
-                                break;
+
+                                    if(PermutedLoopOrder.equals(MemoryOrder)){
+
+
+                                    //Do not parallelize innermost loop in a loop nest of depth 2, even if it is parallelizable.
+                        
+                                            if(innerLoops.size() == 2 ){
+
+                                                ForLoop innerloop = (ForLoop)innerLoops.get(1);
+
+                                                DDTDriver ddt = new DDTDriver(program);
+                                                ddt.alias_analysis = new AliasAnalysis(program);
+                                                DDGraph loopddg = ddt.analyzeLoopsForDependence(innerloop);
+
+                                                if(!loopddg.checkLoopCarriedDependence(innerloop)){
+                                                    LoopsNottoParallelize.add(innerloop);
+                                            
+                                                    System.out.println("\n[LoopInterchange] Loop: " + LoopTools.getLoopName(outermostLoop) + 
+                                                                        " has loop carried dependencies , profitable not to parallelize loop: " +
+                                                                        LoopTools.getLoopName((ForLoop)innerLoops.get(1)));    
+                                                    loopMap.put(l, true);  
+                                                } 
+                                            } 
+
+                                        loopMap.put(l, true); 
+                                        icFlag = false;
+                                        break OuterWhileLoop;
+                                    
+                                    }            
+                                      
                             }
+
+
+                            
                         }        
                         until = r;
                     }
                     target_index++;
                     if(until == 0) icFlag = false;
+             
                 }
+
+                if(PermutedLoopOrder.equals(OriginalLoopOrder) ||
+                   PermutedLoopOrder.isEmpty())
+                loopMap.put((ForLoop)loops.get(0), false);
             }
+
+
         }
 
       
@@ -270,8 +297,19 @@ public class LoopInterchange extends TransformPass
 
             }
 
+            else if(AlreadyInOrder.containsKey(forloop)){
+
+                System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
+                                    " Already in desired order\n");
+
+            }
+
+
         }
 
+
+        if(loopMap.isEmpty())
+        System.out.println("[LoopInterchange] No loops have been interchanged\n");
 
         //Running Array privatization to get the correct cetus private pragma for the loop
 
@@ -279,8 +317,6 @@ public class LoopInterchange extends TransformPass
 
         AnalysisPass.run(new ArrayPrivatization(program));
 
-         if(loopMap.isEmpty())
-            System.out.println("[LoopInterchange] No loops have been interchanged\n");
 
         return;
     }
@@ -349,7 +385,7 @@ public class LoopInterchange extends TransformPass
 
     //Add support for symbolic loop bounds                                                              *********************************************************************
 
-    public Expression ReusabilityTest(Program OriginalProgram, Loop LoopNest ,
+    public List ReusabilityTest(Program OriginalProgram, Loop LoopNest ,
                             List<AssignmentExpression> LoopExprs, List<ArrayAccess> LoopArrays ){
 
         int i , j ,k , l;
@@ -357,8 +393,8 @@ public class LoopInterchange extends TransformPass
         long count;
     
        List<Expression> LoopNestOrder = new ArrayList<Expression>();
-      
-       HashMap<Expression,Long> ReuseScoreMap = new HashMap<Expression,Long>();
+       List<Expression> LoopOrderinNest = new ArrayList<Expression>();
+       HashMap<Expression,Long> LoopCostMap = new HashMap<Expression,Long>();
        List<Long> scores = new ArrayList<>(); 
        Expression IndexOfInnerLoop = null;
 
@@ -375,8 +411,6 @@ public class LoopInterchange extends TransformPass
             }
 
        }
-
-       DDGraph OrigProgramddg = OriginalProgram.getDDGraph();
 
      
        HashMap LoopNestIterationMap = LoopIterationMap(LoopNest);
@@ -401,7 +435,7 @@ public class LoopInterchange extends TransformPass
                 long LoopstrideValue = ((IntegerLiteral)LoopIncExpr).getValue();
 
 
-                List ReferenceGroups =  RefGroup(OrigProgramddg , LoopNest , loop , LoopArrays , LoopNestOrder);
+                List ReferenceGroups =  RefGroup( loop , LoopArrays , LoopNestOrder);
 
                 //System.out.println("Loop: " + LoopIdx + "\nGroups: " + ReferenceGroups +"\n");
  
@@ -409,15 +443,24 @@ public class LoopInterchange extends TransformPass
 
                 RefGroupCost = new ArrayList<>();
 
+                ArrayList RepresentativeGroup = new ArrayList<>();
+
+                //Taking one Array Access from each Ref Group to form a representative group
+
                 for( i = 0 ; i < ReferenceGroups.size(); i++){
 
-                    ArrayList Group = (ArrayList)ReferenceGroups.get(i);
+                  ArrayList Group  = (ArrayList)ReferenceGroups.get(i);
 
-                    for( j = 0; j < Group.size() ; j++){
+                  RepresentativeGroup.add(Group.get(0));
+                
+                }
+
+        
+                    for( j = 0; j < RepresentativeGroup.size() ; j++){
 
                         count = 0;
 
-                        ArrayAccess Array = (ArrayAccess)Group.get(j);
+                        ArrayAccess Array = (ArrayAccess)RepresentativeGroup.get(j);
 
                         List<Expression> ArrayDims = Array.getIndices();
 
@@ -489,43 +532,52 @@ public class LoopInterchange extends TransformPass
                             count += trip_currentLoop;
 
 
-                        // Add cost expression for array access with stride > 1                     ************************************************
-
                         RefGroupCost.add(count);
 
                     }
 
 
-                }
 
                long TotalLoopCost =  LoopCost(RefGroupCost, LoopNestIterationMap , LoopIdx);
 
                scores.add(TotalLoopCost);
 
-                ReuseScoreMap.put(LoopIdx, TotalLoopCost);
+               LoopCostMap.put(LoopIdx, TotalLoopCost);
 
              }
         
 
 
-           //System.out.println("Reuse Score: \n" + ReuseScoreMap +"\n");
+           //System.out.println("Loop Cost: \n" + LoopCostMap +"\n");
 
+           Collections.sort(scores, Collections.reverseOrder());
 
-            long MaxScore = Collections.min(scores);
+            long MinScore = Collections.min(scores);
 
         
-            for(Expression key : ReuseScoreMap.keySet()){
+            for(Expression key : LoopCostMap.keySet()){
 
-                if(ReuseScoreMap.get(key).equals(MaxScore)){
+                long Cost = LoopCostMap.get(key);
 
-                IndexOfInnerLoop = key;
+                if(Cost == MinScore ){
+
+                    IndexOfInnerLoop = key;
+
+                }
+
+                /*
+                    Order of loops in the loop nest according to Cost analysis
+                    Loop accessing the least number of cache lines is innermost while
+                    the one accessing the most number of cache lines is outermost.
+
+                */
+
+                LoopNestOrder.set(scores.indexOf(Cost), key);
 
             }
 
-            }
 
-
-        return  IndexOfInnerLoop;
+        return  LoopNestOrder;
 
 
     }
@@ -595,6 +647,13 @@ public class LoopInterchange extends TransformPass
 
     }
 
+
+    /*
+        Determines the cost in terms of cache lines for the loop. 
+        Add the costs of all the reference groups and multiply with the iteration count
+        of the loops other than the candidate innermost loop.
+    */
+
     protected long LoopCost(ArrayList ReferenceCosts , HashMap LoopNestIterCount , Expression CurrentLoop){
 
       
@@ -615,8 +674,6 @@ public class LoopInterchange extends TransformPass
 
         }
 
-
-
         return (SumOfRefCosts * RestOfLoops_Iterations);
 
     }
@@ -626,145 +683,36 @@ public class LoopInterchange extends TransformPass
 
         Following method forms reference groups of Array Accesses for each loop in the Nest.
         1. Criteria for 2 references to be in the same group depend on whether they have dependencies (Loop carrried and Non Loop Carried).
-        2. Criteria for forming groups have been derived from K.S McKinley's model. ( Refer her papers on locality)
+        2. Criteria for forming groups have been derived from the paper - "Optimizing for Parallelism and Data Locality" - K.S Mckinley
 
     */
 
-    private static List RefGroup(DDGraph ProgramDDG , Loop OriginalLoopNest , Loop CandidateLoop,
-                                 List<ArrayAccess> LoopBodyArrays , List<Expression> OriginalLoopNestOrder){
+    private static List RefGroup( Loop CandidateLoop, List<ArrayAccess> LoopBodyArrays , List<Expression> OriginalLoopNestOrder){
             
         int i , j ,k;
     
-        List ReferenceGroupsDuplicates = new ArrayList<>();
         List FinalRefGroups = new ArrayList<>();
-        ArrayList temp = new ArrayList<>();
         ArrayList<Expression> ParentArrays = new ArrayList<Expression>();
 
-      
-        // Following needs fixing. Dependence Arcs need to be found out w.r.t the loop                  ***************************************************
-
-        DDGraph loopddg = ProgramDDG.getSubGraph(OriginalLoopNest);
-
-            DDGraph ddg = loopddg.getSubGraph(CandidateLoop);
-
-            ArrayList<Arc> LoopDDGArcs = ddg.getAllArcs();
-
+     
             for( i = 0 ; i < LoopBodyArrays.size();i++){
 
                 ParentArrays.add(LoopBodyArrays.get(i).getArrayName());
 
             }
 
+           // System.out.println("Program DDG: " + ProgramDDG +"\n");
+
 
             LinkedHashSet<Expression> hashSet = new LinkedHashSet<>(ParentArrays);
 
             ParentArrays = new ArrayList<>(hashSet);
 
-            ArrayList<Expression> Dependent_Exprs = new ArrayList<Expression>();
-            ArrayList<Expression> Independent_Exprs = new ArrayList<Expression>();
-
-            //If the Loop Nest has dependencies (Loop Carried and Non-Loop Carried)
-
-            if(!LoopDDGArcs.isEmpty()){
-       
-                for(i = 0 ; i < ParentArrays.size() ;i++){
-
-                    Expression ArrayName = ParentArrays.get(i);
-
-                    ArrayList Arraygroups = new ArrayList<>();
-
-                    for( j = 0 ; j < LoopDDGArcs.size(); j++){
-                
-                        Arc DDGArc = LoopDDGArcs.get(j);
-        
-                        DDArrayAccessInfo DDSource = DDGArc.getSource();
-        
-                        DDArrayAccessInfo DDSink = DDGArc.getSink();
-
-                        Expression SourceName = DDSource.getArrayAccessName();
-                        Expression SinkName = DDSink.getArrayAccessName();
-
-
-                        if(SourceName.equals(ArrayName) && SinkName.equals(ArrayName)){
-        
-                            if(DDSource.getArrayAccess().equals(DDSink.getArrayAccess()))
-                                Arraygroups.add(DDSource.getArrayAccess());
             
-                            else{
-            
-                                Arraygroups.add(DDSource.getArrayAccess());
-                                Arraygroups.add(DDSink.getArrayAccess());
-            
-                            }
-                        }
-        
-        
-                    }
-
-                    if(!Arraygroups.isEmpty())
-                    ReferenceGroupsDuplicates.add(Arraygroups);
-
-                }
-
-
-                for( i = 0 ; i < ReferenceGroupsDuplicates.size();i++){
-
-                    ArrayList Refgrp = (ArrayList)ReferenceGroupsDuplicates.get(i);
-
-                    LinkedHashSet tempHashSet = new LinkedHashSet<>(Refgrp);
-
-                    Refgrp = new ArrayList<>(tempHashSet);
-
-                    ArrayAccess access = (ArrayAccess)Refgrp.get(i);
-
-                    Dependent_Exprs.add(access.getArrayName());
-
-                    FinalRefGroups.add(Refgrp);
-
-                }
-            }
-
-
-            for(i = 0 ; i < ParentArrays.size() ;i++){
-
-                Expression e = ParentArrays.get(i);
-
-                if(!Dependent_Exprs.contains(e)){
-
-                    Independent_Exprs.add(e);
-
-                }
-
-            }
-
-
-            if(!Dependent_Exprs.isEmpty()){
-                for( i = 0 ; i < LoopBodyArrays.size();i++){
-
-                    Expression e = LoopBodyArrays.get(i).getArrayName();
-
-                    ArrayList tempList = new ArrayList<>();
-
-                    if(Independent_Exprs.contains(e)){
-
-                        tempList.add(LoopBodyArrays.get(i));
-
-                    }
-
-                    if(!tempList.isEmpty())
-                    FinalRefGroups.add(tempList);
-
-                }
-            }
-
-            // If the Loop Nest does not have dependencies- Loop carried as well as Non-loop carried
-
-
             List<Expression> LoopIndexExpressions = new ArrayList<Expression>();
-            List<Integer> LoopIndexExprcoeff = new ArrayList<Integer>();
             Expression CandidateLoopid = LoopTools.getIndexVariable(CandidateLoop);
 
-            if(LoopDDGArcs.isEmpty()){
+            
 
                 for(i = 0 ; i < LoopBodyArrays.size(); i++){
 
@@ -800,7 +748,6 @@ public class LoopInterchange extends TransformPass
                 //System.out.println("Loop: " + CandidateLoopid + " LoopIndexExprs: " + LoopIndexExpressions +"\n");
 
          
-
                 ArrayList<ArrayAccess> References = new ArrayList<ArrayAccess>();
 
                 ArrayList<ArrayAccess> ArraysAssignedToGroups = new ArrayList<ArrayAccess>();
@@ -842,7 +789,7 @@ public class LoopInterchange extends TransformPass
 
 
                 }
-            }
+            
 
             LinkedHashSet tempHashSet = new LinkedHashSet<>(FinalRefGroups);
 
@@ -860,7 +807,7 @@ public class LoopInterchange extends TransformPass
     }
 
 
-
+    // Returns a Mapping of the Loops to their corresponding iteration count
  
     private HashMap LoopIterationMap(Loop LoopNest)
 
@@ -899,6 +846,8 @@ public class LoopInterchange extends TransformPass
 
 
     }
+
+
 
   
 

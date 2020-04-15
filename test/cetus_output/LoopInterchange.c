@@ -53,37 +53,29 @@ int main()
 	r=1000;
 	#pragma loop name main#0 
 	#pragma cetus private(i, j) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(i, j)
-	for (j=0; j<10000; j ++ )
+	for (i=0; i<10000; i ++ )
 	{
 		#pragma loop name main#0#0 
-		#pragma cetus private(i) 
-		for (i=0; i<10000; i ++ )
+		#pragma cetus private(j) 
+		#pragma cetus parallel 
+		#pragma omp parallel for private(j)
+		for (j=0; j<10000; j ++ )
 		{
-			b[j][i]=(2*b[j][i-1]);
+			b[j][i]=(2*b[j+1][i-1]);
 		}
 	}
 	/* Taken from ARC2D (Perfect Benchmarks) */
-	#pragma loop name main#1 
-	#pragma cetus private(j, k) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(j, k)
-	for (j=0; j<10000; j ++ )
-	{
-		#pragma loop name main#1#0 
-		#pragma cetus private(k) 
-		for (k=0; k<10000; k ++ )
-		{
-			work[j][k][3]=((coef2[j][k]*work[j][k][1])-(coef4[j][k]*work[j][k][2]));
-		}
-	}
+	/* for(k = 0 ; k < 10000 ;k++){ */
+		/*     for(j = 0 ; j < 10000; j++){ */
+			/*       work[j][k][3] = coef2[j][k] work[j][k][1] - coef4[j][k] * work[j][k][2]; */
+		/*     } */
+	/* } */
 	/* From ARC2D Perfect benchmarks */
-	#pragma loop name main#2 
+	#pragma loop name main#1 
 	#pragma cetus private(j, k, ld, ld1, ld2, ldi) 
 	for (j=0; j<10000; j ++ )
 	{
-		#pragma loop name main#2#0 
+		#pragma loop name main#1#0 
 		#pragma cetus private(k, ld, ld1, ld2, ldi) 
 		for (k=0; k<10000; k ++ )
 		{
@@ -97,17 +89,17 @@ int main()
 		}
 	}
 	/* Matrix Multiplication kernel */
-	#pragma loop name main#3 
+	#pragma loop name main#2 
 	#pragma cetus private(i, j, k) 
 	#pragma cetus parallel 
 	#pragma omp parallel for private(i, j, k)
 	for (i=0; i<1800; i ++ )
 	{
-		#pragma loop name main#3#0 
+		#pragma loop name main#2#0 
 		#pragma cetus private(j, k) 
 		for (k=0; k<1800; k ++ )
 		{
-			#pragma loop name main#3#0#0 
+			#pragma loop name main#2#0#0 
 			/* #pragma cetus reduction(+: d[i][j])  */
 			#pragma cetus private(j) 
 			for (j=0; j<1800; j ++ )
@@ -116,13 +108,13 @@ int main()
 			}
 		}
 	}
-	#pragma loop name main#4 
+	#pragma loop name main#3 
 	#pragma cetus private(i, j) 
 	#pragma cetus parallel 
 	#pragma omp parallel for private(i, j)
 	for (j=0; j<10000; j ++ )
 	{
-		#pragma loop name main#4#0 
+		#pragma loop name main#3#0 
 		#pragma cetus private(i) 
 		for (i=0; i<10000; i ++ )
 		{

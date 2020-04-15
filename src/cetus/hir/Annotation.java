@@ -116,6 +116,7 @@ public abstract class Annotation extends HashMap<String, Object> {
     * Collection, Map or null). Symbol is also returned as a shallow copy.
     */
     private Object cloneObject(Object obj) {
+
         if (obj instanceof String || obj instanceof Symbol) {
             return obj;
         } else if (obj instanceof Collection) {
