@@ -9,18 +9,18 @@ int main(){
 
  
 
-    int i ,j ,k , n = 10000 , r = 1000 , jmi , ld1 , ld2 , ldi ,ld ;
+    int i ,j ,k , n = 10000 , r = 1000 , jmi , ld1 , ld2 , ldi ,ld,m ;
     
 
 
-    for(i = 0 ; i < 10000 ;i++){
+    // for(i = 0 ; i < 10000 ;i++){
 
-      for( j = 0 ; j < 10000 ;j++){
+    //   for( j = 0 ; j < 10000 ;j++){
 
-        b[j][i] = 2 * b[j+1][i-1];
+    //     b[j][i] = 2 * b[j+1][i-1];
 
-      }
-    }
+    //   }
+    // }
 
 
     
@@ -38,9 +38,9 @@ int main(){
     
     // From ARC2D Perfect benchmarks
        
-    for(k = 0 ; k < 10000 ;k++){
+    for(k = 0 ; k < n ;k++){
 
-          for(j = 0 ; j < 10000; j++){
+          for(j = 0 ; j < n ; j++){
 
               ld2 = a[j][k];
               ld1 = b[j][k] - ld2 * x[j-2][k];
@@ -55,11 +55,11 @@ int main(){
 
    
   // Matrix Multiplication kernel
-     for(i= 0 ; i < 1800 ; i++){
+     for(i= 0 ; i < n ; i++){
 
-        for( j = 0 ; j < 1800; j++){
+        for( j = 0 ; j < m; j++){
 
-          for( k = 0 ; k < 1800; k++){
+          for( k = 0 ; k < n; k++){
 
               d[i][j] = d[i][j] + a[i][k] * b[k][j];
 
@@ -70,9 +70,9 @@ int main(){
 
     }
 
-    for( i = 0 ; i < 10000; i++){
+    for( i = 0 ; i < n; i++){
 
-      for( j = 0 ; j < 10000 ;j++){
+      for( j = 0 ; j < n ;j++){
 
        a[j][i] = 0.2 * (b[j][i] + b[j-1][i] + b[j][i-1] + b[j+1][i] + b[j][i+1]);
       }

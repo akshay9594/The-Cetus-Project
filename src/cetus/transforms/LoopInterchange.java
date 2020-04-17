@@ -30,6 +30,8 @@ public class LoopInterchange extends TransformPass
 
     //    protected Program program;
 
+    List Loop_ref_cost = new ArrayList<>();
+
     public LoopInterchange(Program program)
     {
         super(program);
@@ -136,6 +138,8 @@ public class LoopInterchange extends TransformPass
                 /*              
                     Begin reusability test to determine Reusability for each loop in the Nest
                     Result of reusability test is the Order of the loops in the nest for max reusability
+                    TODO: Implementing the Nearby Permutation alogirthm in the scenario where the 
+                          MemoryOrder cannot be reached.
 
                 */
 
@@ -380,10 +384,9 @@ OuterWhileLoop:
             *trip : Number of iterations of the candidate innermost loop.
         4. Multiply the Reference group costs with the number of iterations of loops other than the candidate innnermost loop
         5. Here Cache line size is assumed to be 64.
+        6.Symbolic loop bounds are also supported, though extensive testing needs to be done to ensure accuracy.
     */
 
-
-    //Add support for symbolic loop bounds                                                              *********************************************************************
 
     public List ReusabilityTest(Program OriginalProgram, Loop LoopNest ,
                             List<AssignmentExpression> LoopExprs, List<ArrayAccess> LoopArrays ){
@@ -393,10 +396,13 @@ OuterWhileLoop:
         long count;
     
        List<Expression> LoopNestOrder = new ArrayList<Expression>();
-       List<Expression> LoopOrderinNest = new ArrayList<Expression>();
        HashMap<Expression,Long> LoopCostMap = new HashMap<Expression,Long>();
+       HashMap<Expression,Expression> Symbolic_LoopCostMap = new HashMap<Expression,Expression>();                            
+
        List<Long> scores = new ArrayList<>(); 
-       Expression IndexOfInnerLoop = null;
+       List<Expression> Symbolic_scores = new ArrayList<>();
+       Expression IndexOfInnerLoop = null; 
+     
 
        DepthFirstIterator LoopNestiter = new DepthFirstIterator(LoopNest);
 
@@ -413,35 +419,63 @@ OuterWhileLoop:
        }
 
      
+       Boolean SymbolicIter = true;
+       Boolean SymbolicLoopStride = false;
+
        HashMap LoopNestIterationMap = LoopIterationMap(LoopNest);
 
+       if(LoopNestIterationMap.get(LoopNestOrder.get(0)) instanceof Long){
+
+          SymbolicIter = false;
+       }
+      
        //Getting reusability score
 
        DFIterator<ForLoop> forloopiter = new DFIterator<>(LoopNest, ForLoop.class);
 
        ArrayList<Long> RefGroupCost = new ArrayList<Long>();
+       ArrayList<Expression> Symbolic_RefGRoupCost = new ArrayList<Expression>();
        ArrayList<Expression> LHSDim = new ArrayList<Expression>();
        ArrayList<Expression> RHSDim = new ArrayList<Expression>();
+       long LoopstrideValue = 0;
+       long trip_currentLoop = 0;
+       long TotalLoopCost = 0;
+
+       IntegerLiteral initalValue = new IntegerLiteral(0);
+       FloatLiteral cls = new FloatLiteral(0.015625);
+       IntegerLiteral Identity = new IntegerLiteral(1);
+       
+       Expression Symbolic_LoopTripCount = null;
+       Expression Symbolic_count = null;
+       Expression Symbolic_TotalLoopCost = null;
 
             while(forloopiter.hasNext()){
 
                 ForLoop loop = forloopiter.next();
 
-                //Collecting Looop Information
+                //Collecting Loop Information
                 Expression LoopIdx = LoopTools.getIndexVariable(loop);
 
                 Expression LoopIncExpr = LoopTools.getIncrementExpression(loop);
 
-                long LoopstrideValue = ((IntegerLiteral)LoopIncExpr).getValue();
-
+                if(LoopIncExpr instanceof IntegerLiteral)
+                 LoopstrideValue = ((IntegerLiteral)LoopIncExpr).getValue();
+                
+                else
+                 SymbolicLoopStride = true;
+                
 
                 List ReferenceGroups =  RefGroup( loop , LoopArrays , LoopNestOrder);
-
-                //System.out.println("Loop: " + LoopIdx + "\nGroups: " + ReferenceGroups +"\n");
  
-                long trip_currentLoop = (long)LoopNestIterationMap.get(LoopIdx);
+                if(!SymbolicIter)
+                 trip_currentLoop = (long)LoopNestIterationMap.get(LoopIdx);
+                
+                 else
+                 Symbolic_LoopTripCount = (Expression)LoopNestIterationMap.get(LoopIdx);
 
                 RefGroupCost = new ArrayList<>();
+
+                Symbolic_RefGRoupCost = new ArrayList<>();
 
                 ArrayList RepresentativeGroup = new ArrayList<>();
 
@@ -458,7 +492,9 @@ OuterWhileLoop:
         
                     for( j = 0; j < RepresentativeGroup.size() ; j++){
 
-                        count = 0;
+                         count = 0;
+
+                         Symbolic_count = (Expression)initalValue;
 
                         ArrayAccess Array = (ArrayAccess)RepresentativeGroup.get(j);
 
@@ -505,82 +541,239 @@ OuterWhileLoop:
             
                         Expression LHSExpr = LHSDim.get(0);
 
-                        if(RHSExprWithLoopID!= null && UnitStride(RHSExprWithLoopID, LoopIdx) && LoopstrideValue == 1)
-                            count += (trip_currentLoop/64);
+                        // If Loop Trip count is not Symbolic
 
-                        /*
+                        if(Symbolic_LoopTripCount == null){
 
-                         Cost = 1 if:
-                          Array access is loop invariant                    
+                            if(RHSExprWithLoopID!= null && UnitStride(RHSExprWithLoopID, LoopIdx) && LoopstrideValue == 1)
+                                count += (trip_currentLoop/64);
 
-                        */
+                            /*
 
-                        else if(!LHSExpr.toString().contains(LoopIdx.toString()) && RHSExprWithLoopID == null ){
-                            count += 1;
+                            Cost = 1 if:
+                            Array access is loop invariant                    
+
+                            */
+
+                            else if(!LHSExpr.toString().contains(LoopIdx.toString()) && RHSExprWithLoopID == null ){
+                                count += 1;
+                            }
+        
+
+                            /*
+                            Cost = (trip) if:
+                            (a) Loop index variable is present in the left hand side dimension of the array access
+                            (b) The Dimension has a non- unit stride or
+                            (c) The loop candidate loop has a non-unit stride
+
+                            */
+
+                            else 
+                                count += trip_currentLoop;
+
+
+                            RefGroupCost.add(count);
                         }
-      
 
-                          /*
-                         Cost = (trip) if:
-                         (a) Loop index variable is present in the left hand side dimension of the array access
-                         (b) The Dimension has a non- unit stride or
-                         (c) The loop candidate loop has a non-unit stride
+                        // If Loop Trip Count is Symbolic
 
-                        */
+                        else{
 
-                        else 
-                            count += trip_currentLoop;
+                        
 
+                            if(RHSExprWithLoopID!= null && UnitStride(RHSExprWithLoopID, LoopIdx) && LoopstrideValue == 1){
+                                   Expression result = Symbolic.multiply(Symbolic_LoopTripCount , (Expression)cls);
+                                   Symbolic_count =  Symbolic.add(Symbolic_count, result);
+                            }
+                                   
+                            
+                            else if(!LHSExpr.toString().contains(LoopIdx.toString()) && RHSExprWithLoopID == null )
+                                Symbolic_count = Symbolic.add(Symbolic_count , (Expression)Identity);
 
-                        RefGroupCost.add(count);
+                            else{
+
+                                Symbolic_count = Symbolic.add(Symbolic_count , Symbolic_LoopTripCount);
+
+                                
+                            }
+                                
+
+                            Symbolic_RefGRoupCost.add(Symbolic_count);
+
+                        }
+
 
                     }
 
 
+                if(!SymbolicIter){
+                    TotalLoopCost =  LoopCost(RefGroupCost, LoopNestIterationMap , LoopIdx);
 
-               long TotalLoopCost =  LoopCost(RefGroupCost, LoopNestIterationMap , LoopIdx);
+                    scores.add(TotalLoopCost);
 
-               scores.add(TotalLoopCost);
+                    LoopCostMap.put(LoopIdx, TotalLoopCost);
+                }
 
-               LoopCostMap.put(LoopIdx, TotalLoopCost);
+                else{
 
-             }
-        
+                    Symbolic_TotalLoopCost = SymbolicLoopCost(Symbolic_RefGRoupCost, LoopNestIterationMap , LoopIdx);
 
-
-           //System.out.println("Loop Cost: \n" + LoopCostMap +"\n");
-
-           Collections.sort(scores, Collections.reverseOrder());
-
-            long MinScore = Collections.min(scores);
-
-        
-            for(Expression key : LoopCostMap.keySet()){
-
-                long Cost = LoopCostMap.get(key);
-
-                if(Cost == MinScore ){
-
-                    IndexOfInnerLoop = key;
+                    Symbolic_scores.add(Symbolic_TotalLoopCost);
+                    Symbolic_LoopCostMap.put(LoopIdx , Symbolic_TotalLoopCost);
 
                 }
 
-                /*
-                    Order of loops in the loop nest according to Cost analysis
-                    Loop accessing the least number of cache lines is innermost while
-                    the one accessing the most number of cache lines is outermost.
+              
 
-                */
+             }
+        
+             //System.out.println("Map: " + Symbolic_LoopCostMap +"\n");
 
-                LoopNestOrder.set(scores.indexOf(Cost), key);
+            if(!LoopCostMap.isEmpty()){
+                Collections.sort(scores, Collections.reverseOrder());
+
+                long MinScore = Collections.min(scores);
+
+            
+                for(Expression key : LoopCostMap.keySet()){
+
+                    long Cost = LoopCostMap.get(key);
+
+                    if(Cost == MinScore ){
+
+                        IndexOfInnerLoop = key;
+
+                    }
+
+                    /*
+                        Order of loops in the loop nest according to Cost analysis
+                        Loop accessing the least number of cache lines is innermost while
+                        the one accessing the most number of cache lines is outermost.
+
+                    */
+
+                    LoopNestOrder.set(scores.indexOf(Cost), key);
+
+                }
+            }
+
+            else{
+
+                //For Symbolic Loop Costs
+
+                int counter = 0;
+
+                List <Expression> DominantTerms = new ArrayList<>();
+
+                Expression variable = null;
+
+                List<Expression> ListOfExpressionVariables = new ArrayList<>();
+
+                for( k = 0 ; k < Symbolic_scores.size() ; k++){
+
+                        Expression se1 = (Expression)Symbolic_scores.get(k);
+
+                         variable = Symbolic.getVariables(se1).get(0);
+
+                         ListOfExpressionVariables.add(variable);
+
+                        List <Expression> Terms = Symbolic.getTerms(se1);
+
+                        List<Integer> VariableCount = new ArrayList<>();
+
+                        for(i = 0 ; i < Terms.size(); i++){
+
+                            Expression childterm = Terms.get(i);
+
+                            counter = 0;
+
+                            if(childterm.getChildren().contains(variable)){
+
+                                List entries = childterm.getChildren();
+
+                                for( j = 0 ; j < entries.size() ; j++){
+
+                                    if(entries.get(j).equals(variable))
+                                    counter++;
+
+                                }
+
+                                VariableCount.add(counter);
+                            }
+
+                            else
+                            VariableCount.add(counter);
+
+                        }
+
+                        int MaxCount = Collections.max(VariableCount);
+
+                        int indx = VariableCount.indexOf(MaxCount);
+
+                        DominantTerms.add(Terms.get(indx));
+
+                       
+
 
             }
 
+
+             List Coeffs = new ArrayList<>();
+
+             for( i = 0 ; i < DominantTerms.size(); i++){
+
+                Expression term = DominantTerms.get(i);
+
+                Identifier VarID = (Identifier)ListOfExpressionVariables.get(i);
+
+                Coeffs.add(Symbolic.getCoefficient(term, VarID));
+
+             }
+               
+             
+             Collections.sort(Coeffs, Collections.reverseOrder());
+
+
+             List<Expression> Sortedscores = new ArrayList<>();
+
+             for(i = 0 ; i < Coeffs.size() ; i++){
+
+                Expression coefficient = (Expression)Coeffs.get(i);
+
+
+                for( j = 0 ; j < DominantTerms.size(); j++){
+
+                    if(DominantTerms.get(j).getChildren().contains(coefficient)){
+
+                        Sortedscores.add(Symbolic_scores.get(j));
+
+                    }
+
+                }
+
+
+             }
+
+            //System.out.println( "Coeffs: " + Coeffs + " \nScores sorted: " + Sortedscores +"\n");
+
+                for(Expression key : Symbolic_LoopCostMap.keySet() ){
+
+                    Expression Symbolic_cost = Symbolic_LoopCostMap.get(key);
+
+                    LoopNestOrder.set(Sortedscores.indexOf(Symbolic_cost) , key);
+
+                }
+
+
+            }
+   
 
         return  LoopNestOrder;
 
 
     }
+
+
 
 
     /*
@@ -658,23 +851,56 @@ OuterWhileLoop:
 
       
         long RestOfLoops_Iterations = 1 , SumOfRefCosts = 0;
+        
+        int i;
+
+     
+            for(Object key : LoopNestIterCount.keySet()){
+
+                if(!CurrentLoop.equals(key))
+                RestOfLoops_Iterations *= (long)LoopNestIterCount.get(key);
+
+            }
+
+            for(i =0 ; i < ReferenceCosts.size(); i++){
+
+                SumOfRefCosts += (long)ReferenceCosts.get(i);
+
+            }
+            
+        return (SumOfRefCosts * RestOfLoops_Iterations);
+
+    }
+
+
+    protected Expression SymbolicLoopCost(ArrayList ReferenceCosts , HashMap LoopNestIterCount , Expression CurrentLoop){
 
         int i;
+        IntegerLiteral InitialVal = new IntegerLiteral(1);
+        IntegerLiteral IntialValForSum = new IntegerLiteral(0);
+        Expression Symbolic_RestOfLoopIterations = (Expression)InitialVal;
+        Expression Symbolic_SumOfRefCosts = (Expression)IntialValForSum;
 
         for(Object key : LoopNestIterCount.keySet()){
 
             if(!CurrentLoop.equals(key))
-              RestOfLoops_Iterations *= (long)LoopNestIterCount.get(key);
+             Symbolic_RestOfLoopIterations = Symbolic.multiply(Symbolic_RestOfLoopIterations , (Expression)LoopNestIterCount.get(key));
 
         }
 
         for(i =0 ; i < ReferenceCosts.size(); i++){
 
-            SumOfRefCosts += (long)ReferenceCosts.get(i);
+            Symbolic_SumOfRefCosts = Symbolic.add(Symbolic_SumOfRefCosts, (Expression)ReferenceCosts.get(i));
 
         }
 
-        return (SumOfRefCosts * RestOfLoops_Iterations);
+        Loop_ref_cost.add(Symbolic_SumOfRefCosts);
+
+        Expression result = Symbolic_SumOfRefCosts;                                                          //******************************** Might need arethink */
+
+
+        return result;
+
 
     }
 
@@ -814,8 +1040,19 @@ OuterWhileLoop:
     {
 
         HashMap<Expression, Long> LoopIterationCount = new HashMap<Expression , Long>();
+        HashMap<Expression , Expression> SymbolicIterationCount = new HashMap<Expression,Expression>();
 
-        DFIterator<ForLoop> forloopiter = new DFIterator<>(LoopNest, ForLoop.class);        
+        DFIterator<ForLoop> forloopiter = new DFIterator<>(LoopNest, ForLoop.class);
+        
+        long LoopUpperBound = 0;
+        long LoopLowerBound = 0;
+        long Loopstride = 0;
+
+        Boolean UpperboundisSymbolic = false;
+        Boolean LowerboundisSymbolic = false;
+        Boolean StrideboundisSymbolic = false;
+
+        Expression Symbolic_Iter = null;
 
         long numLoopiter = 0;
 
@@ -823,26 +1060,56 @@ OuterWhileLoop:
 
                 ForLoop loop = forloopiter.next();
 
- 
                      Expression upperbound = LoopTools.getUpperBoundExpression(loop);
  
                      Expression lowerbound = LoopTools.getLowerBoundExpression(loop);
  
                      Expression incExpr = LoopTools.getIncrementExpression(loop);
  
-                     long LoopUpperBound = ((IntegerLiteral)upperbound).getValue();
+                     if(upperbound instanceof IntegerLiteral)
+                      LoopUpperBound = ((IntegerLiteral)upperbound).getValue();   
+                     else
+                        UpperboundisSymbolic = true;
+
+                     if(lowerbound instanceof IntegerLiteral)
+                      LoopLowerBound = ((IntegerLiteral)lowerbound).getValue();
+                     else
+                        LowerboundisSymbolic = true;
  
-                     long LoopLowerBound = ((IntegerLiteral)lowerbound).getValue();
- 
-                     long Loopstride = ((IntegerLiteral)incExpr).getValue();
- 
-                     numLoopiter = ((LoopUpperBound - LoopLowerBound + Loopstride) / Loopstride);
-                
-                    LoopIterationCount.put(LoopTools.getIndexVariable(loop), numLoopiter);
+                    if(incExpr instanceof IntegerLiteral)
+                      Loopstride = ((IntegerLiteral)incExpr).getValue();
+                     else
+                      StrideboundisSymbolic = true;
+
+
+                    if(!UpperboundisSymbolic && !LowerboundisSymbolic && !StrideboundisSymbolic){
+                        numLoopiter = ((LoopUpperBound - LoopLowerBound + Loopstride) / Loopstride);
+                        
+                        LoopIterationCount.put(LoopTools.getIndexVariable(loop), numLoopiter);
+                    }
+
+                     else{
+
+                        Expression Bound_Difference = Symbolic.subtract(upperbound , lowerbound);
+
+                        Expression Numerator = Symbolic.add(Bound_Difference , incExpr);
+
+                        Symbolic_Iter = Symbolic.divide(Numerator , incExpr);
+
+                        SymbolicIterationCount.put(LoopTools.getIndexVariable(loop) , Symbolic_Iter);
+
+
+                     }
+
 
             }
 
-            return LoopIterationCount;
+
+            if(!LoopIterationCount.isEmpty())
+             return LoopIterationCount;
+
+            else
+             return SymbolicIterationCount;
 
 
     }

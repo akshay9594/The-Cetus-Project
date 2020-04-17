@@ -47,23 +47,15 @@ int work[10000][10000][10000], coef2[1000][10000], coef4[10000][10000];
 int S[10000], x[10000][10000], y[10000][10000], f[10000][10000], e[10000][10000];
 int main()
 {
-	int i, j, k, n, r, jmi, ld1, ld2, ldi, ld;
+	int i, j, k, n, r, jmi, ld1, ld2, ldi, ld, m;
 	int _ret_val_0;
 	n=10000;
 	r=1000;
-	#pragma loop name main#0 
-	#pragma cetus private(i, j) 
-	for (i=0; i<10000; i ++ )
-	{
-		#pragma loop name main#0#0 
-		#pragma cetus private(j) 
-		#pragma cetus parallel 
-		#pragma omp parallel for private(j)
-		for (j=0; j<10000; j ++ )
-		{
-			b[j][i]=(2*b[j+1][i-1]);
-		}
-	}
+	/* for(i = 0 ; i < 10000 ;i++){ */
+		/*   for( j = 0 ; j < 10000 ;j++){ */
+			/*     b[j][i] = 2 b[j+1][i-1]; */
+		/*   } */
+	/* } */
 	/* Taken from ARC2D (Perfect Benchmarks) */
 	/* for(k = 0 ; k < 10000 ;k++){ */
 		/*     for(j = 0 ; j < 10000; j++){ */
@@ -71,13 +63,13 @@ int main()
 		/*     } */
 	/* } */
 	/* From ARC2D Perfect benchmarks */
-	#pragma loop name main#1 
+	#pragma loop name main#0 
 	#pragma cetus private(j, k, ld, ld1, ld2, ldi) 
-	for (j=0; j<10000; j ++ )
+	for (j=0; j<n; j ++ )
 	{
-		#pragma loop name main#1#0 
+		#pragma loop name main#0#0 
 		#pragma cetus private(k, ld, ld1, ld2, ldi) 
-		for (k=0; k<10000; k ++ )
+		for (k=0; k<n; k ++ )
 		{
 			ld2=a[j][k];
 			ld1=(b[j][k]-(ld2*x[j-2][k]));
@@ -89,34 +81,34 @@ int main()
 		}
 	}
 	/* Matrix Multiplication kernel */
-	#pragma loop name main#2 
+	#pragma loop name main#1 
 	#pragma cetus private(i, j, k) 
 	#pragma cetus parallel 
-	#pragma omp parallel for private(i, j, k)
-	for (i=0; i<1800; i ++ )
+	#pragma omp parallel for if((10000<(((1L+(3L*n))+((3L*n)*n))+(((3L*m)*n)*n)))) private(i, j, k)
+	for (i=0; i<n; i ++ )
 	{
-		#pragma loop name main#2#0 
+		#pragma loop name main#1#0 
 		#pragma cetus private(j, k) 
-		for (k=0; k<1800; k ++ )
+		for (k=0; k<n; k ++ )
 		{
-			#pragma loop name main#2#0#0 
+			#pragma loop name main#1#0#0 
 			/* #pragma cetus reduction(+: d[i][j])  */
 			#pragma cetus private(j) 
-			for (j=0; j<1800; j ++ )
+			for (j=0; j<m; j ++ )
 			{
 				d[i][j]=(d[i][j]+(a[i][k]*b[k][j]));
 			}
 		}
 	}
-	#pragma loop name main#3 
+	#pragma loop name main#2 
 	#pragma cetus private(i, j) 
 	#pragma cetus parallel 
-	#pragma omp parallel for private(i, j)
-	for (j=0; j<10000; j ++ )
+	#pragma omp parallel for if((10000<((1L+(3L*n))+((3L*n)*n)))) private(i, j)
+	for (j=0; j<n; j ++ )
 	{
-		#pragma loop name main#3#0 
+		#pragma loop name main#2#0 
 		#pragma cetus private(i) 
-		for (i=0; i<10000; i ++ )
+		for (i=0; i<n; i ++ )
 		{
 			a[j][i]=(0.2*((((b[j][i]+b[j-1][i])+b[j][i-1])+b[j+1][i])+b[j][i+1]));
 		}
