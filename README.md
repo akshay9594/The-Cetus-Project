@@ -30,7 +30,10 @@ Cetus Source to Source compiler improvements being done at University of Delawar
        The directive would look something like:
        
        Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(*: e)reduction(+: d)
-    
+       
+### 5. Loop Interchange Pass Added to Cetus
+       Loop Interchange pass with Profitability and Legality analysis along with the ability to handle symbolic
+       loop bounds has been added to cetus, pending some minor changes. Benchmark testing required.
 
     
     
