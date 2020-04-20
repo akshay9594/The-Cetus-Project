@@ -13,27 +13,27 @@ int main(){
     
 
 
-    // for(i = 0 ; i < 10000 ;i++){
+    for(i = 0 ; i < 10000 ;i++){
 
-    //   for( j = 0 ; j < 10000 ;j++){
+      for( j = 0 ; j < 10000 ;j++){
 
-    //     b[j][i] = 2 * b[j+1][i-1];
+        b[j][i] = 2 * b[j+1][i-1];
 
-    //   }
-    // }
+      }
+    }
 
 
     
    
     //Taken from ARC2D (Perfect Benchmarks)
-      // for(k = 0 ; k < 10000 ;k++){
+      for(k = 0 ; k < 10000 ;k++){
 
-      //     for(j = 0 ; j < 10000; j++){
+          for(j = 0 ; j < 10000; j++){
 
-      //       work[j][k][3] = coef2[j][k] * work[j][k][1] - coef4[j][k] * work[j][k][2];
+            work[j][k][3] = coef2[j][k] * work[j][k][1] - coef4[j][k] * work[j][k][2];
 
-      //     }
-      // }
+          }
+      }
 
     
     // From ARC2D Perfect benchmarks
@@ -46,7 +46,7 @@ int main(){
               ld1 = b[j][k] - ld2 * x[j-2][k];
               ld =  d[j][k] - (ld2 * y[j-2][k] + ld1 * x[j-2][k]);
               ldi = 1.0/ld;
-              f[j][k] = (f[j][k-1] - ld2 * f[j-2][k] - ld1 * f[j-1][k]) * ldi;
+              f[j][k] = (f[j][k] - ld2 * f[j-2][k] - ld1 * f[j-1][k]) * ldi;
               x[j][k] = (d[j][k] - ld1 * y[j-1][k]) * ld1;
               y[j][k] = e[j][k]* ldi;
           }

@@ -58,7 +58,6 @@ public class LoopInterchange extends TransformPass
              
         HashMap<ForLoop,Boolean> loopMap = new HashMap<ForLoop,Boolean>();
         HashMap<ForLoop,Boolean> AlreadyInOrder = new HashMap<ForLoop,Boolean>();
-        
 
         while(iter.hasNext()) {
             Object o = iter.next();
@@ -144,7 +143,7 @@ public class LoopInterchange extends TransformPass
                 */
 
                
-                List<Expression> MemoryOrder = ReusabilityTest(program , loops.get(0), LoopAssnExprs , arrays);
+                List<Expression> MemoryOrder = ReusabilityAnalysis(program , loops.get(0), LoopAssnExprs , arrays , loops);
 
 
                 //If the Original Nest is already in the desired order, no need for further analysis. 
@@ -201,7 +200,6 @@ OuterWhileLoop:
                                
                                     ForLoop loop1 = (ForLoop)loops.get(r);
                                     ForLoop loop2 = (ForLoop)loops.get(k);
-
 
                                     swapLoop( loop1 , loop2);
                                     num_loop_interchange++;
@@ -275,7 +273,6 @@ OuterWhileLoop:
 
 
         }
-
       
         System.out.print("\n");
 
@@ -388,8 +385,8 @@ OuterWhileLoop:
     */
 
 
-    public List ReusabilityTest(Program OriginalProgram, Loop LoopNest ,
-                            List<AssignmentExpression> LoopExprs, List<ArrayAccess> LoopArrays ){
+    public List ReusabilityAnalysis(Program OriginalProgram, Loop LoopNest ,
+                            List<AssignmentExpression> LoopExprs, List<ArrayAccess> LoopArrays, LinkedList<Loop> LoopNestList ){
 
         int i , j ,k , l;
 
@@ -402,6 +399,11 @@ OuterWhileLoop:
        List<Long> scores = new ArrayList<>(); 
        List<Expression> Symbolic_scores = new ArrayList<>();
        Expression IndexOfInnerLoop = null; 
+     
+       DDGraph programDDG = program.getDDGraph();
+       ArrayList<DependenceVector> Loopdpv = new ArrayList<>();
+
+       Loopdpv = programDDG.getDirectionMatrix(LoopNestList);
      
 
        DepthFirstIterator LoopNestiter = new DepthFirstIterator(LoopNest);
@@ -896,7 +898,7 @@ OuterWhileLoop:
 
         Loop_ref_cost.add(Symbolic_SumOfRefCosts);
 
-        Expression result = Symbolic_SumOfRefCosts;                                                          //******************************** Might need arethink */
+        Expression result = Symbolic_SumOfRefCosts;                                                          
 
 
         return result;

@@ -75,44 +75,24 @@ int main()
 			ld1=(b[j][k]-(ld2*x[j-2][k]));
 			ld=(d[j][k]-((ld2*y[j-2][k])+(ld1*x[j-2][k])));
 			ldi=(1.0/ld);
-			f[j][k]=(((f[j][k-1]-(ld2*f[j-2][k]))-(ld1*f[j-1][k]))*ldi);
+			f[j][k]=(((f[j][k]-(ld2*f[j-2][k]))-(ld1*f[j-1][k]))*ldi);
 			x[j][k]=((d[j][k]-(ld1*y[j-1][k]))*ld1);
 			y[j][k]=(e[j][k]*ldi);
 		}
 	}
 	/* Matrix Multiplication kernel */
-	#pragma loop name main#1 
-	#pragma cetus private(i, j, k) 
-	#pragma cetus parallel 
-	#pragma omp parallel for if((10000<(((1L+(3L*n))+((3L*n)*n))+(((3L*m)*n)*n)))) private(i, j, k)
-	for (i=0; i<n; i ++ )
-	{
-		#pragma loop name main#1#0 
-		#pragma cetus private(j, k) 
-		for (k=0; k<n; k ++ )
-		{
-			#pragma loop name main#1#0#0 
-			/* #pragma cetus reduction(+: d[i][j])  */
-			#pragma cetus private(j) 
-			for (j=0; j<m; j ++ )
-			{
-				d[i][j]=(d[i][j]+(a[i][k]*b[k][j]));
-			}
-		}
-	}
-	#pragma loop name main#2 
-	#pragma cetus private(i, j) 
-	#pragma cetus parallel 
-	#pragma omp parallel for if((10000<((1L+(3L*n))+((3L*n)*n)))) private(i, j)
-	for (j=0; j<n; j ++ )
-	{
-		#pragma loop name main#2#0 
-		#pragma cetus private(i) 
-		for (i=0; i<n; i ++ )
-		{
-			a[j][i]=(0.2*((((b[j][i]+b[j-1][i])+b[j][i-1])+b[j+1][i])+b[j][i+1]));
-		}
-	}
+	/*  for(i= 0 ; i < n ; i++){ */
+		/*     for( j = 0 ; j < m; j++){ */
+			/*       for( k = 0 ; k < n; k++){ */
+				/*           d[i][j] = d[i][j] + a[i][k] b[k][j]; */
+			/*       } */
+		/*   } */
+	/* } */
+	/* for( i = 0 ; i < n; i++){ */
+		/*   for( j = 0 ; j < n ;j++){ */
+			/*    a[j][i] = 0.2 (b[j][i] + b[j-1][i] + b[j][i-1] + b[j+1][i] + b[j][i+1]); */
+		/*   } */
+	/* } */
 	_ret_val_0=0;
 	return _ret_val_0;
 }

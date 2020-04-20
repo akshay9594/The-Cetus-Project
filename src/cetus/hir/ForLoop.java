@@ -63,6 +63,8 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
         setBody(body);
     }
 
+   
+
     /* SymbolTable interface */
     public void addDeclaration(Declaration decl) {
         throw new UnsupportedOperationException(
