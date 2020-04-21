@@ -1,5 +1,14 @@
 
 
+/*
+
+Loops to test MIN and MAX Reductions.
+Also loop to test multiple reduction statements with different operators.
+MIN and MAX aren't intrinsic functions in C/C++.
+
+*/
+
+
 #define  MAX(X,Y)  (((X) > (Y)) ? (X) : (Y))
 
 
@@ -22,7 +31,7 @@ int main(){
         b &= a[i];
         d += a[i];
         e *= a[i];
-         maxl = MAX(maxl , a[i]);
+        maxl = MAX(maxl , a[i]);
 
     }
 
@@ -33,16 +42,14 @@ int main(){
         if (a[j] > maxl) 
           maxl = a[j]; 
 
-      //c[i] = minl;
-    
-    }
+      }
 
 
       for( i = 0 ; i < 10000 ;i++){
 
-       minl = (minl < a[i]) ? minl : a[i];
+        minl = (minl < a[i]) ? minl : a[i];
     
-    }
+      }
 
 
 	
