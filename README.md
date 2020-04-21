@@ -30,10 +30,16 @@ Cetus Source to Source compiler improvements being done at University of Delawar
        The directive would look something like:
        
        Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(*: e)reduction(+: d)
+           Earlier Cetus would try to include all the identifiers and operators within one reduction clause.
        
 ### 5. Loop Interchange Pass Added to Cetus
-       Loop Interchange pass with Profitability and Legality analysis along with the ability to handle symbolic
-       loop bounds has been added to cetus, pending some minor changes. Benchmark testing required.
+       a. Loop Interchange legality algorithm had some minor bugs which have been fixed.
+       b. Reusability analysis added to the Loop Interchange pass which determines the 
+          best order of loops in the nest for maximizing reusability of cache lines. 
+       c. Model taken from K.S McKinley’s paper- "Optimizing for Parallelism and Data locality".
+       d. Pass can also handle symbolic loop bounds.
+       My contribution was everything else besides the leglity test.
+
 
     
     
