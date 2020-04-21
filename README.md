@@ -14,7 +14,7 @@ Cetus Source to Source compiler improvements being done at University of Delawar
     
 ### 2. Added support for logical and bitwise scalar reductions
         Scalar reductions of the form x = x op expr, where op is any of:
-        {logical AND - && , logical OR- || , Bitwise OR - | , Biwise AND- & , Bitwise XOR - ^}. 
+        {logical AND - && , logical OR- || , Bitwise OR - | , Bitwise AND- & , Bitwise XOR - ^}. 
         Also added support for Bitwise assignment operators of the form: 
         {Bitwise AND - &= , Bitwise OR - |= , Bitwise XOR - ^=}
         
@@ -26,7 +26,7 @@ Cetus Source to Source compiler improvements being done at University of Delawar
 ### 4. Support for Multiple reductions using different operators
        Cetus had no issue recognizing multiple unique reduction statements within the same loop. But Cetus could
        not create a separate reduction clause for each reduction-identifier within the same directive as per the
-       lates OpenMP specification. The support for the same has now has been added. 
+       latest OpenMP specification. The support for the same has now been added. 
        The directive would look something like:
        
        Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(*: e)reduction(+: d)
