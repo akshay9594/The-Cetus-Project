@@ -42,6 +42,13 @@ wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
    - 3 additional Zanabazar Square characters
 */
 /* We do not support C11 <threads.h>.  */
+/*
+
+
+Different loops to test the Loop Interchange pass in Cetus.
+
+
+*/
 int a[10000][10000], c[10000], b[10000][10000], d[10000][10000];
 int work[10000][10000][10000], coef2[1000][10000], coef4[10000][10000];
 int S[10000], x[10000][10000], y[10000][10000], f[10000][10000], e[10000][10000];
@@ -51,24 +58,42 @@ int main()
 	int _ret_val_0;
 	n=10000;
 	r=1000;
-	/* for(i = 0 ; i < 10000 ;i++){ */
-		/*   for( j = 0 ; j < 10000 ;j++){ */
-			/*     b[j][i] = 2 b[j+1][i-1]; */
-		/*   } */
-	/* } */
-	/* Taken from ARC2D (Perfect Benchmarks) */
-	/* for(k = 0 ; k < 10000 ;k++){ */
-		/*     for(j = 0 ; j < 10000; j++){ */
-			/*       work[j][k][3] = coef2[j][k] work[j][k][1] - coef4[j][k] * work[j][k][2]; */
-		/*     } */
-	/* } */
-	/* From ARC2D Perfect benchmarks */
 	#pragma loop name main#0 
+	#pragma cetus private(i, j) 
+	for (i=0; i<10000; i ++ )
+	{
+		#pragma loop name main#0#0 
+		#pragma cetus private(j) 
+		#pragma cetus parallel 
+		#pragma omp parallel for private(j)
+		for (j=0; j<10000; j ++ )
+		{
+			b[j][i]=(2*b[j+1][i-1]);
+		}
+	}
+	/* Taken from ARC2D (Perfect Benchmarks) */
+	#pragma loop name main#1 
+	#pragma cetus private(j, k) 
+	#pragma cetus parallel 
+	#pragma omp parallel for private(j, k)
+	for (j=0; j<10000; j ++ )
+	{
+		#pragma loop name main#1#0 
+		#pragma cetus private(k) 
+		for (k=0; k<10000; k ++ )
+		{
+			work[j][k][3]=((coef2[j][k]*work[j][k][1])-(coef4[j][k]*work[j][k][2]));
+		}
+	}
+	/* From ARC2D Perfect benchmarks */
+	#pragma loop name main#2 
 	#pragma cetus private(j, k, ld, ld1, ld2, ldi) 
 	for (j=0; j<n; j ++ )
 	{
-		#pragma loop name main#0#0 
+		#pragma loop name main#2#0 
 		#pragma cetus private(k, ld, ld1, ld2, ldi) 
+		#pragma cetus parallel 
+		#pragma omp parallel for if((10000<(1L+(9L*n)))) private(k, ld, ld1, ld2, ldi)
 		for (k=0; k<n; k ++ )
 		{
 			ld2=a[j][k];
@@ -81,18 +106,38 @@ int main()
 		}
 	}
 	/* Matrix Multiplication kernel */
-	/*  for(i= 0 ; i < n ; i++){ */
-		/*     for( j = 0 ; j < m; j++){ */
-			/*       for( k = 0 ; k < n; k++){ */
-				/*           d[i][j] = d[i][j] + a[i][k] b[k][j]; */
-			/*       } */
-		/*   } */
-	/* } */
-	/* for( i = 0 ; i < n; i++){ */
-		/*   for( j = 0 ; j < n ;j++){ */
-			/*    a[j][i] = 0.2 (b[j][i] + b[j-1][i] + b[j][i-1] + b[j+1][i] + b[j][i+1]); */
-		/*   } */
-	/* } */
+	#pragma loop name main#3 
+	#pragma cetus private(i, j, k) 
+	#pragma cetus parallel 
+	#pragma omp parallel for if((10000<(((1L+(3L*n))+((3L*n)*n))+(((3L*m)*n)*n)))) private(i, j, k)
+	for (i=0; i<n; i ++ )
+	{
+		#pragma loop name main#3#0 
+		#pragma cetus private(j, k) 
+		for (k=0; k<n; k ++ )
+		{
+			#pragma loop name main#3#0#0 
+			/* #pragma cetus reduction(+: d[i][j])  */
+			#pragma cetus private(j) 
+			for (j=0; j<m; j ++ )
+			{
+				d[i][j]=(d[i][j]+(a[i][k]*b[k][j]));
+			}
+		}
+	}
+	#pragma loop name main#4 
+	#pragma cetus private(i, j) 
+	#pragma cetus parallel 
+	#pragma omp parallel for if((10000<((1L+(3L*n))+((3L*n)*n)))) private(i, j)
+	for (j=0; j<n; j ++ )
+	{
+		#pragma loop name main#4#0 
+		#pragma cetus private(i) 
+		for (i=0; i<n; i ++ )
+		{
+			a[j][i]=(0.2*((((b[j][i]+b[j-1][i])+b[j][i-1])+b[j+1][i])+b[j][i+1]));
+		}
+	}
 	_ret_val_0=0;
 	return _ret_val_0;
 }

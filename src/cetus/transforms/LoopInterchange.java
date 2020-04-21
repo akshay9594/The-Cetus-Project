@@ -226,27 +226,7 @@ OuterWhileLoop:
 
 
                                     if(PermutedLoopOrder.equals(MemoryOrder)){
-
-
-                                    //Do not parallelize innermost loop in a loop nest of depth 2, even if it is parallelizable.
-                        
-                                            if(innerLoops.size() == 2 ){
-
-                                                ForLoop innerloop = (ForLoop)innerLoops.get(1);
-
-                                                DDTDriver ddt = new DDTDriver(program);
-                                                ddt.alias_analysis = new AliasAnalysis(program);
-                                                DDGraph loopddg = ddt.analyzeLoopsForDependence(innerloop);
-
-                                                if(!loopddg.checkLoopCarriedDependence(innerloop)){
-                                                    LoopsNottoParallelize.add(innerloop);
-                                            
-                                                    System.out.println("\n[LoopInterchange] Loop: " + LoopTools.getLoopName(outermostLoop) + 
-                                                                        " has loop carried dependencies , profitable not to parallelize loop: " +
-                                                                        LoopTools.getLoopName((ForLoop)innerLoops.get(1)));    
-                                                    loopMap.put(l, true);  
-                                                } 
-                                            } 
+                    
 
                                         loopMap.put(l, true); 
                                         icFlag = false;

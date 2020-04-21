@@ -220,13 +220,6 @@ public class LoopParallelizationPass extends AnalysisPass {
                     !nested_parallelism) {
                     continue;
                 }
-
-
-                // Do not try to parallelize loops determined "Not to parallelize" by the Loop
-                // Loop Interchange pass based on profitability test
-                if(LoopInterchange.LoopsNottoParallelize.contains(l)){
-                    continue;
-                }
                
                 is_parallel = true;
                 if (LoopTools.containsBreakStatement(l)) {
