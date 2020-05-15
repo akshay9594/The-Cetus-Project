@@ -59,6 +59,8 @@ tryAgain:
 		resetText();
 		try {   // for char stream error handling
 			try {   // for lexical error handling
+
+
 				if ((LA(1)=='#') && (LA(2)=='i') && (LA(3)=='n')) {
 					mInclude(true);
 					theRetToken=_returnToken;
@@ -83,6 +85,7 @@ tryAgain:
 					mNewline(true);
 					theRetToken=_returnToken;
 				}
+
 				else {
 					if (LA(1)==EOF_CHAR) {uponEOF(); _returnToken = makeToken(Token.EOF_TYPE);}
 				else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
@@ -95,7 +98,7 @@ tryAgain:
 				return _returnToken;
 			}
 			catch (RecognitionException e) {
-				
+				//System.out.println("LA(1) = " + Integer.toString(LA(1)) + " , LA(2) = " + Integer.toString(LA(2))  +"\n");
 				throw new TokenStreamRecognitionException(e);
 			}
 		}

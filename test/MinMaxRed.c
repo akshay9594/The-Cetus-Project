@@ -10,16 +10,16 @@
 
 int main(){
 
-    int a[10000] , c[10000];
+    int a[10000] , c[10000] , b[10000][10000], p[10000][10000] , q[10000][10000];
 
     
-    int b = 1 ,i , maxl = 1 , minl = 1000 , d , e;
+    int m[10000] ,i , j , k, maxl = 1 , minl = 1000 , d , e , len , n;
 
     int x1,x2,t1,t2,t3,t4,l,sx,sy;
 
     for( i = 0 ; i < 10000 ;i++){
 
-        b &= a[i];
+
         d += a[i];
         e *= a[i];
          maxl = MAX(maxl , a[i]);
@@ -43,7 +43,7 @@ int main(){
        minl = (minl < a[i]) ? minl : a[i];
     
     }
-
+     
 
 	
    return 0;

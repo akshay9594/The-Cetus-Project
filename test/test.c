@@ -1,113 +1,68 @@
 
 
-#include "stdio.h"
-#include <omp.h>
-#include "stdlib.h"
+// #include "stdio.h"
+// #include<stdlib.h>
+// #include "omp.h"
 
+#define  MAX(X,Y)  (((X) > (Y)) ? (X) : (Y))
 
+  int x = 1;
 
-#include <stdio.h>
-#include <sys/time.h>
+  float y = 0.0;
 
-
-#define r 10000
-#define c 10000
-
-int d[r][c];
-int a[r][c];
-int b[r][c];
-int x[r][c];
-int y[r][c];
-int f[r][c];
-int e[r][c];
-int work[r][c][3];
-int coef2[r][c] , coef4[r][c];
+  int c[1000][1000];
+  int myArray[10000];
+  int p[1000][1000] , b[1000][1000];
 
 int main(){
 
-   struct timeval start, end;
-    int i , j , k , ld1 =1  , ld2 =1  , ldi =1  ,ld =1;
+   int LX1 = 5 , idel[2400][6][6][6], ntemp , iel ;
 
-   
-    for(i = 0 ; i < r ;i++){
+  double a;
 
-        for(j = 0 ; j < c ; j++){
+  int j ,k;
 
-            a[i][j] = j + 1;
 
-            b[i][j] = j + 3;
-
-            x[i][j] = j + 2;
-
-            y[i][j] = j + 4;
-
-            d[i][j] = j;
-
-            e[i][j] = j;
-
-            f[i][j] = j + 6;
-
-        }
+  for ( int i=0; i<10000; i++)
+  {
+    a = 2.0; // Or something non-trivial justifying the parallelism...
+    for ( int n = 0; n<10000; n++)
+    {
+      myArray[n] += a;
     }
+  }
 
-  
+ 
 
+  for(int i = 0 ; i < 1000; i++){
 
-    gettimeofday(&start, NULL);
+    for( j = 0 ; j < 1000; j++){
 
-    //    for(j = 8 ; j < c ; j++){
+      for( k = 0 ; k < 10000; k++){
 
-    //       #pragma omp parallel for private( k, ld, ld1, ld2, ldi)
+        c[i][j] += p[i][k] * b[k][j];
+       c[i][j+1] += p[i][k] * b[k][j+1];
 
-    //       for(k = 0 ; k < r ; k++){
-
-    //           ld2 = a[j][k];
-    //           ld1 = b[j][k] - ld2 * x[j-2][k];
-    //           ld =  d[j][k] - (ld2 * y[j-2][k] + ld1 * x[j-2][k]);
-    //           ldi = 1.0/ld;
-    //           f[j][k] = (f[j][k] - ld2 * f[j-2][k] - ld1 * f[j-1][k]) * ldi;
-    //           x[j][k] = (d[j][k] - ld1 * y[j-1][k]) * ld1;
-    //           y[j][k] = e[j][k]* ldi;
-    //       }
-    // }
-
-    //Taken from ARC2D (Perfect Benchmarks)
-   
-      for(j = 0 ; j < 15000 ;j++){
-
-          for(k = 0 ; k < 15000; k++){
-
-            work[j][k][3] = coef2[j][k] * work[j][k][1] - coef4[j][k] * work[j][k][2];
-
-          }
       }
 
 
-    
-    //   for(k= 0 ; k < 1800 ; k++){
+    }
 
-    //     for( i = 0 ; i < 1800; i++){
+  }
 
-    //       for( j = 0 ; j < 1800; j++){
+  
 
-    //           d[i][j] = d[i][j] + a[i][k] * b[k][j];
 
-    //       }
+    // for (i=0; i < len; i++) {
+      
+    //   c[j]+=a[i]*m[i];
 
-    //   }
-
+    //   j++;
     // }
 
-    gettimeofday(&end, NULL);
- 
-    double time_taken; 
-  
-    time_taken = (end.tv_sec - start.tv_sec) * 1e6; 
-    time_taken = (time_taken + (end.tv_usec -  
-                              start.tv_usec)) * 1e-6; 
- 
-    printf("Time elpased is %f seconds \n", time_taken);
 
 
-   
+	
+   return 0;
 }
+

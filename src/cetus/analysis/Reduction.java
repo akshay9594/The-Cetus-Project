@@ -64,6 +64,8 @@ public class Reduction extends AnalysisPass {
 
     private Expression loop_index;
 
+    List<Expression> LoopNestIndices = new ArrayList<>();
+
     private static final String pass_name = "[Reduction]";
 
     public Reduction(Program program) {
@@ -90,7 +92,28 @@ public class Reduction extends AnalysisPass {
         DFIterator<ForLoop> iter =
                 new DFIterator<ForLoop>(program, ForLoop.class);
         while (iter.hasNext()) {
+
+
             ForLoop loop = iter.next();
+
+            LinkedList<Loop> innerLoopList = LoopTools.calculateInnerLoopNest(loop);
+
+            ListIterator innerLoopListiter = innerLoopList.listIterator();
+
+            if(innerLoopList.size() > 1){
+
+                while(innerLoopListiter.hasNext()){
+
+                    ForLoop innerLoop = (ForLoop)innerLoopListiter.next();
+
+                    Expression id = LoopTools.getIndexVariable(innerLoop);
+
+                    if(!LoopNestIndices.contains(id))
+                        LoopNestIndices.add(id);
+
+                }
+            }
+
 
             BinaryExpression b = (BinaryExpression)loop.getCondition();
             loop_index = b.getLHS();
@@ -131,6 +154,17 @@ public class Reduction extends AnalysisPass {
     // and a Statement
     public Map<String, Set<Expression>> analyzeStatement(Statement istmt) {
         debug_tab++;
+
+        Expression loopid = null;
+
+        if(istmt instanceof ForLoop){
+
+            ForLoop current_loop = (ForLoop)istmt;
+
+            loopid = LoopTools.getIndexVariable(current_loop);
+
+        }
+
         if (debug_level > 1) {
             System.out.println(
                     "------------ analyzeStatement strt ------------\n");
@@ -184,6 +218,9 @@ public class Reduction extends AnalysisPass {
 
         }
 
+
+
+       // System.out.println( "loop:\n" + istmt + "\n" + "rmap: " + rmap + "\n");
 
     //Following code block is for detecting possible MIN or MAX reductions in if-statements
 
@@ -298,6 +335,8 @@ public class Reduction extends AnalysisPass {
 
     
         //System.out.println("Return Ref Map: " + RefMap +"\n");
+       
+
         // final reduction map that maps a reduction operator to a set of
         // reduction variables
         Map<String, Set<Expression>> fmap =
@@ -311,11 +350,19 @@ public class Reduction extends AnalysisPass {
                 if (RefMap.get(candidate_symbol) == null) {
                     continue;
                 }
-                if (!RefMap.get(candidate_symbol).isEmpty() && !op.equals("max") && !op.equals("min")) {                // Reference of min max candidate are checked in find_reduction
-                    PrintTools.printlnStatus(2, pass_name, candidate,                                                   // for min , max
-                            "is referenced in the non-reduction statement!");
+                // if (!RefMap.get(candidate_symbol).isEmpty() && !op.equals("max") && !op.equals("min")) {                // Reference of min max candidate are checked in find_reduction
+                //     PrintTools.printlnStatus(2, pass_name, candidate,                                                   // for min , max
+                //             "is referenced in the non-reduction statement!");
+                //             System.out.println("candidate: " + candidate +" , min max\n");
+                //     remove_flag = true;
+                // }
+
+                if(LoopNestIndices.contains(candidate)){
+
                     remove_flag = true;
                 }
+
+
                 if (alias != null) {
                     DFIterator<Statement> stmt_iter =
                             new DFIterator<Statement>(istmt, Statement.class);
@@ -328,6 +375,8 @@ public class Reduction extends AnalysisPass {
                                         o, candidate_symbol, RefMap.keySet())) {
                                 PrintTools.printlnStatus(2, pass_name,
                                         candidate, "is Aliased!");
+                                
+                                //System.out.println("candidate: " + candidate +" , is aliased\n");
                                 remove_flag = true;
                                 break;
                             }
@@ -337,6 +386,8 @@ public class Reduction extends AnalysisPass {
                 if (side_effect_set.contains(candidate_symbol)) {
                     PrintTools.printlnStatus(2, pass_name,
                             candidate, "has side-effect!");
+
+                    //System.out.println("candidate: " + candidate +" , has side-effect\n");
                     remove_flag = true;
                 }
                 if (candidate instanceof ArrayAccess &&
@@ -361,9 +412,11 @@ public class Reduction extends AnalysisPass {
                                 "No self-carried-output dependence in",
                                 candidate);
                         remove_flag = true;
+                        //System.out.println("candidate: " + candidate +" , has self-output dependence\n");
                     }
                     if (option == SCALAR_REDUCTION) {
                         remove_flag = true;
+                       // System.out.println("candidate: " + candidate +" , scalar reduction\n");
                     }
                 }
                 if (remove_flag == false) {
@@ -383,6 +436,9 @@ public class Reduction extends AnalysisPass {
                     "------------ analyzeStatement done ------------\n");
         }
         debug_tab--;
+
+        //System.out.println("\nfmap:\n" + fmap +"\n");
+
 
         return fmap;
     }
@@ -589,6 +645,8 @@ public class Reduction extends AnalysisPass {
         Expression rhse = expr.getRHS();
         Expression lhse_removed_rhse = null;
         String reduction_op = null;
+        Expression base_array_name = null;
+
         if (lhse instanceof IDExpression || lhse instanceof ArrayAccess ||
             lhse instanceof AccessExpression) {
             if (assign_op == AssignmentOperator.NORMAL) {
@@ -680,7 +738,7 @@ public class Reduction extends AnalysisPass {
                     isReduction = true;
                 }
             } else if (lhse instanceof ArrayAccess) {
-                Expression base_array_name = ((ArrayAccess)lhse).getArrayName();
+                base_array_name = ((ArrayAccess)lhse).getArrayName();
                 if (base_array_name instanceof Identifier) {
                     Identifier id = (Identifier)base_array_name;
                     if (!IRTools.containsSymbol(
@@ -688,6 +746,8 @@ public class Reduction extends AnalysisPass {
                         isReduction = true;
                     }
                 }
+
+               // lhse = base_array_name;
             } else if (lhse instanceof AccessExpression) {
                 Symbol lhs_symbol = SymbolTools.getSymbolOf(lhse);
                 if (!IRTools.containsSymbol(lhse_removed_rhse, lhs_symbol)) {
@@ -696,14 +756,21 @@ public class Reduction extends AnalysisPass {
             }
         }
         if (isReduction) {
+
+            Set <Expression> expr_set = rmap.get(reduction_op);
+          
             add_to_rmap(rmap, reduction_op, lhse);
+
             for (Expression e : IRTools.findExpressions(expr, lhse)) {
                 add_to_cmap(cmap, SymbolTools.getSymbolOf(lhse),
                         System.identityHashCode(e));
-            }
+            } 
             PrintTools.printlnStatus(2, pass_name,
                     "candidate = (", reduction_op, ":", lhse, ")");
         }
+
+       // System.out.println("rmap: " + rmap + " , cmap: " + cmap +"\n");
+      
     }
 
 

@@ -59,7 +59,6 @@ public class OmpAnnotation extends PragmaAnnotation {
 
             Map<String, Set> reduction_map = get(key);
 
-
             for (String op : reduction_map.keySet()) {
                 sb.append(op);
                 sb.append(": ");

@@ -42,81 +42,66 @@ wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
    - 3 additional Zanabazar Square characters
 */
 /* We do not support C11 <threads.h>.  */
+/* #include "stdio.h" */
+/* #include<stdlib.h> */
+/* #include "omp.h" */
 int x = 1;
 float y = 0.0;
+int c[1000][1000];
+int myArray[10000];
+int p[1000][1000], b[1000][1000];
 int main()
 {
-	int a[10000], c[10000], b[10000][10000], p[10000][10000], q[10000][10000];
-	int m[10000], i, j, k, maxl, minl, d, e, len, n;
-	int x1, x2, t1, t2, t3, t4, l, sx, sy;
-	int j;
+	int LX1, idel[2400][6][6][6], ntemp, iel;
+	double a;
+	int j, k;
+	int i;
 	int _ret_val_0;
-	maxl=1;
-	minl=1000;
-	#pragma cetus private(i) 
+	LX1=5;
+	#pragma cetus private(a, i) 
 	#pragma loop name main#0 
-	#pragma cetus reduction(max: maxl) reduction(*: e) reduction(+: d) 
+	#pragma cetus reduction(+: myArray[n]) 
 	#pragma cetus parallel 
-	#pragma omp parallel for private(i) reduction(max: maxl)reduction(*: e)reduction(+: d)
+	#pragma omp parallel for private(a, i) reduction(+: myArray[n])
 	for (i=0; i<10000; i ++ )
 	{
-		d+=a[i];
-		e*=a[i];
-		maxl=((maxl>a[i]) ? maxl : a[i]);
-	}
-	#pragma cetus private(j) 
-	#pragma loop name main#1 
-	#pragma cetus reduction(max: maxl) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(j) reduction(max: maxl)
-	for (j=0; j<10000; j ++ )
-	{
-		if (a[j]>maxl)
+		int n;
+		a=2.0;
+		/* Or something non-trivial justifying the parallelism... */
+		#pragma cetus private(n) 
+		#pragma loop name main#0#0 
+		#pragma cetus parallel 
+		#pragma omp parallel for private(n)
+		for (n=0; n<10000; n ++ )
 		{
-			maxl=a[j];
+			myArray[n]+=a;
 		}
-		/* c[i] = minl; */
-	}
-	#pragma cetus private(i) 
-	#pragma loop name main#2 
-	#pragma cetus reduction(min: minl) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(i) reduction(min: minl)
-	for (i=0; i<10000; i ++ )
-	{
-		minl=((minl<a[i]) ? minl : a[i]);
 	}
 	#pragma cetus private(i, j, k) 
-	#pragma loop name main#3 
-	#pragma cetus reduction(+: j, k, p) 
+	#pragma loop name main#1 
 	#pragma cetus parallel 
-	#pragma omp parallel for if((10000<(((1L+(3L*((-2L+n)/2L)))+((3L*((-2L+n)/2L))*((-2L+n)/2L)))+(((5L*((-2L+n)/2L))*((-2L+n)/2L))*((-2L+n)/2L))))) private(i, j, k) reduction(+: j, k, p)
-	for (i=0; i<(n-1); i+=2)
+	#pragma omp parallel for private(i, j, k)
+	for (i=0; i<1000; i ++ )
 	{
 		#pragma cetus private(j, k) 
-		#pragma loop name main#3#0 
-		#pragma cetus reduction(+: k, p) 
+		#pragma loop name main#1#0 
+		#pragma cetus reduction(+: c[i][j+1]) 
 		#pragma cetus parallel 
-		#pragma omp parallel for if((10000<((1L+(3L*((-2L+n)/2L)))+((5L*((-2L+n)/2L))*((-2L+n)/2L))))) private(j, k) reduction(+: k, p)
-		for (j=0; j<(n-1); j+=2)
+		#pragma omp parallel for private(j, k) reduction(+: c[i][j+1])
+		for (j=0; j<1000; j ++ )
 		{
 			#pragma cetus private(k) 
-			#pragma loop name main#3#0#0 
-			#pragma cetus reduction(+: p) 
+			#pragma loop name main#1#0#0 
+			#pragma cetus reduction(+: c[i][j+1], c[i][j]) 
 			#pragma cetus parallel 
-			#pragma omp parallel for if((10000<(1L+(5L*((-2L+n)/2L))))) private(k) reduction(+: p)
-			for (k=0; k<(n-1); k+=2)
+			#pragma omp parallel for private(k) reduction(+: c[i][j+1], c[i][j])
+			for (k=0; k<10000; k ++ )
 			{
-				p[i][j]+=((q[i][j]*a[k])+(c[k]*b[k+1][j]));
-				p[i][j+1]+=((q[i][k]*b[k][j+1])+(a[k+1]*b[k+1][j+1]));
-				p[i+1][j]+=(q[i+1][k]*b[k][j]);
+				c[i][j]+=(p[i][k]*b[k][j]);
+				c[i][j+1]+=(p[i][k]*b[k][j+1]);
 			}
 		}
 	}
-	/* for (i=0; i < len; i++) { */
-		/*   c[j]+=a[i]m[i]; */
-		/*   j++; */
-	/* } */
 	_ret_val_0=0;
 	return _ret_val_0;
 }

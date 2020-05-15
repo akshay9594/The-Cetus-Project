@@ -3115,7 +3115,7 @@ inputState.guessing--;
 		//Initializer binit=null;
 		Object binit = null;
 		Expression expr1=null;
-		Expression initial_expr;
+		Expression initial_expr = null;
 		
 		
 		try {      // for error handling
@@ -3287,6 +3287,7 @@ inputState.guessing--;
 		  loop_decl =  new VariableDeclaration(dspec, decl_for_global);
 
 	
+		 
 
          if(loop_idex_list.contains(idex_for)){
 
@@ -5175,6 +5176,7 @@ inputState.guessing--;
 
 						//decl=declaration();
 						expr1 = ForinitDecl();
+						
 					}
 					else if ((_tokenSet_68.member(LA(1))) && (_tokenSet_72.member(LA(2)))) {
 					}
@@ -5189,6 +5191,8 @@ inputState.guessing--;
 				}
 				
 				}
+
+
 				{
 				switch ( LA(1)) {
 				case ID:
@@ -5263,22 +5267,23 @@ inputState.guessing--;
 				}
 				}
 
+				//System.out.println("decl: " + loop_decl + " stmt1: " + stmt1 +"\n");
+
 				match(RPAREN);
-				stmt1=statement();
 				
+				if(loop_decl != null && !loop_decl_list.contains(loop_decl)){
+
+					curr_cstmt.addDeclaration(loop_decl);
+					loop_decl_list.add(loop_decl);
+
+				}
+				stmt1=statement();
+		
 				if ( inputState.guessing==0 ) {
 					
 					if (expr1 != null) {
-					statb = new ForLoop(new ExpressionStatement(expr1), expr2, expr3, stmt1);
+						statb = new ForLoop(new ExpressionStatement(expr1), expr2, expr3, stmt1);
 		  
-					
-
-					if(loop_decl != null && !loop_decl_list.contains(loop_decl)){
-
-						curr_cstmt.addDeclaration(loop_decl);
-						loop_decl_list.add(loop_decl);
-	
-					}
 					} 
 					                                                                                           
 					statb.setLineNumber(sline);                                                                    
