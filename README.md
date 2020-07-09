@@ -5,7 +5,8 @@ Cetus Source to Source compiler improvements being done at University of Delawar
 
 ### 1. Handling of loop index initializations within FOR loop declaration-
         When for loops are declared as- for(int i = 0; i < n; i++), 
-        cetus would remove the initialization of 'i' from it's place and hoist it at the top of the code block.
+        cetus would remove the initialization of 'i' from it's place and 
+        hoist it at the top of the code block.
         The reason for doing so would be the use of underlying cetus principle that- 
         "All variable declarations should appear at the top of the code block". 
         Cetus wouldn't parallelize a loop without knowing the initial value of the loop index.
@@ -24,9 +25,9 @@ Cetus Source to Source compiler improvements being done at University of Delawar
        Conditional operator (?). Some expression restrictions apply.
        
 ### 4. Support for Multiple reductions using different operators
-       Cetus had no issue recognizing multiple unique reduction statements within the same loop. But Cetus could
-       not create a separate reduction clause for each reduction-identifier within the same directive as per the
-       latest OpenMP specification. The support for the same has now been added. 
+       Cetus had no issue recognizing multiple unique reduction statements within the same loop. 
+       But Cetus could not create a separate reduction clause for each reduction-identifier within 
+       the same directive as per the atest OpenMP specification. The support for the same has now been added. 
        The directive would look something like:
        
        Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(*: e)reduction(+: d)
