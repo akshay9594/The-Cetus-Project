@@ -100,7 +100,7 @@ public class Reduction extends AnalysisPass {
 
             ListIterator innerLoopListiter = innerLoopList.listIterator();
 
-            if(innerLoopList.size() > 1){
+            if(innerLoopList.size() >= 1){
 
                 while(innerLoopListiter.hasNext()){
 
@@ -615,6 +615,11 @@ public class Reduction extends AnalysisPass {
         UnaryOperator unary_op = expr.getOperator();
         Expression lhse = expr.getExpression();
         String reduction_op = null;
+
+
+            System.out.println("lhse : " + lhse +" , expr: " + expr +" , indices : " + LoopNestIndices);
+        
+
         if (lhse instanceof IDExpression || lhse instanceof ArrayAccess ||
             lhse instanceof AccessExpression) {
             if (unary_op == UnaryOperator.PRE_INCREMENT ||
@@ -628,6 +633,7 @@ public class Reduction extends AnalysisPass {
             }
         }
         if (isReduction) {
+           
             add_to_rmap(rmap, reduction_op, lhse);
             add_to_cmap(cmap, SymbolTools.getSymbolOf(lhse),
                         System.identityHashCode(lhse));

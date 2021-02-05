@@ -20,7 +20,7 @@ int main(){
 
   double a;
 
-  int j ,k;
+  int i ,j ,k;
 
 
   for ( int i=0; i<10000; i++)
@@ -34,7 +34,7 @@ int main(){
 
  
 
-  for(int i = 0 ; i < 1000; i++){
+  for( i = 0 ; i < 1000; i++){
 
     for( j = 0 ; j < 1000; j++){
 
@@ -51,6 +51,14 @@ int main(){
   }
 
   
+  for( i = 0 ; i < 10000 ; i++){
+
+    for( j = 0 ; j < 10000 ; j++){
+
+      c[i][j] = c[i+1][j+1];
+    }
+
+  }
 
 
     // for (i=0; i < len; i++) {

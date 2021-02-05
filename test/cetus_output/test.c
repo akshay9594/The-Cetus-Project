@@ -1,3 +1,4 @@
+#include <stdlib.h>
 /*
 Copyright (C) 1991-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -54,27 +55,42 @@ int main()
 {
 	int LX1, idel[2400][6][6][6], ntemp, iel;
 	double a;
-	int j, k;
+	int i, j, k;
 	int i;
 	int _ret_val_0;
 	LX1=5;
-	#pragma cetus private(a, i) 
-	#pragma loop name main#0 
-	#pragma cetus reduction(+: myArray[n]) 
 	#pragma cetus parallel 
-	#pragma omp parallel for private(a, i) reduction(+: myArray[n])
-	for (i=0; i<10000; i ++ )
+	#pragma cetus private(a, i) 
+	#pragma omp parallel private(a, i)
 	{
-		int n;
-		a=2.0;
-		/* Or something non-trivial justifying the parallelism... */
-		#pragma cetus private(n) 
-		#pragma loop name main#0#0 
-		#pragma cetus parallel 
-		#pragma omp parallel for private(n)
-		for (n=0; n<10000; n ++ )
+		int * reduce = (int * )malloc(10000*sizeof (int));
+		int reduce_span_0;
+		for (reduce_span_0=0; reduce_span_0<10000; reduce_span_0 ++ )
 		{
-			myArray[n]+=a;
+			reduce[reduce_span_0]=0;
+		}
+		#pragma loop name main#0 
+		#pragma cetus for  
+		#pragma omp for
+		for (i=0; i<10000; i ++ )
+		{
+			int n;
+			a=2.0;
+			/* Or something non-trivial justifying the parallelism... */
+			#pragma cetus private(n) 
+			#pragma loop name main#0#0 
+			for (n=0; n<10000; n ++ )
+			{
+				reduce[n]+=a;
+			}
+		}
+		#pragma cetus critical  
+		#pragma omp critical
+		{
+			for (reduce_span_0=0; reduce_span_0<10000; reduce_span_0 ++ )
+			{
+				myArray[reduce_span_0]+=reduce[reduce_span_0];
+			}
 		}
 	}
 	#pragma cetus private(i, j, k) 
@@ -85,16 +101,12 @@ int main()
 	{
 		#pragma cetus private(j, k) 
 		#pragma loop name main#1#0 
-		#pragma cetus reduction(+: c[i][j+1]) 
-		#pragma cetus parallel 
-		#pragma omp parallel for private(j, k) reduction(+: c[i][j+1])
+		/* #pragma cetus reduction(+: c[i][(j+1)])  */
 		for (j=0; j<1000; j ++ )
 		{
 			#pragma cetus private(k) 
 			#pragma loop name main#1#0#0 
-			#pragma cetus reduction(+: c[i][j+1], c[i][j]) 
-			#pragma cetus parallel 
-			#pragma omp parallel for private(k) reduction(+: c[i][j+1], c[i][j])
+			/* #pragma cetus reduction(+: c[i][(j+1)], c[i][j])  */
 			for (k=0; k<10000; k ++ )
 			{
 				c[i][j]+=(p[i][k]*b[k][j]);
@@ -102,6 +114,23 @@ int main()
 			}
 		}
 	}
+	#pragma cetus private(i, j) 
+	#pragma loop name main#2 
+	for (i=0; i<10000; i ++ )
+	{
+		#pragma cetus private(j) 
+		#pragma loop name main#2#0 
+		#pragma cetus parallel 
+		#pragma omp parallel for private(j)
+		for (j=0; j<10000; j ++ )
+		{
+			c[i][j]=c[i+1][j+1];
+		}
+	}
+	/* for (i=0; i < len; i++) { */
+		/*   c[j]+=a[i]m[i]; */
+		/*   j++; */
+	/* } */
 	_ret_val_0=0;
 	return _ret_val_0;
 }

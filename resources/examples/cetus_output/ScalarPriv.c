@@ -42,49 +42,31 @@ wchar_t uses Unicode 10.0.0.  Version 10.0 of the Unicode Standard is
    - 3 additional Zanabazar Square characters
 */
 /* We do not support C11 <threads.h>.  */
-int x = 1;
-float y = 0.0;
+/*
+Scalar Privatization Example
+
+  The variable t is used temporarily during a single loop iteration. No value
+  of t is used in an iteration other than the one that produced it. Without
+  privatization, executing different iterations in parallel would create
+  conflicts on accesses to t.  Declaring t private gives each thread a separate
+  storage space, avoiding these conflicts.
+
+
+*/
 int main()
 {
-	int a[10000], c[10000], b[10000][10000], p[10000][10000], q[10000][10000];
-	int m[10000], i, j, k, maxl, minl, d, e, len, n;
-	int x1, x2, t1, t2, t3, t4, l, sx, sy;
-	int j;
+	float a[10000], b[10000], t;
+	int i, n;
 	int _ret_val_0;
-	maxl=1;
-	minl=1000;
-	#pragma cetus private(i) 
+	n=10000;
+	#pragma cetus private(i, t) 
 	#pragma loop name main#0 
-	#pragma cetus reduction(max: maxl) reduction(*: e) reduction(+: d) 
 	#pragma cetus parallel 
-	#pragma omp parallel for private(i) reduction(max: maxl)reduction(*: e)reduction(+: d)
-	for (i=0; i<10000; i ++ )
+	#pragma omp parallel for private(i, t)
+	for (i=1; i<n; i ++ )
 	{
-		d+=a[i];
-		e*=a[i];
-		maxl=((maxl>a[i]) ? maxl : a[i]);
-	}
-	#pragma cetus private(j) 
-	#pragma loop name main#1 
-	#pragma cetus reduction(max: maxl) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(j) reduction(max: maxl)
-	for (j=0; j<10000; j ++ )
-	{
-		if (a[j]>maxl)
-		{
-			maxl=a[j];
-		}
-		/* c[i] = minl; */
-	}
-	#pragma cetus private(i) 
-	#pragma loop name main#2 
-	#pragma cetus reduction(min: minl) 
-	#pragma cetus parallel 
-	#pragma omp parallel for private(i) reduction(min: minl)
-	for (i=0; i<10000; i ++ )
-	{
-		minl=((minl<a[i]) ? minl : a[i]);
+		t=(a[i]+b[i]);
+		b[i]=(t+(t*t));
 	}
 	_ret_val_0=0;
 	return _ret_val_0;

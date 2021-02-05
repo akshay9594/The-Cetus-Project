@@ -60,7 +60,7 @@ int main(){
 
    
   // Matrix Multiplication kernel
-     for(i= 0 ; i < n ; i++){
+     for(i= 0 ; i < n ; i++){  
 
         for( j = 0 ; j < m; j++){
 
