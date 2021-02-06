@@ -1,6 +1,18 @@
 # The Cetus Project
 Cetus Source to Source compiler improvements being done at University of Delaware
 
+## Install Instructions:
+        1. Download the Cetus through the green button above or through wget.
+        2. Unpack the Tar file and navigate to the main directory.
+        3. Run the build script through the command - ./build.sh bin
+        4. The cetus executable is created in the bin directory
+        5. Copy and paste the cetus executable in your working directory.
+        6. Run the Cetus executable to see the list of available options.
+        7. To use compile a source code using setus typein-
+                ./cetus [options] [C FILE]
+                E.g. ./cetus [-parallelize-loops=2] [foo.c]
+        8. Inside the resource directory, you can find example programs
+
 ## Bug Fixes and added features
 
 ### 1. Handling of loop index initializations within FOR loop declaration-
