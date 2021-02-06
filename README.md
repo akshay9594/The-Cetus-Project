@@ -42,7 +42,7 @@ Cetus Source to Source compiler improvements being done at University of Delawar
        the same directive as per the atest OpenMP specification. The support for the same has now been added. 
        The directive would look something like:
        
-       Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(*: e)reduction(+: d)
+       Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(+: d)
            Earlier Cetus would try to include all the identifiers and operators within one reduction clause.
        
 ### 5. Loop Interchange Pass Added to Cetus
