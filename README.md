@@ -7,14 +7,13 @@ Cetus Source to Source compiler improvements being done at University of Delawar
         3. Run the build script through the command - ./build.sh bin
         4. The Cetus executable is created in the bin directory
         5. Copy and paste the Cetus executable in your working directory.
-        6. Run the Cetus executable to see the list of available options.
+        6. Run the Cetus executable to see the list of available options and how to enable them.
         7. To compile a source code using Cetus through the command line type-
                 ./cetus [options] [C FILE]
                 E.g. ./cetus -parallelize-loops=2 foo.c
-        8. To see a list of all available options and how to enable them, run ./cetus
-        9. The output file after running Cetus is made available in the cetus_output folder
+        8. The output file after running Cetus is made available in the cetus_output folder
             in your working directory.
-        10. Inside the resource directory, you can find example programs
+        9. Inside the resource directory, you can find example programs
 
 ## Bug Fixes and added features
 
