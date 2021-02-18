@@ -11,7 +11,10 @@ Cetus Source to Source compiler improvements being done at University of Delawar
         7. To compile a source code using Cetus through the command line type-
                 ./cetus [options] [C FILE]
                 E.g. ./cetus -parallelize-loops=2 foo.c
-        8. Inside the resource directory, you can find example programs
+        8. To see a list of all available options and how to enable them, run ./cetus
+        9. The output file after running Cetus is made available in the cetus_output folder
+            in your working directory.
+        10. Inside the resource directory, you can find example programs
 
 ## Bug Fixes and added features
 
