@@ -1,7 +1,7 @@
 # The Cetus Project
 Cetus Source to Source compiler improvements being done at University of Delaware
 
-## Install Instructions:
+## Downloading and Running Cetus:
         1. Download Cetus through the "Download Code" (green button) above or through wget.
         2. Unpack the Zip/Tar file and navigate to the main directory.
         3. Run the build script through the command - ./build.sh bin
