@@ -1,0 +1,45 @@
+You can start Cetus GUI by double-clicking the binary file if your OS supports it. You can also start Cetus GUI by running "java -jar cetusgui.jar" or "java -jar cetusgui.jar -gui" in command line. Starting Cetus GUI through command line should work on all platforms.
+
+Like previous versions, you can still run command line version of Cetus by running "java -jar cetusgui.jar" plus flags (options) and input C file, e.g. "java -jar cetusgui.jar foo.c" for processing C file with the default options; "java -jar cetusgui.jar -parallelize-loops=2 foo.c" for processing C file with the option "parallelize all loops in nests".
+
+You may receive a warning about the option file, when you run our new version first time. Please save your option file again through [Options] -> Advanced options, or delete your old option file.
+
+In this new version, you can use our Cetus remote server to translate your C code for you, especially when you run Cetus on a non-Linux platform. To turn on/off this feature, please go to [Options].
+
+In this new version, you can also compile and run your input C code in sequential mode, compile and run your output OpenMP C code in parallel mode, and calculate the speedup and efficiency. Cetus can also show the charts of running time, speedup and efficiency for different number of threads. Be careful that the running time used for calculating speedup and efficiency is the total execution time of your C code, not just the part which can be translated to parallel code. Since each platform has different C compilers and OpenMP flags, you can change our default ones in [Options] -> Advanced options. In the future, you may be able to compile and run your C code through our Cetus remote server, so you will not need to worry about the platform.
+
+In this new version, we provided you several demo C code. Jacobi.c is a good one for testing speedup and efficiency. You need to click [Save As] to save demo C code as a disk file first though. You can remove any demo C code by running: zip -d cetusgui.jar examples/xxx.c. You can add your demo C code into Cetus by running: jar uf cetusgui.jar examples/xxx.c (xxx.c must be under folder "examples"). You can also unzip cetusgui.jar, add/remove C files, and zip them back to cetusgui.jar (be sure that no another level of cetus folder after re-zip the files).
+
+If you want to translate, compile and run your C code in OpenMP mode by Cetus on Windows, a preprocessor, i.e. Cygwin gcc version 4 (cpp-4.exe), must be installed. However, compiling C code by Cetus with Cygwin on Windows (and Mac) has not been fully tested. Be aware that after installing Cygwin on Windows, the path to cpp-4.exe (e.g. C:\cygwin\bin) must be set in Environment Variables on Windows. Sometimes, you need to reboot your machine to let the path take effect, especially for Cetus GUI version. If you want to compile and run translated C code in OpenMP mode on Windows, you may also need to install libmpfr library in Cygwin. Example command: gcc-4 -fopenmp -o openmp.exe openmp.c.
+
+You need gcc (and cpp, version 4 or higher) or other C preprocessor/compiler on Linux and Mac for translating C code from sequential to parallel and for compiling and running C code. Translating C code by Cetus on Mac has not been fully tested.
+
+We do not have a full documentation for Cetus GUI version yet, but you will see basic balloon tips/help by hanging the cursor over buttons and options.
+
+You can also try our experimental Hub version of Cetus, where you can run Cetus through a web browser. The link is: https://parhub.ecn.purdue.edu. You need to register on it first to use it.
+
+============== Some notes from previous version =============
+
+You need at least Java SE 6 to run the binary version.
+
+Cetus will automatically access cetus.ecn.purdue.edu periodically and remind user if a new version is available.
+
+Turning off all flags sets the following default options (i.e. run "java -jar cetusgui.jar foo.c"). Please click [Help] in GUI or run "java -jar cetusgui.jar -help" to check the meaning of the option values (some of them have been changed since version 1.3.1)
+
+-parser=cetus.base.grammars.CetusCParser
+-induction=3
+-outdir=cetus_output
+-preprocessor=cpp-3.exe -E (for Windows) 
+-preprocessor=cpp -C -I. (for Linux and Mac)
+-privatize=2
+-reduction=2
+-verbosity=0
+-ddt=2
+-parallelize-loops=1
+-ompGen=1
+-alias=1
+-range=1
+-teliminate-branch=1
+-profitable-omp=1
+
+We respect your privacy and will not use or distribute your C code for any purpose, except some possible scientific statistics
