@@ -68,7 +68,7 @@ case "$1" in
   ;;
   javadoc)
   echo "Generating JAVA documents..."
-  javadoc -d api cetus $SRC
+  javadoc -d api $SRC -classpath $ANTLR:$PWD/lib/junit.jar:$PWD/lib/rsyntaxtextarea.jar
   ;;
   clean)
   echo "Cleaning up..."

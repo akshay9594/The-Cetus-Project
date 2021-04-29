@@ -37,6 +37,10 @@ public class LoopInterchange extends TransformPass
         super(program);
     }
 
+    
+    /** 
+     * @return String
+     */
     public String getPassName()
     {
         return new String("[LoopInterchange]");
@@ -213,16 +217,6 @@ OuterWhileLoop:
                                         PermutedLoopOrder.add(LoopTools.getIndexVariable(loops.get(q)));
 
                                     }
-                                    
-                            
-                                    /*
-
-                                    For a Loop Nest of any depth, the innermost loop should not be parallelized under any scenario for
-                                    profitability. The profitability test needs to recognize this. Currently, for a loop nest of depth 2,
-                                    the the loop parallelization pass is trying to parallelize the innermost loop if the outermost loops
-                                    is not parallelizable. This needs to be changed.
-
-                                    */
 
 
                                     if(PermutedLoopOrder.equals(MemoryOrder)){
@@ -302,6 +296,12 @@ OuterWhileLoop:
         return;
     }
 
+    
+    /** 
+     * @param rank
+     * @param loops
+     * @return List<Integer>
+     */
     // Find out which loops could legally be interchanged with innermost loop.
     protected List<Integer> rankByMaxInterchange(List<Integer> rank, List<Loop> loops)
     {
@@ -341,28 +341,34 @@ OuterWhileLoop:
     }
 
 
-    /*
-        Reusability Test to determine the innermost loop in the nest for Max reusability.
-        1. Loop which accesses the least number of cache lines should be the innermost loop.
-        2. To find reusability score , for a loop:
-            (a) Form Reference groups with array accesses
-            (b) Array accesses can be of following types:
-                - Accesses with loop carried or non-loop carried dependencies
-                - Accesses with no loop dependencies
-                - Loop invariant accesses
-            * Refer to K.S. McKinley's paper - 'Optimizing for parallelism and locality' on how the ref groups are formed
-        3. Add the costs in terms of cache lines for each reference group
-           - For an array access w.r.t. candidate innermost loop
-             (a) The array access requires 'trip/Cache Line size' no. of cache lines if the loop index of the 
-                 candidate innermost loop appears on the rightmost dimension of the access(row-major access)
-             (b) The array access requires 1 cache line if it is loop invariant and
-             (c) The array access requires 'trip' no. of cache lines if the loop index of the candidate innermost loop
-                 appears on the leftmost dimension of the access(Column-major access)
-            *trip : Number of iterations of the candidate innermost loop.
-        4. Multiply the Reference group costs with the number of iterations of loops other than the candidate innnermost loop
-        5. Here Cache line size is assumed to be 64.
-        6.Symbolic loop bounds are also supported, though extensive testing needs to be done to ensure accuracy.
-    */
+    /**
+     * Reusability Test to determine the innermost loop in the nest for Max reusability.
+     *         1. Loop which accesses the least number of cache lines should be the innermost loop.
+     *         2. To find reusability score , for a loop:
+     *             (a) Form Reference groups with array accesses
+     *             (b) Array accesses can be of following types:
+     *                 - Accesses with loop carried or non-loop carried dependencies
+     *                 - Accesses with no loop dependencies
+     *                 - Loop invariant accesses
+     *             * Refer to K.S. McKinley's paper - 'Optimizing for parallelism and locality' on how the ref groups are formed
+     *         3. Add the costs in terms of cache lines for each reference group
+     *            - For an array access w.r.t. candidate innermost loop
+     *              (a) The array access requires 'trip/Cache Line size' no. of cache lines if the loop index of the
+     *                  candidate innermost loop appears on the rightmost dimension of the access(row-major access)
+     *              (b) The array access requires 1 cache line if it is loop invariant and
+     *              (c) The array access requires 'trip' no. of cache lines if the loop index of the candidate innermost loop
+     *                  appears on the leftmost dimension of the access(Column-major access)
+     *             *trip : Number of iterations of the candidate innermost loop.
+     *         4. Multiply the Reference group costs with the number of iterations of loops other than the candidate innnermost loop
+     *         5. Here Cache line size is assumed to be 64.
+     *         6.Symbolic loop bounds are also supported, though extensive testing needs to be done to ensure accuracy.
+     * @param OriginalProgram - The program
+     * @param LoopNest    - The loop nest to be analyzed
+     * @param LoopExprs   - The expressions in the loop body
+     * @param LoopArrays  - All array accesses in the loop body
+     * @param LoopNestList - List of loops in the loop nest 
+     * @return    - - Order of the loops in the nest for max reusability
+     */
 
 
     public List ReusabilityAnalysis(Program OriginalProgram, Loop LoopNest ,
@@ -755,13 +761,16 @@ OuterWhileLoop:
 
     }
 
-
-
-
-    /*
-    Following test determines if in the candidate loop permutation, the loop with max reuse is at the 
-    innermost position. If that's the case, the loop permutation is profitable.
-    */
+    /** 
+     * Following test determines if in the candidate loop permutation, the loop with max reuse is at the
+     * innermost position. If that's the case, the loop permutation is profitable.
+     * @param loop1     - 1st loop in the permutation
+     * @param loop2     - 2nd loop in the permutation
+     * @param LoopNest  - The loop nest with the 2 loops
+     * @param InnerLoopidx  - Loop index of the inner loop in the permutation
+     * @return              - true if profitable, false otherwise
+     */
+    
 
     private boolean isprofitable(ForLoop loop1 , ForLoop loop2 , Loop LoopNest , Expression InnerLoopidx){
 
@@ -823,11 +832,15 @@ OuterWhileLoop:
     }
 
 
-    /*
-        Determines the cost in terms of cache lines for the loop. 
-        Add the costs of all the reference groups and multiply with the iteration count
-        of the loops other than the candidate innermost loop.
-    */
+    /**
+     * Determines the cost in terms of cache lines for the loop. 
+     * Add the costs of all the reference groups and multiply with the iteration count
+     * of the loops other than the candidate innermost loop.
+     * @param ReferenceCosts    - Cost of Ref groups
+     * @param LoopNestIterCount - Number of iterations of each loop in the nest
+     * @param CurrentLoop       - Loop index of current loop
+     * @return                  - Loop cost in terms of cache lines accessed
+     */
 
     protected long LoopCost(ArrayList ReferenceCosts , HashMap LoopNestIterCount , Expression CurrentLoop){
 
@@ -855,6 +868,12 @@ OuterWhileLoop:
     }
 
 
+    
+    /** 
+     * Symbolic loop cost. Same as the routine to calculate loop cost with 
+     * long loop bounds.
+     */
+    
     protected Expression SymbolicLoopCost(ArrayList ReferenceCosts , HashMap LoopNestIterCount , Expression CurrentLoop){
 
         int i;
@@ -887,13 +906,17 @@ OuterWhileLoop:
     }
 
 
-    /*
-
-        Following method forms reference groups of Array Accesses for each loop in the Nest.
-        1. Criteria for 2 references to be in the same group depend on whether they have dependencies (Loop carrried and Non Loop Carried).
-        2. Criteria for forming groups have been derived from the paper - "Optimizing for Parallelism and Data Locality" - K.S Mckinley
-
-    */
+    
+    /** 
+     * Following method forms reference groups of Array Accesses for each loop in the Nest.
+     * 1. Criteria for 2 references to be in the same group depend on whether they have dependencies (Loop carrried and Non Loop Carried).
+     * 2. Criteria for forming groups have been derived from the paper - "Optimizing for Parallelism and Data Locality" - K.S Mckinley
+     * @param CandidateLoop   - The loop with the array accesses
+     * @param LoopBodyArrays  - Arrays in the loop body
+     * @param OriginalLoopNestOrder - Original order of the loops
+     * @return    - list of reference groups
+     */
+    
 
     private static List RefGroup( Loop CandidateLoop, List<ArrayAccess> LoopBodyArrays , List<Expression> OriginalLoopNestOrder){
             
@@ -1015,7 +1038,6 @@ OuterWhileLoop:
     }
 
 
-    // Returns a Mapping of the Loops to their corresponding iteration count
  
     private HashMap LoopIterationMap(Loop LoopNest)
 
@@ -1097,10 +1119,6 @@ OuterWhileLoop:
     }
 
 
-
-  
-
-    /* if all upperbound, lowerbound and increment are constnant, we can decide by number of iterations */
     protected List<Integer> rankByNumOfIteration(List<Integer> rank, List<Loop> loops)
     {
         int i, rankSize;
@@ -1145,6 +1163,7 @@ OuterWhileLoop:
         return result;
     }
 
+    
     protected int getRank2(List<Integer> rank, List<Expression> expList, List<Loop> loops)
     {
         int i;
@@ -1163,9 +1182,6 @@ OuterWhileLoop:
         return result.get(result.size()-1);
     }
 
-   
-   
-      //  Safe to say that this method is used to determine number of loop interchanges possible in a loop nest
     
     protected List<Integer> getRank(List<ArrayAccess> array , List<Expression> expList, int n)
     {
@@ -1221,7 +1237,14 @@ OuterWhileLoop:
 
    
 
-
+    
+    /** 
+     * Determines if the access is a stride 1 access
+     * @param Expr - Input Expression
+     * @param Var - LoopIndex
+     * @return    -  boolean
+     */
+    //Determines if an access is a stride 1 access
     private boolean UnitStride(Expression Expr , Expression Var)
 
     {
@@ -1268,6 +1291,12 @@ OuterWhileLoop:
     }
 
     
+  
+  /** 
+   * Performs the actual swapping of loops
+   * @param loop1 - Input loop to be swapped
+   * @param loop2 - Input loop to be swapped
+   */
 
     public void swapLoop(ForLoop loop1, ForLoop loop2) 
     {
@@ -1281,11 +1310,14 @@ OuterWhileLoop:
         return;
     }
 
+   /**
+    * Check legality of loop interchange between src and target. Both src and target are in the nest and src is outer than target
+    * @param nest   - The input loop nest
+    * @param src    - Rank of the source loop
+    * @param target - Rank of the target loop
+    * @return       - If two loops can be interchanged or not
+    */
 
-  
-
-   
-    /* Check legality of loop interchange between src and target. Both src and target are in nest loops and src is outer than target */
     public boolean isLegal(LinkedList<Loop> nest, int src, int target)
     {
         int i, j, next;
