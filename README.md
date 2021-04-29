@@ -41,11 +41,13 @@ Cetus Source to Source compiler improvements being done at University of Delawar
 ### 4. Support for Multiple reductions using different operators
        Cetus had no issue recognizing multiple unique reduction statements within the same loop. 
        But Cetus could not create a separate reduction clause for each reduction-identifier within 
-       the same directive as per the atest OpenMP specification. The support for the same has now been added. 
+       the same directive as per the atest OpenMP specification. 
+       The support for the same has now been added. 
        The directive would look something like:
        
-       Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)reduction(+: d)
-           Earlier Cetus would try to include all the identifiers and operators within one reduction clause.
+       Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)
+           Earlier Cetus would try to include all the identifiers and operators 
+           within one reduction clause.
        
 ### 5. Loop Interchange Pass Added to Cetus
        a. Loop Interchange legality algorithm had some minor bugs which have been fixed.
