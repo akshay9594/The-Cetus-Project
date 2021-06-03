@@ -82,7 +82,7 @@ case "$1" in
   cat > bin/cetus << EOF
 #!/bin/sh
 # This file was generated automatically by build.sh.
-java -cp $classpath -Xmx1g cetus.exec.Driver \$*
+java -cp $classpath -Xmx1g omp2gpu.exec.OMP2GPUDriver \$*
 EOF
   chmod 755 bin/cetus
   ;;

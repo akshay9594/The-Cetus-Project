@@ -615,9 +615,6 @@ public class Reduction extends AnalysisPass {
         UnaryOperator unary_op = expr.getOperator();
         Expression lhse = expr.getExpression();
         String reduction_op = null;
-
-
-            System.out.println("lhse : " + lhse +" , expr: " + expr +" , indices : " + LoopNestIndices);
         
 
         if (lhse instanceof IDExpression || lhse instanceof ArrayAccess ||
