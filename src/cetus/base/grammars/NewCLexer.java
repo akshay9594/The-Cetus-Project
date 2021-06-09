@@ -208,6 +208,7 @@ public NewCLexer(LexerSharedInputState state) {
 	literals.put(new ANTLRHashString("unsigned", this), new Integer(29));
 	literals.put(new ANTLRHashString("const", this), new Integer(19));
 	literals.put(new ANTLRHashString("float", this), new Integer(26));
+	literals.put(new ANTLRHashString("_Float128", this), new Integer(161));
 	literals.put(new ANTLRHashString("return", this), new Integer(56));
 	literals.put(new ANTLRHashString("__builtin_va_arg", this), new Integer(95));
 	literals.put(new ANTLRHashString("sizeof", this), new Integer(93));

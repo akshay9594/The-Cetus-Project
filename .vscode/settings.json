@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "timers.h": "c"
+        "timers.h": "c",
+        "type_traits": "cpp",
+        "stdio.h": "c"
     }
 }

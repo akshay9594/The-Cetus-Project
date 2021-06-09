@@ -73,15 +73,12 @@ public PreCParser(ParserSharedInputState state) {
 					
 										String s = null;
 										s = in.getText();
-					
 										// non global include clause
 										if(s.startsWith("internal")){
 											out.print(s.substring(8));
 										}
 										// global include clause
 										else{
-
-						
 										    // marker for start of header inclusion
 											out.print("#pragma startinclude "+in.getText());
 											// adjust line numbering
@@ -93,7 +90,6 @@ public PreCParser(ParserSharedInputState state) {
 											// adjust line numbering
 											out.println("#line "+(in.getLine()+1));
 												
-				
 										}
 					
 								
