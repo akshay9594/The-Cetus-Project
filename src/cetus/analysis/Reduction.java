@@ -301,7 +301,7 @@ public class Reduction extends AnalysisPass {
             Expression tempexpr = expriter.next();
 
              if( tempexpr instanceof ConditionalExpression ){
-               
+                          
                 ConditionalExpression cond_expr = (ConditionalExpression)tempexpr;
 
                 if(!cond_expr.equals(null) ){
@@ -941,6 +941,13 @@ public class Reduction extends AnalysisPass {
 
         Expression lhs_cond_expr = null;
         Expression rhs_cond_expr = null;
+
+
+        if(!(true_expr instanceof Expression) || !(false_expr instanceof Expression))
+            return;
+
+        if(true_expr instanceof ConditionalExpression || false_expr instanceof ConditionalExpression)
+            return;
         
 
         for( i = 0 ; i < expr.getChildren().size(); i++){
@@ -950,6 +957,9 @@ public class Reduction extends AnalysisPass {
 
         }
 
+        if(!(expr.getParent() instanceof AssignmentExpression))
+            return;
+            
         AssignmentExpression reduction_parent = (AssignmentExpression)expr.getParent();
 
 

@@ -162,5 +162,4 @@ public interface NEWCTokenTypes {
 	int IDMEAT = 158;
 	int WideCharLiteral = 159;
 	int WideStringLiteral = 160;
-	int LITERAL_float128=161;
 }

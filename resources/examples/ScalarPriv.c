@@ -7,6 +7,9 @@
   storage space, avoiding these conflicts.
 
 */
+
+#include <stdio.h>
+#include <math.h>
 int main(){
 
   float a[10000], b[10000], t;

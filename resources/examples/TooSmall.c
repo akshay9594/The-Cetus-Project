@@ -4,6 +4,9 @@
       
 */
 
+#include <stdio.h>
+#include <math.h>
+
 int main(){
 
   float a[1000], b[1000];

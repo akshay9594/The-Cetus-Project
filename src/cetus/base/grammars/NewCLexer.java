@@ -42,41 +42,41 @@ public void initialize(String src)
 public void initialize()
 {
   literals.put(new ANTLRHashString("__alignof__", this),
-      new Integer(LITERAL___alignof__));
+      LITERAL___alignof__);
   literals.put(new ANTLRHashString("__ALIGNOF__", this),
-      new Integer(LITERAL___alignof__));
+      LITERAL___alignof__);
   literals.put(new ANTLRHashString("__asm", this),
-      new Integer(LITERAL___asm));
+      LITERAL___asm);
   literals.put(new ANTLRHashString("__asm__", this),
-      new Integer(LITERAL___asm));
+      LITERAL___asm);
   literals.put(new ANTLRHashString("__attribute__", this),
-      new Integer(LITERAL___attribute));
+      LITERAL___attribute);
   literals.put(new ANTLRHashString("__complex__", this),
-      new Integer(LITERAL___complex));
+      LITERAL___complex);
   literals.put(new ANTLRHashString("__const", this),
-      new Integer(LITERAL_const));
+      LITERAL_const);
   literals.put(new ANTLRHashString("__const__", this),
-      new Integer(LITERAL_const));
+      LITERAL_const);
   literals.put(new ANTLRHashString("__imag__", this),
-      new Integer(LITERAL___imag));
+      LITERAL___imag);
   literals.put(new ANTLRHashString("__inline", this),
       //new Integer(LITERAL___extension__));
-      new Integer(LITERAL_inline));
+      LITERAL_inline);
   literals.put(new ANTLRHashString("__inline__", this),
       //new Integer(LITERAL___extension__));
-      new Integer(LITERAL_inline));
+      LITERAL_inline);
   literals.put(new ANTLRHashString("__real__", this),
-      new Integer(LITERAL___real));
+      LITERAL___real);
   literals.put(new ANTLRHashString("__restrict", this),
-      new Integer(LITERAL___extension__));
+      LITERAL___extension__);
   literals.put(new ANTLRHashString("__restrict__", this),
-      new Integer(LITERAL___extension__));
+      LITERAL___extension__);
   literals.put(new ANTLRHashString("__extension", this),
-      new Integer(LITERAL___extension__));
+      LITERAL___extension__);
   literals.put(new ANTLRHashString("__signed", this),
-      new Integer(LITERAL_signed));
+      LITERAL_signed);
   literals.put(new ANTLRHashString("__signed__", this),
-      new Integer(LITERAL_signed));
+      LITERAL_signed);
   /*
   literals.put(new ANTLRHashString("__typeof", this),
       new Integer(LITERAL_typeof));
@@ -84,32 +84,34 @@ public void initialize()
       new Integer(LITERAL_typeof));
   */
   literals.put(new ANTLRHashString("__volatile", this),
-      new Integer(LITERAL_volatile));
+      LITERAL_volatile);
   literals.put(new ANTLRHashString("__volatile__", this),
-      new Integer(LITERAL_volatile));
+      LITERAL_volatile);
   // GCC Builtin function
   literals.put(new ANTLRHashString("__builtin_va_arg", this),
-      new Integer(LITERAL___builtin_va_arg));
+      LITERAL___builtin_va_arg);
   literals.put(new ANTLRHashString("__builtin_offsetof", this),
-      new Integer(LITERAL___builtin_offsetof));
+      LITERAL___builtin_offsetof);
   // MinGW specific
   literals.put(new ANTLRHashString("__MINGW_IMPORT", this),
-      new Integer(LITERAL___extension__));
+      LITERAL___extension__);
   literals.put(new ANTLRHashString("_CRTIMP", this),
-      new Integer(LITERAL___extension__));
+      LITERAL___extension__);
   // Microsoft specific
   literals.put(new ANTLRHashString("__cdecl", this),
-      new Integer(LITERAL___extension__));
+      LITERAL___extension__);
   literals.put(new ANTLRHashString("__w64", this),
-      new Integer(LITERAL___extension__));
+      LITERAL___extension__);
   literals.put(new ANTLRHashString("__int64", this),
-      new Integer(LITERAL_int));
+      LITERAL_int);
   literals.put(new ANTLRHashString("__int32", this),
-      new Integer(LITERAL_int));
+      LITERAL_int);
   literals.put(new ANTLRHashString("__int16", this),
-      new Integer(LITERAL_int));
+      LITERAL_int);
   literals.put(new ANTLRHashString("__int8", this),
-      new Integer(LITERAL_int));
+      LITERAL_int);
+  literals.put(new ANTLRHashString("_Float128", this),
+     LITERAL_float);
 }
 
 LineObject lineObject = new LineObject();
@@ -154,7 +156,7 @@ public PreprocessorInfoChannel getPreprocessorInfoChannel()
 public void setPreprocessingDirective(String pre,int t)
 {
   preprocessorInfoChannel.addLineForTokenNumber(
-      new Pragma(pre,t), new Integer(tokenNumber));
+      new Pragma(pre,t), tokenNumber);
 }
 
 protected Token makeToken(int t)
@@ -197,56 +199,55 @@ public NewCLexer(LexerSharedInputState state) {
 	caseSensitiveLiterals = true;
 	setCaseSensitive(true);
 	literals = new Hashtable();
-	literals.put(new ANTLRHashString("extern", this), new Integer(16));
-	literals.put(new ANTLRHashString("__real", this), new Integer(99));
-	literals.put(new ANTLRHashString("case", this), new Integer(57));
-	literals.put(new ANTLRHashString("short", this), new Integer(23));
-	literals.put(new ANTLRHashString("break", this), new Integer(55));
-	literals.put(new ANTLRHashString("while", this), new Integer(50));
-	literals.put(new ANTLRHashString("__declspec", this), new Integer(38));
-	literals.put(new ANTLRHashString("inline", this), new Integer(18));
-	literals.put(new ANTLRHashString("unsigned", this), new Integer(29));
-	literals.put(new ANTLRHashString("const", this), new Integer(19));
-	literals.put(new ANTLRHashString("float", this), new Integer(26));
-	literals.put(new ANTLRHashString("_Float128", this), new Integer(161));
-	literals.put(new ANTLRHashString("return", this), new Integer(56));
-	literals.put(new ANTLRHashString("__builtin_va_arg", this), new Integer(95));
-	literals.put(new ANTLRHashString("sizeof", this), new Integer(93));
-	literals.put(new ANTLRHashString("do", this), new Integer(51));
-	literals.put(new ANTLRHashString("__label__", this), new Integer(49));
-	literals.put(new ANTLRHashString("__alignof__", this), new Integer(94));
-	literals.put(new ANTLRHashString("__asm", this), new Integer(44));
-	literals.put(new ANTLRHashString("typedef", this), new Integer(4));
-	literals.put(new ANTLRHashString("if", this), new Integer(59));
-	literals.put(new ANTLRHashString("double", this), new Integer(27));
-	literals.put(new ANTLRHashString("volatile", this), new Integer(9));
-	literals.put(new ANTLRHashString("__attribute", this), new Integer(43));
-	literals.put(new ANTLRHashString("union", this), new Integer(12));
-	literals.put(new ANTLRHashString("_Imaginary", this), new Integer(32));
-	literals.put(new ANTLRHashString("register", this), new Integer(15));
-	literals.put(new ANTLRHashString("auto", this), new Integer(14));
-	literals.put(new ANTLRHashString("goto", this), new Integer(53));
-	literals.put(new ANTLRHashString("enum", this), new Integer(13));
-	literals.put(new ANTLRHashString("_Complex", this), new Integer(31));
-	literals.put(new ANTLRHashString("int", this), new Integer(24));
-	literals.put(new ANTLRHashString("for", this), new Integer(52));
-	literals.put(new ANTLRHashString("char", this), new Integer(22));
-	literals.put(new ANTLRHashString("default", this), new Integer(58));
-	literals.put(new ANTLRHashString("__imag", this), new Integer(100));
-	literals.put(new ANTLRHashString("__builtin_offsetof", this), new Integer(96));
-	literals.put(new ANTLRHashString("static", this), new Integer(17));
-	literals.put(new ANTLRHashString("_Bool", this), new Integer(30));
-	literals.put(new ANTLRHashString("continue", this), new Integer(54));
-	literals.put(new ANTLRHashString("struct", this), new Integer(11));
-	literals.put(new ANTLRHashString("restrict", this), new Integer(20));
-	literals.put(new ANTLRHashString("signed", this), new Integer(28));
-	literals.put(new ANTLRHashString("else", this), new Integer(60));
-	literals.put(new ANTLRHashString("void", this), new Integer(21));
-	literals.put(new ANTLRHashString("switch", this), new Integer(61));
-	literals.put(new ANTLRHashString("long", this), new Integer(25));
-	literals.put(new ANTLRHashString("__extension__", this), new Integer(142));
-	literals.put(new ANTLRHashString("asm", this), new Integer(8));
-	literals.put(new ANTLRHashString("__complex", this), new Integer(33));
+	literals.put(new ANTLRHashString("extern", this), 16);
+	literals.put(new ANTLRHashString("__real", this), 99);
+	literals.put(new ANTLRHashString("case", this), 57);
+	literals.put(new ANTLRHashString("short", this), 23);
+	literals.put(new ANTLRHashString("break", this), 55);
+	literals.put(new ANTLRHashString("while", this), 50);
+	literals.put(new ANTLRHashString("__declspec", this), 38);
+	literals.put(new ANTLRHashString("inline", this), 18);
+	literals.put(new ANTLRHashString("unsigned", this), 29);
+	literals.put(new ANTLRHashString("const", this), 19);
+	literals.put(new ANTLRHashString("float", this), 26);
+	literals.put(new ANTLRHashString("return", this), 56);
+	literals.put(new ANTLRHashString("__builtin_va_arg", this), 95);
+	literals.put(new ANTLRHashString("sizeof", this), 93);
+	literals.put(new ANTLRHashString("do", this), 51);
+	literals.put(new ANTLRHashString("__label__", this), 49);
+	literals.put(new ANTLRHashString("__alignof__", this), 94);
+	literals.put(new ANTLRHashString("__asm", this), 44);
+	literals.put(new ANTLRHashString("typedef", this), 4);
+	literals.put(new ANTLRHashString("if", this), 59);
+	literals.put(new ANTLRHashString("double", this), 27);
+	literals.put(new ANTLRHashString("volatile", this), 9);
+	literals.put(new ANTLRHashString("__attribute", this), 43);
+	literals.put(new ANTLRHashString("union", this), 12);
+	literals.put(new ANTLRHashString("_Imaginary", this), 32);
+	literals.put(new ANTLRHashString("register", this), 15);
+	literals.put(new ANTLRHashString("auto", this), 14);
+	literals.put(new ANTLRHashString("goto", this), 53);
+	literals.put(new ANTLRHashString("enum", this), 13);
+	literals.put(new ANTLRHashString("_Complex", this), 31);
+	literals.put(new ANTLRHashString("int", this), 24);
+	literals.put(new ANTLRHashString("for", this), 52);
+	literals.put(new ANTLRHashString("char", this), 22);
+	literals.put(new ANTLRHashString("default", this), 58);
+	literals.put(new ANTLRHashString("__imag", this), 100);
+	literals.put(new ANTLRHashString("__builtin_offsetof", this), 96);
+	literals.put(new ANTLRHashString("static", this), 17);
+	literals.put(new ANTLRHashString("_Bool", this), 30);
+	literals.put(new ANTLRHashString("continue", this), 54);
+	literals.put(new ANTLRHashString("struct", this), 11);
+	literals.put(new ANTLRHashString("restrict", this), 20);
+	literals.put(new ANTLRHashString("signed", this), 28);
+	literals.put(new ANTLRHashString("else", this), 60);
+	literals.put(new ANTLRHashString("void", this), 21);
+	literals.put(new ANTLRHashString("switch", this), 61);
+	literals.put(new ANTLRHashString("long", this), 25);
+	literals.put(new ANTLRHashString("__extension__", this), 142);
+	literals.put(new ANTLRHashString("asm", this), 8);
+	literals.put(new ANTLRHashString("__complex", this), 33);
 }
 
 public Token nextToken() throws TokenStreamException {

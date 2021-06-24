@@ -505,8 +505,8 @@ OuterWhileLoop:
                         /*
                          Cost = (trip)/cache line size if:
                          (a) Loop index variable is present in the right hand side dimension of the array access
-                         (b) The Dimension has a unit stride and
-                         (c) The loop also has a unit stride
+                         (b) The RHS Dimension has a unit stride and
+                         (c) The innerloop also has a unit stride
 
                         */
                         
@@ -550,9 +550,10 @@ OuterWhileLoop:
 
                             /*
                             Cost = (trip) if:
-                            (a) Loop index variable is present in the left hand side dimension of the array access
-                            (b) The Dimension has a non- unit stride or
-                            (c) The loop candidate loop has a non-unit stride
+                            (a) Loop index variable of candidate loop is present 
+                                in the left hand side dimension of the array access
+                            (b) The LHS Dimension has a non-unit stride or
+                            (c) The innerloop candidate has a non-unit stride
 
                             */
 

@@ -241,6 +241,7 @@ public class ProfitableOMP extends CodeGenPass {
         iter.pruneOn(VariableDeclaration.class);
         iter.pruneOn(ExpressionStatement.class);
         int[] parcount = new int[] {0};
+        
         while (iter.hasNext()) {
             Statement stmt = iter.next();
             if (stmt.containsAnnotation(OmpAnnotation.class, "parallel")) {

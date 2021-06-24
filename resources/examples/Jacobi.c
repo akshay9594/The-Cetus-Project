@@ -1,9 +1,9 @@
 /* Compute Jacobian; Take about 5 seconds to finish on single core*/
 
-/*
+
 #include <math.h>
 #include <stdio.h>
-*/
+
 
 #define ITER 200 //you can change this value to control the length of running time, 1000 = 30 seconds
 #define SIZE 1024

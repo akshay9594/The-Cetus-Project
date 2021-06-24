@@ -6,6 +6,9 @@
   linear induction variable as the increment.
 
 */
+#include <stdio.h>
+#include <math.h>
+
 int main(){
 
   float a[10000], b[10000];

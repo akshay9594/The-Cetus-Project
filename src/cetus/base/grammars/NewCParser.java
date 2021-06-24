@@ -307,7 +307,6 @@ public NewCParser(ParserSharedInputState state) {
 			case LITERAL_char:
 			case LITERAL_short:
 			case LITERAL_int:
-			case LITERAL_float128:
 			case LITERAL_long:
 			case LITERAL_float:
 			case LITERAL_double:
@@ -364,7 +363,7 @@ public NewCParser(ParserSharedInputState state) {
 			int _cnt5=0;
 			_loop5:
 			do {
-				if ((_tokenSet_1.member(LA(1))) || LA(1) == LITERAL_float128 ) {
+				if ((_tokenSet_1.member(LA(1))) ) {
 					externalDef(tunit);
 				}
 				else {
@@ -514,9 +513,7 @@ inputState.guessing--;
 							
 						}
 					}
-					else if(LA(1) == LITERAL_float128){
-						decl = declaration();
-					}
+				
 
 				else {
 			
@@ -1224,12 +1221,6 @@ inputState.guessing--;
 			else if ((_tokenSet_13.member(LA(1))) && (_tokenSet_14.member(LA(2)))) {
 			
 			}
-		
-			else if(LA(1) == LPAREN && LA(2) == LITERAL_float128){
-			}
-			else if(LA(1) == COMMA && LA(2) == LITERAL_float128){
-				
-			}
 			
 			else {
 				
@@ -1550,9 +1541,6 @@ inputState.guessing--;
 						rewind(_m32);
 inputState.guessing--;
 					}
-				
-					if(LA(1) == LITERAL_float128)
-						synPredMatched32 = true;
 
 					if ( synPredMatched32 ) {
 
@@ -1764,14 +1752,7 @@ inputState.guessing--;
 				}
 				break;
 			}
-			case LITERAL_float128:
-			{
-				match(LITERAL_float128);
-				if ( inputState.guessing==0 ) {
-					types = Specifier.FLOAT;
-				}
-				break;
-			}
+		
 			case LITERAL_double:
 			{
 				match(LITERAL_double);
@@ -3234,13 +3215,14 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
-	
-		if(extern_decl && binit != null) {
-			binit = new Initializer((Expression) binit);
+
+		if(extern_decl && binit != null) {	
+			if (binit instanceof Expression)
+				binit = new Initializer((Expression)binit);
+				
 			decl.setInitializer((Initializer)binit);
 
 		}
-
 		
 		return decl;
 		
@@ -3866,8 +3848,7 @@ inputState.guessing--;
 			match(LPAREN);
 			{
 			boolean synPredMatched141 = false;
-			if (((_tokenSet_2.member(LA(1))) && (_tokenSet_19.member(LA(2))))
-			    || LA(1)==LITERAL_float128 ) {
+			if (((_tokenSet_2.member(LA(1))) && (_tokenSet_19.member(LA(2)))) ) {
 				int _m141 = mark();
 				synPredMatched141 = true;
 				inputState.guessing++;
@@ -3962,8 +3943,7 @@ inputState.guessing--;
 			{
 			_loop147:
 			do {
-				if ((LA(1)==SEMI||LA(1)==COMMA) && (_tokenSet_2.member(LA(2)))
-				   || LA(2)==LITERAL_float128) {
+				if ((LA(1)==SEMI||LA(1)==COMMA) && (_tokenSet_2.member(LA(2)))) {
 					{
 					switch ( LA(1)) {
 					case COMMA:
@@ -7876,7 +7856,6 @@ inputState.guessing--;
 		"\"int\"",
 		"\"long\"",
 		"\"float\"",
-		"\"_Float128\"",
 		"\"double\"",
 		"\"signed\"",
 		"\"unsigned\"",

@@ -13,10 +13,10 @@ int main(){
    n = 3000;
 
 
-for(j = 0; j < n; j++){
+for (j = 0; j < n; j++){
 
    d[j] = p;
-   for(i = 0; i < n; i++){
+   for (i = 0; i < n; i++){
 
       if(c[i] != 0){
 
@@ -32,7 +32,7 @@ for(j = 0; j < n; j++){
 }
 
 
-for(j=0 ; j < n; j++) {
+for (j=0 ; j < n; j++) {
 
      if(j%2 ==0)
        a[j] = 0;
@@ -41,7 +41,7 @@ for(j=0 ; j < n; j++) {
      
   }
 
-  for(j=0 ; j<n; j++) {
+  for (j=0 ; j<n; j++) {
 
      a[j] = a[j-1] + a[j];
      

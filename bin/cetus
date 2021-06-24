@@ -1,3 +1,0 @@
-#!/bin/sh
-# This file was generated automatically by build.sh.
-java -cp /home/akshay/The-Cetus-Project/lib/cetus.jar:/home/akshay/The-Cetus-Project/lib/rsyntaxtextarea.jar -Xmx1g cetus.exec.Driver $*

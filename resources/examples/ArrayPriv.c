@@ -7,6 +7,8 @@
   each thread a separate storage space, avoiding these conflicts.
 
 */
+
+#include <math.h>
 int main(){
 
   float a[1000][1000], b[1000][1000], t[1000];

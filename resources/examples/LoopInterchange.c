@@ -5,6 +5,9 @@
 Different loops to test the Loop Interchange pass in Cetus.
 
 */
+
+#include <stdio.h>
+#include <math.h>
   
   int a[10000][10000] , c[10000] , b[10000][10000] ,d[10000][10000] ;
     int work[10000][10000][10000], coef2[1000][10000],coef4[10000][10000];
@@ -18,9 +21,9 @@ int main(){
     
 
 
-    for(i = 0 ; i < 10000 ;i++){
+    for (i = 0 ; i < 10000 ;i++){
 
-      for( j = 0 ; j < 10000 ;j++){
+      for ( j = 0 ; j < 10000 ;j++){
 
         b[j][i] = 2 * b[j+1][i-1];
 
@@ -31,9 +34,9 @@ int main(){
     
    
     //Taken from ARC2D (Perfect Benchmarks)
-      for(k = 0 ; k < 10000 ;k++){
+      for (k = 0 ; k < 10000 ;k++){
 
-          for(j = 0 ; j < 10000; j++){
+          for (j = 0 ; j < 10000; j++){
 
             work[j][k][3] = coef2[j][k] * work[j][k][1] - coef4[j][k] * work[j][k][2];
 
@@ -43,9 +46,9 @@ int main(){
     
     // From ARC2D Perfect benchmarks
        
-    for(k = 0 ; k < n ;k++){
+    for (k = 0 ; k < n ;k++){
 
-          for(j = 0 ; j < n ; j++){
+          for (j = 0 ; j < n ; j++){
 
               ld2 = a[j][k];
               ld1 = b[j][k] - ld2 * x[j-2][k];
@@ -60,11 +63,11 @@ int main(){
 
    
   // Matrix Multiplication kernel
-     for(i= 0 ; i < n ; i++){
+     for (i= 0 ; i < n ; i++){
 
-        for( j = 0 ; j < m; j++){
+        for ( j = 0 ; j < m; j++){
 
-          for( k = 0 ; k < n; k++){
+          for ( k = 0 ; k < n; k++){
 
               d[i][j] = d[i][j] + a[i][k] * b[k][j];
 
@@ -74,12 +77,11 @@ int main(){
       }
 
     }
-
     
 
-    for( i = 0 ; i < n; i++){
+    for ( i = 0 ; i < n; i++){
 
-      for( j = 0 ; j < n ;j++){
+      for ( j = 0 ; j < n ;j++){
 
        a[j][i] = 0.2 * (b[j][i] + b[j-1][i] + b[j][i-1] + b[j+1][i] + b[j][i+1]);
       }
