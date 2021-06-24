@@ -55,7 +55,6 @@ Cetus Source to Source compiler improvements being done at University of Delawar
           best order of loops in the nest for maximizing reusability of cache lines. 
        c. Model taken from K.S McKinley’s paper- "Optimizing for Parallelism and Data locality".
        d. Pass can also handle symbolic loop bounds.
-       My contribution was everything else besides the leglity test.
 
 
     
