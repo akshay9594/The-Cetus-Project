@@ -238,6 +238,7 @@ public class ProfitableOMP extends CodeGenPass {
     public void start() {
         DFIterator<Statement> iter =
                 new DFIterator<Statement>(program, Statement.class);
+
         iter.pruneOn(VariableDeclaration.class);
         iter.pruneOn(ExpressionStatement.class);
         int[] parcount = new int[] {0};

@@ -3,7 +3,6 @@ package cetus.analysis;
 import cetus.exec.Driver;
 import cetus.hir.*;
 import cetus.transforms.TransformPass;
-import cetus.transforms.LoopInterchange;
 import cetus.transforms.ReductionTransform;
 
 import java.util.*;
@@ -184,11 +183,6 @@ public class LoopParallelizationPass extends AnalysisPass {
     */
     private void parallelizeLoopNest(Loop enclosing_loop) {
         boolean is_parallel;
-
-
-        // Re running the Data dependence test if loop interchange has been enabled (Pre-parallelization Interchange)
-
-
     
         DDGraph dependence_graph = program.getDDGraph();
 

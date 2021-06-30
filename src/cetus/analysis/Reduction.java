@@ -62,8 +62,6 @@ public class Reduction extends AnalysisPass {
 
     private int option;
 
-    private Expression loop_index;
-
     List<Expression> LoopNestIndices = new ArrayList<>();
 
     private static final String pass_name = "[Reduction]";
@@ -93,7 +91,6 @@ public class Reduction extends AnalysisPass {
                 new DFIterator<ForLoop>(program, ForLoop.class);
         while (iter.hasNext()) {
 
-
             ForLoop loop = iter.next();
 
             LinkedList<Loop> innerLoopList = LoopTools.calculateInnerLoopNest(loop);
@@ -104,19 +101,21 @@ public class Reduction extends AnalysisPass {
 
                 while(innerLoopListiter.hasNext()){
 
-                    ForLoop innerLoop = (ForLoop)innerLoopListiter.next();
+                    Loop l = (Loop)innerLoopListiter.next();
 
-                    Expression id = LoopTools.getIndexVariable(innerLoop);
+                    if(l instanceof ForLoop){
+                        ForLoop innerLoop = (ForLoop)l;
 
-                    if(!LoopNestIndices.contains(id))
-                        LoopNestIndices.add(id);
+                        Expression id = LoopTools.getIndexVariable(innerLoop);
+
+                        if(!LoopNestIndices.contains(id))
+                            LoopNestIndices.add(id);
+                    
+                    }
 
                 }
             }
 
-
-            BinaryExpression b = (BinaryExpression)loop.getCondition();
-            loop_index = b.getLHS();
             // find reduction variables in a loop
             Map<String, Set<Expression>> reduce_map = analyzeStatement(loop);
             // Insert reduction Annotation to the current loop
@@ -126,6 +125,7 @@ public class Reduction extends AnalysisPass {
                 loop.annotateBefore(note);
             }
         }
+
     }
 
     public void displayMap(Map<Symbol, Set<Integer>> imap, String name) {
