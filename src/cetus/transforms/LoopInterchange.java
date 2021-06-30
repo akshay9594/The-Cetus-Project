@@ -63,6 +63,7 @@ public class LoopInterchange extends TransformPass
         HashMap<ForLoop,Boolean> loopMap = new HashMap<ForLoop,Boolean>();
         HashMap<ForLoop,Boolean> AlreadyInOrder = new HashMap<ForLoop,Boolean>();
 
+
         while(iter.hasNext()) {
             Object o = iter.next();
             if(o instanceof ForLoop)
@@ -73,7 +74,6 @@ public class LoopInterchange extends TransformPass
         for(i = 0 ; i < outer_loops.size(); i++){
 
             ForLoop l = (ForLoop)outer_loops.get(i);
-
             CetusAnnotation annotation = l.getAnnotation(CetusAnnotation.class, "private");
             l.getAnnotations().remove(annotation);
         }

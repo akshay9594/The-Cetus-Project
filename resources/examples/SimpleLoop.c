@@ -16,5 +16,11 @@ int main(){
 
   }
 
+  for (int k=1 ; k<30000; k++) {
+
+    a[k]= k;
+
+  }
+
    return 0;
 }

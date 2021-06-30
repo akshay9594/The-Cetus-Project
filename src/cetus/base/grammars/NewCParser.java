@@ -479,7 +479,6 @@ inputState.guessing--;
 
 						try {
 							{
-							//System.out.println("func prefix hit: \n");
 							functionPrefix();
 							}
 						}
@@ -494,7 +493,7 @@ inputState.guessing--;
 					
 					if ( synPredMatched10 ) {
 						decl=functionDef();
-					
+
 						if ( inputState.guessing==0 ) {
 							
 							//PrintTools.printStatus("Adding Declaration: ",3);
@@ -744,6 +743,11 @@ inputState.guessing--;
 		int dcount = 0;
 		SymbolTable prev_symtab =null;
 		SymbolTable temp_symtab = new CompoundStatement();
+
+		loop_decl = null;
+		decl_for_global = null;
+		loop_idex_list = new ArrayList<IDExpression>();
+		loop_decl_list = new ArrayList<Declaration>();
 		
 		
 		try {      // for error handling
@@ -3152,7 +3156,7 @@ inputState.guessing--;
 		
 		try {      // for error handling
 			decl=declarator();
-					
+			
 			_loop105:
 			do {
 				if ((LA(1)==LITERAL___attribute||LA(1)==LITERAL___asm)) {
@@ -3192,12 +3196,17 @@ inputState.guessing--;
 			}
 			}
 			
-			
 			if ( inputState.guessing==0 ) {
 				
 				if (binit instanceof Expression && decl != null && binit != null && !extern_decl){
 
-					lhsID = new NameID(decl.toString());
+					if(decl.toString().contains("*")){
+						String pointer_Decl = decl.toString().replace("*", "");
+						lhsID = new NameID(pointer_Decl);
+					}
+					else{
+						lhsID = new NameID(decl.toString());
+					}
 
 					initial_expr = new AssignmentExpression(lhsID , AssignmentOperator.NORMAL, (Expression)binit);
 
@@ -3313,7 +3322,7 @@ inputState.guessing--;
 		  decl_for_global = new VariableDeclarator(idex_for);
 
 		  loop_decl =  new VariableDeclaration(dspec, decl_for_global);
-	
+
          if(loop_idex_list.contains(idex_for)){
 
 			loop_decl = null;
@@ -3324,7 +3333,6 @@ inputState.guessing--;
 			loop_idex_list.add(idex_for);
 			
 		}
-
 
 		return init_for_expr;
 	}
@@ -4560,6 +4568,7 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
+	
 		return adecl;
 	}
 	
@@ -4748,6 +4757,7 @@ inputState.guessing--;
 					throw ex;
 				}
 			}
+		
 			return stmt;
 		}
 		
@@ -5029,7 +5039,6 @@ inputState.guessing--;
 					decl=declaration();
 					
 					if ( inputState.guessing==0 ) {
-						
 						curr_cstmt.addDeclaration(decl);
 					}
 				}
