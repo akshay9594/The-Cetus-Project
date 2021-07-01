@@ -155,16 +155,6 @@ public class Reduction extends AnalysisPass {
     public Map<String, Set<Expression>> analyzeStatement(Statement istmt) {
         debug_tab++;
 
-        Expression loopid = null;
-
-        if(istmt instanceof ForLoop){
-
-            ForLoop current_loop = (ForLoop)istmt;
-
-            loopid = LoopTools.getIndexVariable(current_loop);
-
-        }
-
         if (debug_level > 1) {
             System.out.println(
                     "------------ analyzeStatement strt ------------\n");
@@ -200,7 +190,6 @@ public class Reduction extends AnalysisPass {
             PrintTools.printlnStatus(9, pass_name, "[expr]", ++expr_cnt, ":",
                     expr, "(", expr.getClass().getName(), ")");
             if (expr instanceof AssignmentExpression) {
-                
                 AssignmentExpression assign_expr = (AssignmentExpression)expr;
                 findReduction(assign_expr, rmap, cmap);
             } else if (expr instanceof UnaryExpression) {
@@ -693,9 +682,6 @@ public class Reduction extends AnalysisPass {
                        (assign_op == AssignmentOperator.SUBTRACT)) {
                 // case: lhse += expr; or lhse -= expr; 
                 lhse_removed_rhse = Symbolic.simplify(rhse);
-                if (lhse_removed_rhse == null) {
-                    System.out.println("[+= or -=] rhse_removed_rhse is null");
-                }
                 reduction_op = "+";
             } else if (assign_op == AssignmentOperator.MULTIPLY) {
                 // case: lhse *= expr;
@@ -750,7 +736,7 @@ public class Reduction extends AnalysisPass {
                     }
                 }
 
-               // lhse = base_array_name;
+               lhse = base_array_name;
             } else if (lhse instanceof AccessExpression) {
                 Symbol lhs_symbol = SymbolTools.getSymbolOf(lhse);
                 if (!IRTools.containsSymbol(lhse_removed_rhse, lhs_symbol)) {
