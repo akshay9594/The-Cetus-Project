@@ -89,6 +89,7 @@ public class Reduction extends AnalysisPass {
 */
         DFIterator<ForLoop> iter =
                 new DFIterator<ForLoop>(program, ForLoop.class);
+        
         while (iter.hasNext()) {
 
             ForLoop loop = iter.next();
@@ -120,9 +121,10 @@ public class Reduction extends AnalysisPass {
             Map<String, Set<Expression>> reduce_map = analyzeStatement(loop);
             // Insert reduction Annotation to the current loop
             if (!reduce_map.isEmpty()) {
-                CetusAnnotation note =
-                        new CetusAnnotation("reduction", reduce_map);
-                loop.annotateBefore(note);
+                
+                    CetusAnnotation note =
+                            new CetusAnnotation("reduction", reduce_map);
+                    loop.annotateBefore(note);
             }
         }
 
@@ -322,9 +324,6 @@ public class Reduction extends AnalysisPass {
             }
         }
 
-    
-        //System.out.println("Return Ref Map: " + RefMap +"\n");
-       
 
         // final reduction map that maps a reduction operator to a set of
         // reduction variables
@@ -339,12 +338,11 @@ public class Reduction extends AnalysisPass {
                 if (RefMap.get(candidate_symbol) == null) {
                     continue;
                 }
-                // if (!RefMap.get(candidate_symbol).isEmpty() && !op.equals("max") && !op.equals("min")) {                // Reference of min max candidate are checked in find_reduction
-                //     PrintTools.printlnStatus(2, pass_name, candidate,                                                   // for min , max
-                //             "is referenced in the non-reduction statement!");
-                //             System.out.println("candidate: " + candidate +" , min max\n");
-                //     remove_flag = true;
-                // }
+                if (!RefMap.get(candidate_symbol).isEmpty() && !op.equals("max") && !op.equals("min")) {                
+                    PrintTools.printlnStatus(2, pass_name, candidate,                                                  
+                            "is referenced in the non-reduction statement!");
+                    remove_flag = true;
+                }
 
                 if(LoopNestIndices.contains(candidate)){
 
@@ -401,11 +399,11 @@ public class Reduction extends AnalysisPass {
                                 "No self-carried-output dependence in",
                                 candidate);
                         remove_flag = true;
-                        //System.out.println("candidate: " + candidate +" , has self-output dependence\n");
+                        
                     }
                     if (option == SCALAR_REDUCTION) {
                         remove_flag = true;
-                       // System.out.println("candidate: " + candidate +" , scalar reduction\n");
+                       
                     }
                 }
                 if (remove_flag == false) {
@@ -425,8 +423,6 @@ public class Reduction extends AnalysisPass {
                     "------------ analyzeStatement done ------------\n");
         }
         debug_tab--;
-
-        //System.out.println("\nfmap:\n" + fmap +"\n");
 
 
         return fmap;

@@ -919,7 +919,7 @@ public class LoopTools {
     */
     public static boolean isReduction(Symbol s, Loop l) {
         CetusAnnotation note = ((Annotatable)l).getAnnotation(
-                CetusAnnotation.class, "reduction");
+                CetusAnnotation.class, "reduction"); 
         if (note != null) {
             Map<String, Set<Expression>> m = note.get("reduction");
             for (String op : m.keySet()) {

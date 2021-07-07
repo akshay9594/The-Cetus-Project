@@ -8,23 +8,18 @@
 */
 
 #include <stdio.h>
-#include <math.h>
 
 int main(){
 
-  int a[10000] , c[10000];
+  float a[10000], sum;
+  int i, n;
+  n = 10000;
   
-  int b = 1 ,i;
-
-  for ( i = 0 ; i < 10000 ;i++){
-
-    b = b + a[i];
+  for (i=1; i<n; i++) {
+    sum = sum + a[i];
   }
-
-
 	
    return 0;
 }
-
 
 
