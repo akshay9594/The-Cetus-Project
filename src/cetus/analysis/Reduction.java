@@ -41,6 +41,8 @@ package cetus.analysis;
 
 import cetus.exec.Driver;
 import cetus.hir.*;
+
+import java.sql.Ref;
 import java.util.*;
 
 
@@ -317,6 +319,7 @@ public class Reduction extends AnalysisPass {
                 Symbol candidate_symbol = SymbolTools.getSymbolOf(candidate);
                 Set<Integer> reduceSet = cmap.get(candidate_symbol);
                 Set<Integer> referenceSet = RefMap.get(candidate_symbol);
+                
                 if (referenceSet == null) {
                     continue;
                 }
@@ -407,10 +410,13 @@ public class Reduction extends AnalysisPass {
                     }
                 }
                 if (remove_flag == false) {
+                    if(candidate instanceof ArrayAccess){
+                        candidate = ((ArrayAccess)candidate).getArrayName();
+                    }
                     if (fmap.containsKey(op)) {
                         fmap.get(op).add(candidate);
                     } else {
-                        Set<Expression> new_set = new HashSet<Expression>();
+                        Set<Expression> new_set = new HashSet<Expression>();                            
                         new_set.add(candidate);
                         fmap.put(op, new_set);
                     }
@@ -732,7 +738,7 @@ public class Reduction extends AnalysisPass {
                     }
                 }
 
-               lhse = base_array_name;
+               //lhse = base_array_name;
             } else if (lhse instanceof AccessExpression) {
                 Symbol lhs_symbol = SymbolTools.getSymbolOf(lhse);
                 if (!IRTools.containsSymbol(lhse_removed_rhse, lhs_symbol)) {

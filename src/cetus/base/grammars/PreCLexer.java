@@ -98,7 +98,7 @@ tryAgain:
 				return _returnToken;
 			}
 			catch (RecognitionException e) {
-				//System.out.println("LA(1) = " + Integer.toString(LA(1)) + " , LA(2) = " + Integer.toString(LA(2))  +"\n");
+				//System.out.println("LA(1) = " + Integer.parseInt(hex, 16) + " , LA(2) = " + Integer.toString(LA(2))  +"\n");
 				throw new TokenStreamRecognitionException(e);
 			}
 		}

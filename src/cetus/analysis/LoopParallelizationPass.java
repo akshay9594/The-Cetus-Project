@@ -75,9 +75,9 @@ public class LoopParallelizationPass extends AnalysisPass {
         }
         reportParallelization();
         // Invokes reduction transformation.
-        if (!nested_parallelism) {
-            TransformPass.run(new ReductionTransform(program));
-        }
+        // if (!nested_parallelism) {
+        //     TransformPass.run(new ReductionTransform(program));
+        // }
     }
 
     /**

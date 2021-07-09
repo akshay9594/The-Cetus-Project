@@ -2,6 +2,7 @@
     "files.associations": {
         "timers.h": "c",
         "type_traits": "cpp",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "random": "c"
     }
 }

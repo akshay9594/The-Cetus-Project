@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <math.h>
+static int reverse();
 
 int main(){
     
@@ -16,11 +17,13 @@ int main(){
 
   }
 
+#pragma omp parallel for
   for (int k=1 ; k<30000; k++) {
 
-    a[k]= k;
+    a[k]= a[k-1] + k;
 
   }
+  
 
    return 0;
 }
