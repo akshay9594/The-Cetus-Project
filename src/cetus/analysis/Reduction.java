@@ -196,8 +196,7 @@ public class Reduction extends AnalysisPass {
             if (expr instanceof AssignmentExpression) {
                 AssignmentExpression assign_expr = (AssignmentExpression)expr;
                 findReduction(assign_expr, rmap, cmap);
-            } else if (expr instanceof UnaryExpression) {
-                
+            } else if (expr instanceof UnaryExpression) {  
                 UnaryExpression unary_expr = (UnaryExpression)expr;
                 findReduction(unary_expr, rmap, cmap);
             } else if (expr instanceof FunctionCall) {
@@ -212,16 +211,9 @@ public class Reduction extends AnalysisPass {
         }
 
 
-
-       // System.out.println( "loop:\n" + istmt + "\n" + "rmap: " + rmap + "\n");
-
     //Following code block is for detecting possible MIN or MAX reductions in if-statements
 
-
-        ArrayList<BinaryExpression> IfExprList = new ArrayList<BinaryExpression>();
         ArrayList<Expression> LoopExprList = new ArrayList<Expression>();
-
-
         DFIterator<Expression> loopexpriter =
         new DFIterator<Expression>(istmt, Expression.class);
 
@@ -230,57 +222,9 @@ public class Reduction extends AnalysisPass {
 
             Expression loopexpr = loopexpriter.next();
 
-            if( loopexpr instanceof BinaryExpression || 
-                loopexpr instanceof UnaryExpression ||
-                loopexpr instanceof ConditionalExpression )
+            if(loopexpr instanceof ConditionalExpression )
 
                 LoopExprList.add(loopexpr);
-
-        }
-
-
-        DFIterator<IfStatement> it =
-        new DFIterator<IfStatement>(istmt, IfStatement.class);
-
-
-        IfStatement ifstmt = null;
-
-        while(it.hasNext()){
-
-            ifstmt =  it.next();
-
-        }
-
-
-        BinaryExpression ifCondition = null;
-
-
-        if(ifstmt != null){
-
-            DFIterator<Expression> Ifexpressioniter = new DFIterator<Expression>(ifstmt , Expression.class);
-
-            while(Ifexpressioniter.hasNext()){
-
-                Expression ifexpr = Ifexpressioniter.next();
-
-                if(ifexpr instanceof BinaryExpression){
-
-                    BinaryExpression ifbe = (BinaryExpression)ifexpr;
-
-                    if(ifbe.getOperator().toString().equals(">") || ifbe.getOperator().toString().equals("<")){
-
-                        ifCondition = ifbe;
-                    }
-                    else
-                        IfExprList.add(ifbe);
-
-
-                }
-
-            }
-
-            if(ifCondition!= null)
-            findReduction(ifCondition, LoopExprList ,IfExprList ,rmap, cmap);
 
         }
 
@@ -306,8 +250,7 @@ public class Reduction extends AnalysisPass {
 
         }
 
-
-      
+       
         // if the lhse of the reduction candidate statement is not in the
         // RefMap, lhse is a reduction variable
         displayMap(RefMap, "RefMap");
@@ -323,7 +266,8 @@ public class Reduction extends AnalysisPass {
                 if (referenceSet == null) {
                     continue;
                 }
-                referenceSet.removeAll(reduceSet);
+               
+                referenceSet.removeAll(reduceSet); 
             }
         }
 
@@ -633,6 +577,7 @@ public class Reduction extends AnalysisPass {
     private void findReduction(AssignmentExpression expr,
                                Map<String, Set<Expression>> rmap,
                                Map<Symbol, Set<Integer>> cmap) {
+
         boolean isReduction = false;
         AssignmentOperator assign_op = expr.getOperator();
         Expression lhse = expr.getLHS();
@@ -786,8 +731,6 @@ public class Reduction extends AnalysisPass {
 
         }
 
-
-
         String reduction_operator = null;
         boolean isreduction = false;
         Expression condlhs = condexpr.getLHS();
@@ -800,8 +743,6 @@ public class Reduction extends AnalysisPass {
         condrhs = Symbolic.simplify(condrhs);
 
         // Loop to check the if-condition. If the if-condition contains the loop index or an integer, return.
-
-      
 
 
         for( i = 0 ; i < Ifexprlist.size() ;i++){

@@ -7,7 +7,7 @@ static int reverse();
 
 int main(){
     
-  float a[30000];
+  float a[30000], x, x0;
   
   int b[30000];
 
@@ -17,7 +17,7 @@ int main(){
 
   }
 
-#pragma omp parallel for
+
   for (int k=1 ; k<30000; k++) {
 
     a[k]= a[k-1] + k;
