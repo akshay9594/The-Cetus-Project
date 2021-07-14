@@ -35,7 +35,7 @@ Cetus Source to Source compiler improvements being done at University of Delawar
         
 ### 3. Support for Min and Max Reductions
        OpenMP added the reduction-identifiers "min" and "max" to the reduction clause from OpenMP 3.1.
-       Cetus can now recognize Min and Max reductions implemented using an if-statement or using the
+       Cetus can now recognize Min and Max reductions implemented using using the
        Conditional operator (?). Some expression restrictions apply.
        
 ### 4. Support for Multiple reductions using different operators
