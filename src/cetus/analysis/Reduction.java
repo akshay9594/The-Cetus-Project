@@ -354,9 +354,9 @@ public class Reduction extends AnalysisPass {
                     }
                 }
                 if (remove_flag == false) {
-                    if(candidate instanceof ArrayAccess){
-                        candidate = ((ArrayAccess)candidate).getArrayName();
-                    }
+                    // if(candidate instanceof ArrayAccess){
+                    //     candidate = ((ArrayAccess)candidate).getArrayName();
+                    // }
                     if (fmap.containsKey(op)) {
                         fmap.get(op).add(candidate);
                     } else {
