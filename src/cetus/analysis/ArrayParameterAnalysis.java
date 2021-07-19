@@ -600,14 +600,17 @@ public class ArrayParameterAnalysis extends AnalysisPass {
                 arg_symbol instanceof Procedure ||
                 arg_symbol instanceof ProcedureDeclarator ||
                 arg_symbol.getArraySpecifiers().isEmpty()) {
+
             ;  // unable to analyze this case.
         // pass an equivalent array representation; a => &a[0].
         } else if (arg instanceof Identifier) {
+          
             ArrayAccess array =
                     new ArrayAccess(arg.clone(), new IntegerLiteral(0));
             ret = processArray(param, array, -1);
         // normal case.
         } else if (arg instanceof ArrayAccess) {
+            //System.out.println("Array processing: " + arg +", "+ param +"\n");
             ret = processArray(param, (ArrayAccess)arg, 0);
         // with address_of operator.
         } else if (arg instanceof UnaryExpression) {
@@ -663,6 +666,7 @@ public class ArrayParameterAnalysis extends AnalysisPass {
         // Check if the tailing dimensions match.
         int head_dimensions = arg.getNumIndices()+offset;
         int tail_dimensions = arg_spec.getNumDimensions() - head_dimensions;
+        //System.out.println("param spcs: " + param_specs + ",arg: " + arg +"\n");
         if (tail_dimensions != param_dimensions.size())
             return null; // returns null if exact matching fails.
         if (options.contains(Option.EXACT_DIMENSION)) {

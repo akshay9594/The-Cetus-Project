@@ -6,11 +6,11 @@
 
 int main(){
     
-  int a[30000] , int b[30000];
+  int a[30000] , b[30000], n = 30000;
 
-  for (int i=1 ; i<30000; i++) {
+  for (int i=0 ; i<n; i++) {
 
-    a[i]= b[i];
+    a[i] = b[i];
 
   }
-
+}

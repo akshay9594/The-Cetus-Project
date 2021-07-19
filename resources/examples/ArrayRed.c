@@ -6,12 +6,13 @@
 */
 int main(){
 
-  float a[1000], sum[1000];
+  float a[1000], sum[1000], b[1000];
   int i, n, tab[1000];
   
+  n = 1000;
   /* define content of sum and a */
 
-  for (i=1; i<1000; i++) {
+  for (i=n; i>=0; i--) {
     sum[tab[i]] = sum[tab[i]] + a[i];
   }
 	

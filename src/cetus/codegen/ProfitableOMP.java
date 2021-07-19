@@ -3,6 +3,9 @@ package cetus.codegen;
 import cetus.exec.Driver;
 import cetus.hir.*;
 import cetus.analysis.LoopTools;
+import cetus.analysis.RangeAnalysis;
+import cetus.analysis.RangeDomain;
+
 import java.util.List;
 import java.util.Set;
 
@@ -271,9 +274,12 @@ public class ProfitableOMP extends CodeGenPass {
         if (stmt instanceof ForLoop) {
             // TODO: handling of negative stride
             ForLoop floop = (ForLoop)stmt;
-            Expression inc = LoopTools.getIncrementExpression(floop);
+            Expression inc = LoopTools.getIncrementExpression(floop);          
             Expression lb = LoopTools.getLowerBoundExpression(floop);
-            Expression ub = LoopTools.getUpperBoundExpression(floop);
+
+            BinaryExpression loop_cond = (BinaryExpression)floop.getCondition();
+            Expression ub = Symbolic.subtract(loop_cond.getRHS(), inc);
+
             Statement init = floop.getInitialStatement();
             Expression condition = floop.getCondition();
             Expression step = floop.getStep();

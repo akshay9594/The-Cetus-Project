@@ -12,6 +12,8 @@ public class LoopTools {
     // Flag for checking if all loops are named.
     private static boolean is_loop_named = false;
 
+    public static List bounds = new ArrayList<>();
+
     /**
      * Constructor - not used at all.
      */
