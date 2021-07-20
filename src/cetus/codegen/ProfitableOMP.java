@@ -274,13 +274,11 @@ public class ProfitableOMP extends CodeGenPass {
         if (stmt instanceof ForLoop) {
             // TODO: handling of negative stride
             ForLoop floop = (ForLoop)stmt;
+            Statement init = floop.getInitialStatement();
             Expression inc = LoopTools.getIncrementExpression(floop);          
             Expression lb = LoopTools.getLowerBoundExpression(floop);
-
-            BinaryExpression loop_cond = (BinaryExpression)floop.getCondition();
-            Expression ub = Symbolic.subtract(loop_cond.getRHS(), inc);
-
-            Statement init = floop.getInitialStatement();
+            //BinaryExpression loop_cond = (BinaryExpression)floop.getCondition();
+            Expression ub = LoopTools.getUpperBoundExpression(floop);
             Expression condition = floop.getCondition();
             Expression step = floop.getStep();
             Expression body_load = countWorkLoad(floop.getBody());

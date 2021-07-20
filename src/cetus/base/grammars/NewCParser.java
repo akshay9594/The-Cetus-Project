@@ -3200,17 +3200,20 @@ inputState.guessing--;
 				
 				if (binit instanceof Expression && decl != null && binit != null && !extern_decl){
 
-					if(decl.toString().contains("*")){
-						String pointer_Decl = decl.toString().replace("*", "");
-						lhsID = new NameID(pointer_Decl);
-					}
-					else{
-						lhsID = new NameID(decl.toString());
-					}
+						binit = new Initializer((Expression)binit);
+					if (binit != null) 
+						decl.setInitializer((Initializer)binit);
+					// if(decl.toString().contains("*")){
+					// 	String pointer_Decl = decl.toString().replace("*", "");
+					// 	lhsID = new NameID(pointer_Decl);
+					// }
+					// else{
+					// 	lhsID = new NameID(decl.toString());
+					// }
 
-					initial_expr = new AssignmentExpression(lhsID , AssignmentOperator.NORMAL, (Expression)binit);
+					// initial_expr = new AssignmentExpression(lhsID , AssignmentOperator.NORMAL, (Expression)binit);
 
-					curr_cstmt.addStatement(new ExpressionStatement(initial_expr));
+					// curr_cstmt.addStatement(new ExpressionStatement(initial_expr));
 					
 				}
 

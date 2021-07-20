@@ -4,6 +4,7 @@
   a.k.a irregular reduction or histogram reduction
 
 */
+#include <stdlib.h>
 int main(){
 
   float a[1000], sum[1000], b[1000];
