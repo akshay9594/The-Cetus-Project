@@ -913,8 +913,6 @@ public class PointsToAnalysis extends AnalysisPass {
                     } else {
                         // If null, then points to universe
                         points_to_universe = true;
-                        if(s instanceof VariableDeclarator)
-                            points_to_universe = false;
                     }
                 }
                 deref_symbols.clear();
