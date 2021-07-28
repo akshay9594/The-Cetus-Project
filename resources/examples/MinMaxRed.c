@@ -25,8 +25,8 @@ int main(){
     for ( i = 0 ; i < 10000 ;i++){
 
         b &= a[i];
-        d += a[i];
-        e *= a[i];
+        d |= a[i];
+        e  ^= a[i];
         maxl = MAX(maxl , a[i]);
 
     }

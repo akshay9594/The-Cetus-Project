@@ -618,7 +618,11 @@ public class Reduction extends AnalysisPass {
                     } else {
                         // Added support for logical and bitwise operators : {&& , || , & ,| , ^}
                        
-                        lhse_removed_rhse = Symbolic.subtract(rhse, lhse,true);  
+                        if(reduction_op.equals("&&") || reduction_op.equals("||") ||
+                           reduction_op.equals("&") || reduction_op.equals("|") ||
+                           reduction_op.equals("^") )
+
+                            lhse_removed_rhse = Symbolic.subtract(rhse, lhse,true);  
                        
                     }
                 } else {
