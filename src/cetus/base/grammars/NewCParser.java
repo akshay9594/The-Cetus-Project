@@ -1808,6 +1808,7 @@ inputState.guessing--;
 			case LITERAL_struct:
 			case LITERAL_union:
 			{
+				
 				types=structOrUnionSpecifier();
 				{
 				_loop40:
@@ -2050,9 +2051,6 @@ inputState.guessing--;
 					decls = new ClassDeclaration(ClassDeclaration.UNION, new NameID(name));
 					spec = new UserSpecifier(new NameID("union "+name));
 					}
-
-
-
 					
 				}
 				{

@@ -1,3 +1,4 @@
+
 package cetus.transforms;
 
 import cetus.analysis.AliasAnalysis;
@@ -7,8 +8,8 @@ import cetus.analysis.DDGraph;
 import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
-
-
+import cetus.analysis.RangeAnalysis;
+import cetus.analysis.RangeDomain;
 import cetus.hir.*;
 
 
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -63,7 +65,6 @@ public class LoopInterchange extends TransformPass
         HashMap<ForLoop,Boolean> loopMap = new HashMap<ForLoop,Boolean>();
         HashMap<ForLoop,Boolean> AlreadyInOrder = new HashMap<ForLoop,Boolean>();
 
-
         while(iter.hasNext()) {
             Object o = iter.next();
             if(o instanceof ForLoop)
@@ -74,6 +75,10 @@ public class LoopInterchange extends TransformPass
         for(i = 0 ; i < outer_loops.size(); i++){
 
             ForLoop l = (ForLoop)outer_loops.get(i);
+
+            //Exclude loops with negative stride
+            if(LoopTools.getIncrementExpression(l).toString().equals("-1") )
+                outer_loops.remove(l);
             CetusAnnotation annotation = l.getAnnotation(CetusAnnotation.class, "private");
             l.getAnnotations().remove(annotation);
         }
@@ -406,13 +411,13 @@ OuterWhileLoop:
 
        }
 
-     
+       
        Boolean SymbolicIter = true;
        Boolean SymbolicLoopStride = false;
 
        HashMap LoopNestIterationMap = LoopIterationMap(LoopNest);
 
-       if(LoopNestIterationMap.get(LoopNestOrder.get(0)) instanceof Long){
+       if(!HasSymbolicBounds(LoopNestIterationMap)){
 
           SymbolicIter = false;
        }
@@ -505,8 +510,8 @@ OuterWhileLoop:
                         /*
                          Cost = (trip)/cache line size if:
                          (a) Loop index variable is present in the right hand side dimension of the array access
-                         (b) The RHS Dimension has a unit stride and
-                         (c) The innerloop also has a unit stride
+                         (b) The Dimension has a unit stride and
+                         (c) The loop also has a unit stride
 
                         */
                         
@@ -550,10 +555,9 @@ OuterWhileLoop:
 
                             /*
                             Cost = (trip) if:
-                            (a) Loop index variable of candidate loop is present 
-                                in the left hand side dimension of the array access
-                            (b) The LHS Dimension has a non-unit stride or
-                            (c) The innerloop candidate has a non-unit stride
+                            (a) Loop index variable is present in the left hand side dimension of the array access
+                            (b) The Dimension has a non- unit stride or
+                            (c) The loop candidate loop has a non-unit stride
 
                             */
 
@@ -743,13 +747,14 @@ OuterWhileLoop:
 
              }
 
-            //System.out.println( "Coeffs: " + Coeffs + " \nScores sorted: " + Sortedscores +"\n");
+            //System.out.println( "LNO: " + Symbolic_LoopCostMap + " \nScores sorted: " + Sortedscores +"\n");
 
                 for(Expression key : Symbolic_LoopCostMap.keySet() ){
 
                     Expression Symbolic_cost = Symbolic_LoopCostMap.get(key);
 
-                    LoopNestOrder.set(Sortedscores.indexOf(Symbolic_cost) , key);
+                    if(Sortedscores.indexOf(Symbolic_cost) != -1)
+                        LoopNestOrder.set(Sortedscores.indexOf(Symbolic_cost) , key);
 
                 }
 
@@ -1061,11 +1066,16 @@ OuterWhileLoop:
 
         long numLoopiter = 0;
 
+      
             while(forloopiter.hasNext()){
 
                 ForLoop loop = forloopiter.next();
 
-                     Expression upperbound = LoopTools.getUpperBoundExpression(loop);
+                    //Using custom method to find loop upper bound as Range analysis
+                    // gives probles when substituting the value range of a symbolic
+                    //loop upperbound.
+
+                     Expression upperbound = LoopUpperBoundExpression(loop);
  
                      Expression lowerbound = LoopTools.getLowerBoundExpression(loop);
  
@@ -1360,5 +1370,49 @@ OuterWhileLoop:
 
         return true;
     }
+    
 
+  private boolean HasSymbolicBounds(HashMap LoopIterMap){
+
+    Set<Expression> LoopIndices = LoopIterMap.keySet();
+
+    for(Expression e : LoopIndices){
+
+        if(LoopIterMap.get(e) instanceof Long)
+              return false;
+     }
+
+     return true;
+
+  }
+
+
+
+private static Expression LoopUpperBoundExpression(Loop loop) {
+        Expression ub = null;
+        if (loop instanceof ForLoop) {
+            ForLoop for_loop = (ForLoop)loop;
+            // determine upper bound for index variable of this loop
+            BinaryExpression cond_expr =
+                    (BinaryExpression)for_loop.getCondition();
+            Expression rhs = cond_expr.getRHS();
+            Expression step_size = LoopTools.getIncrementExpression(loop);
+            BinaryOperator cond_op = cond_expr.getOperator();
+            if (cond_op.equals(BinaryOperator.COMPARE_LT)) {
+                ub = Symbolic.subtract(rhs, step_size);
+            } else if ((cond_op.equals(BinaryOperator.COMPARE_LE)) ||
+                       (cond_op.equals(BinaryOperator.COMPARE_GE))) {
+                ub = Symbolic.simplify(rhs);
+            } else if (cond_op.equals(BinaryOperator.COMPARE_GT)) {
+                ub = Symbolic.add(rhs, step_size);
+            }
+        }
+      
+        return ub;
+    }
+
+    
 }
+
+
+

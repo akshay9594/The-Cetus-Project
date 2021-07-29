@@ -6,8 +6,6 @@ Different loops to test the Loop Interchange pass in Cetus.
 
 */
 
-#include <stdio.h>
-#include <math.h>
   
   int a[10000][10000] , c[10000] , b[10000][10000] ,d[10000][10000] ;
     int work[10000][10000][10000], coef2[1000][10000],coef4[10000][10000];
@@ -17,7 +15,7 @@ int main(){
 
  
 
-    int i ,j ,k , n = 10000 , r = 1000 , jmi , ld1 , ld2 , ldi ,ld,m ;
+    int i ,j ,k , n = 10000 , r = 1000 , jmi , ld1 , ld2 , ldi ,ld, m = 10000 ;
     
 
 
