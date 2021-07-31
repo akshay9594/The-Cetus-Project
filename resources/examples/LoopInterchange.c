@@ -6,7 +6,9 @@ Different loops to test the Loop Interchange pass in Cetus.
 
 */
 
-  
+
+#include <stdio.h>
+
   int a[10000][10000] , c[10000] , b[10000][10000] ,d[10000][10000] ;
     int work[10000][10000][10000], coef2[1000][10000],coef4[10000][10000];
     int S[10000] , x[10000][10000] , y[10000][10000] , f[10000][10000],e[10000][10000];
@@ -31,7 +33,7 @@ int main(){
 
     
    
-    //Taken from ARC2D (Perfect Benchmarks)
+    // //Taken from ARC2D (Perfect Benchmarks)
       for (k = 0 ; k < 10000 ;k++){
 
           for (j = 0 ; j < 10000; j++){

@@ -34,6 +34,8 @@ public class LoopInterchange extends TransformPass
 
     List Loop_ref_cost = new ArrayList<>();
 
+    Boolean SymbolicIter;
+
     public LoopInterchange(Program program)
     {
         super(program);
@@ -62,8 +64,7 @@ public class LoopInterchange extends TransformPass
         int target_loops = 0;
         int num_single = 0, num_non_perfect = 0, num_contain_func = 0, num_loop_interchange=0;
              
-        HashMap<ForLoop,Boolean> loopMap = new HashMap<ForLoop,Boolean>();
-        HashMap<ForLoop,Boolean> AlreadyInOrder = new HashMap<ForLoop,Boolean>();
+        HashMap<ForLoop,String> loopMap = new HashMap<ForLoop,String>();
 
         while(iter.hasNext()) {
             Object o = iter.next();
@@ -77,8 +78,10 @@ public class LoopInterchange extends TransformPass
             ForLoop l = (ForLoop)outer_loops.get(i);
 
             //Exclude loops with negative stride
-            if(LoopTools.getIncrementExpression(l).toString().equals("-1") )
+            if(LoopTools.getIncrementExpression(l).toString().equals("-1") ){
+                loopMap.put(l, "NegativeIncrement");
                 outer_loops.remove(l);
+            }
             CetusAnnotation annotation = l.getAnnotation(CetusAnnotation.class, "private");
             l.getAnnotations().remove(annotation);
         }
@@ -151,7 +154,22 @@ public class LoopInterchange extends TransformPass
 
                 */
 
-               
+                HashMap LoopNestIterMap = LoopIterationMap(loops.get(0));
+
+                if(HasSymbolicBounds(LoopNestIterMap)){
+                    SymbolicIter = true;
+                 }
+                 else if(HasNonSymbolicBounds(LoopNestIterMap))
+                 {
+                    SymbolicIter = false;
+          
+                 }
+                 else{
+                     loopMap.put((ForLoop)loops.get(0), "ComplexBounds");
+                     continue;
+                 }
+
+
                 List<Expression> MemoryOrder = ReusabilityAnalysis(program , loops.get(0), LoopAssnExprs , arrays , loops);
 
 
@@ -159,7 +177,7 @@ public class LoopInterchange extends TransformPass
              
                 if(OriginalLoopOrder.equals(MemoryOrder)){
 
-                    AlreadyInOrder.put((ForLoop)loops.get(0), true);
+                    loopMap.put((ForLoop)loops.get(0), "AlreadyInOrder");
                     continue;
                 }
 
@@ -225,9 +243,7 @@ OuterWhileLoop:
 
 
                                     if(PermutedLoopOrder.equals(MemoryOrder)){
-                    
-
-                                        loopMap.put(l, true); 
+                                        loopMap.put(l, "Permuted"); 
                                         icFlag = false;
                                         break OuterWhileLoop;
                                     
@@ -247,7 +263,7 @@ OuterWhileLoop:
 
                 if(PermutedLoopOrder.equals(OriginalLoopOrder) ||
                    PermutedLoopOrder.isEmpty())
-                loopMap.put((ForLoop)loops.get(0), false);
+                loopMap.put((ForLoop)loops.get(0), "Non-Permuted");
             }
 
 
@@ -264,26 +280,41 @@ OuterWhileLoop:
 
             if(loopMap.containsKey(forloop)){      
                 
-                if(loopMap.get(forloop)){
+                if((loopMap.get(forloop)).equals("Permuted")){
 
                     System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) +
                                     " have been Interchanged"+"\n");
 
                 }
 
-                else 
+                else if( (loopMap.get(forloop)).equals("Non-Permuted") )
                     System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) +
                                     " cannot be Interchanged"+"\n");
 
+                else if((loopMap.get(forloop)).equals("AlreadyInOrder")){
+
+                    System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
+                    " Already in desired order\n");
+
+                }
+
+                else if((loopMap.get(forloop)).equals("NegativeIncrement")){
+
+                    System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
+                    " Have negative increment expression;Cannot perform Interchange\n");
+
+                }
+
+                else if((loopMap.get(forloop)).equals("ComplexBounds")){
+
+                    System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
+                    " do not have fully symbolic or fully numeric bounds;Cannot perform Interchange\n");
+
+                }
+
             }
 
-            else if(AlreadyInOrder.containsKey(forloop)){
-
-                System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
-                                    " Already in desired order\n");
-
-            }
-
+           
 
         }
 
@@ -395,7 +426,6 @@ OuterWhileLoop:
        ArrayList<DependenceVector> Loopdpv = new ArrayList<>();
 
        Loopdpv = programDDG.getDirectionMatrix(LoopNestList);
-     
 
        DepthFirstIterator LoopNestiter = new DepthFirstIterator(LoopNest);
 
@@ -411,16 +441,13 @@ OuterWhileLoop:
 
        }
 
-       
-       Boolean SymbolicIter = true;
+       //System.out.println("loop nest: " + LoopNest +"\n");
+
        Boolean SymbolicLoopStride = false;
 
        HashMap LoopNestIterationMap = LoopIterationMap(LoopNest);
 
-       if(!HasSymbolicBounds(LoopNestIterationMap)){
-
-          SymbolicIter = false;
-       }
+      
       
        //Getting reusability score
 
@@ -1378,13 +1405,37 @@ OuterWhileLoop:
 
     for(Expression e : LoopIndices){
 
-        if(LoopIterMap.get(e) instanceof Long)
+        Object o = LoopIterMap.get(e);
+
+        if(o instanceof IntegerLiteral || 
+           o instanceof Long || o instanceof ArrayAccess){
+            
               return false;
+        }
      }
 
      return true;
 
   }
+
+  private boolean HasNonSymbolicBounds(HashMap LoopIterMap){
+
+    Set<Expression> LoopIndices = LoopIterMap.keySet();
+
+    for(Expression e : LoopIndices){
+
+        if(!(LoopIterMap.get(e) instanceof IntegerLiteral || 
+            LoopIterMap.get(e) instanceof Long)){
+           
+              return false;
+        }
+     }
+
+  
+     return true;
+
+  }
+
 
 
 
