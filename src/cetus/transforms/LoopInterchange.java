@@ -116,10 +116,12 @@ public class LoopInterchange extends TransformPass
             }
             if(loops.size() < 2) {
                 num_single++;
-            }    else if(!LoopTools.isPerfectNest((ForLoop)loops.get(0))) {
+            }else if(!LoopTools.isPerfectNest((ForLoop)loops.get(0))) {
                 num_non_perfect++;
-            }    else if(LoopTools.containsFunctionCall((ForLoop)loops.get(0))) {
+                loopMap.put((ForLoop)loops.get(0), "non-perfect");
+            }else if(LoopTools.containsFunctionCall((ForLoop)loops.get(0))) {
                 num_contain_func++;
+                loopMap.put((ForLoop)loops.get(0), "Function-call");
             } else {
                 target_loops++;
                 Statement stm = ((ForLoop)loops.get(loops.size()-1)).getBody();
@@ -154,6 +156,7 @@ public class LoopInterchange extends TransformPass
 
                 */
 
+
                 HashMap LoopNestIterMap = LoopIterationMap(loops.get(0));
 
                 if(HasSymbolicBounds(LoopNestIterMap)){
@@ -169,7 +172,7 @@ public class LoopInterchange extends TransformPass
                      continue;
                  }
 
-
+            
                 List<Expression> MemoryOrder = ReusabilityAnalysis(program , loops.get(0), LoopAssnExprs , arrays , loops);
 
 
@@ -211,7 +214,6 @@ OuterWhileLoop:
     
                         rank.remove(rank.indexOf(r));
                 
-
                         if(expList.size() < until) until = expList.size();
 
 
@@ -308,7 +310,20 @@ OuterWhileLoop:
                 else if((loopMap.get(forloop)).equals("ComplexBounds")){
 
                     System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
-                    " do not have fully symbolic or fully numeric bounds;Cannot perform Interchange\n");
+                    " have complex bound expressions;Cannot perform Interchange\n");
+
+                }
+                else if((loopMap.get(forloop)).equals("non-perfect")){
+
+                    System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
+                    " are imprefectly nested;Cannot perform Interchange\n");
+
+                }
+                
+                else if((loopMap.get(forloop)).equals("Function-call")){
+
+                    System.out.println("[LoopInterchange] Loops in nest: " + LoopTools.getLoopName(forloop) + 
+                    " contain function call;Cannot perform Interchange\n");
 
                 }
 
@@ -1412,6 +1427,14 @@ OuterWhileLoop:
             
               return false;
         }
+
+        if(o instanceof Expression){
+            Expression ubexp = (Expression)o;
+
+            if(Symbolic.getVariables(ubexp) == null)
+               return false;
+           
+        }    
      }
 
      return true;
