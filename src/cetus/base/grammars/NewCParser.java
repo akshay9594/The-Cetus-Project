@@ -911,6 +911,7 @@ inputState.guessing--;
 				
 			}
 		}
+		
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
 				reportError(ex);
@@ -919,7 +920,44 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
-		
+
+		Set<Declaration> variable_decls = stmt.getDeclarations();
+
+		List<IDExpression> declared_vars = new ArrayList<IDExpression>();
+
+		Iterator vdecliter = variable_decls.iterator();
+
+		while (vdecliter.hasNext()){
+
+			Declaration d = (Declaration)vdecliter.next();
+
+			List<IDExpression> decl_IDS = d.getDeclaredIDs();
+
+			for(int i=0 ; i < decl_IDS.size(); i++){
+
+				declared_vars.add(decl_IDS.get(i));
+
+			}
+			
+		}
+
+		if(!loop_decl_list.isEmpty() && !declared_vars.isEmpty()){
+			for(int i=0 ;i < loop_decl_list.size() ; i++){
+				Declaration d = loop_decl_list.get(i);
+				
+				List<IDExpression> decl_IDS = d.getDeclaredIDs();
+
+				for(int j=0 ; j < decl_IDS.size(); j++){
+
+					if(!declared_vars.contains(decl_IDS.get(j)))
+						stmt.addDeclaration(d);				
+	
+				}
+
+				
+			}
+		}
+	
 		return curFunc;
 	}
 	
@@ -4797,7 +4835,10 @@ inputState.guessing--;
 						if ( inputState.guessing==0 ) {
 
 	
-							if(decl != null ) curr_cstmt.addDeclaration(decl);
+							if(decl != null ) {
+								curr_cstmt.addDeclaration(decl);
+							}
+	
 						}
 					}
 					else {
@@ -5041,6 +5082,7 @@ inputState.guessing--;
 					
 					if ( inputState.guessing==0 ) {
 						curr_cstmt.addDeclaration(decl);
+						
 					}
 				}
 				else if ((_tokenSet_66.member(LA(1))) && (_tokenSet_67.member(LA(2)))) {
@@ -5048,6 +5090,7 @@ inputState.guessing--;
 					
 					if ( inputState.guessing==0 ) {
 						curr_cstmt.addStatement(statb);
+
 					}
 				}
 				else {
@@ -5316,12 +5359,12 @@ inputState.guessing--;
 				
 				if(loop_decl != null && !loop_decl_list.contains(loop_decl)){
 
-					curr_cstmt.addDeclaration(loop_decl);
 					loop_decl_list.add(loop_decl);
 
 				}
 				stmt1=statement();
 		
+				
 				if ( inputState.guessing==0 ) {
 					
 					if (expr1 != null) {

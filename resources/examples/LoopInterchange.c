@@ -8,17 +8,20 @@ Different loops to test the Loop Interchange pass in Cetus.
 
 
 #include <stdio.h>
+#include <stdlib.h>
 
   int a[10000][10000] , c[10000] , b[10000][10000] ,d[10000][10000] ;
     int work[10000][10000][10000], coef2[1000][10000],coef4[10000][10000];
     int S[10000] , x[10000][10000] , y[10000][10000] , f[10000][10000],e[10000][10000];
+    int t[10000];
 
 int main(){
 
 
-    int i ,j ,k , n = 10000 , r = 1000 , jmi , ld1 , ld2 , ldi ,ld, m = 10000 ;
+    int n = 10000 , r = 1000 , jmi , ld1 , ld2 , ldi ,ld, m = 10000 ;
 
-    for (i = 0 ; i < 10000 ;i++){
+    int i,j,k,l;
+    for ( i = 0 ; i < 10000 ;i++){
 
       for ( j = 0 ; j < 10000 ;j++){
 
@@ -30,7 +33,7 @@ int main(){
 
     
    
-    // //Taken from ARC2D (Perfect Benchmarks)
+    // // //Taken from ARC2D (Perfect Benchmarks)
       for (k = 0 ; k < 10000 ;k++){
 
           for (j = 0 ; j < 10000; j++){
@@ -41,7 +44,7 @@ int main(){
       }
 
     
-    // From ARC2D Perfect benchmarks
+    // // From ARC2D Perfect benchmarks
        
     for (k = 0 ; k < n ;k++){
 
@@ -74,7 +77,7 @@ int main(){
       }
 
     }
-    
+
 
     for ( i = 0 ; i < n; i++){
 
