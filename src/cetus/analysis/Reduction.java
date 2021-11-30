@@ -678,8 +678,10 @@ public class Reduction extends AnalysisPass {
                     isReduction = true;
                 }
             } else if (lhse instanceof ArrayAccess) {
-                base_array_name = ((ArrayAccess)lhse).getArrayName();
-                if (base_array_name instanceof Identifier) {
+                ArrayAccess array = (ArrayAccess)lhse;
+                base_array_name = (array).getArrayName();
+                if (base_array_name instanceof Identifier &&
+                    array.getIndices().size() == 1) {
                     Identifier id = (Identifier)base_array_name;
                     if (!IRTools.containsSymbol(
                                 lhse_removed_rhse, id.getSymbol())) {
