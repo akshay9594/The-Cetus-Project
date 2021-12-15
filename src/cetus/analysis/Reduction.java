@@ -608,6 +608,10 @@ public class Reduction extends AnalysisPass {
                     reduction_op =
                       ((BinaryExpression)parent_expr).getOperator().toString();
 
+                    if(reduction_op.equals("%") || reduction_op.equals("/")){
+                        return;
+                    }
+
                     if (reduction_op.equals("+")) {
                        
                         lhse_removed_rhse = Symbolic.subtract(rhse, lhse);

@@ -11,16 +11,22 @@
 #include <math.h>
 int main(){
 
-  float a[1000][1000], b[1000][1000], t[1000];
+  float a[10000][1000], b[10000][10000], t[10000];
   int i, j;
+  float c[10000], d[10000],x;
   
-  for (i=1; i<1000; i++) {
-     for (j=1; j<1000; j++) {
+  for (i=1; i<10000; i++) {
+     for (j=1; j<10000; j++) {
        t[j] = a[i][j]+b[i][j];
      }
-     for (j=1; j<1000; j++) {
+     for (j=1; j<10000; j++) {
        b[i][j] =  t[j] + sqrt(t[j]);
      }
+  }
+
+   for (i=1; i<10000; i++) {
+    x = c[i]+d[i];
+    d[i] =  x + x*x;
   }
 	
    return 0;
