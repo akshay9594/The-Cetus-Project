@@ -1,10 +1,6 @@
 
-
-
 /* Scalar Reduction
-
   The loop contains a scalar reduction operation.
-
 */
 
 #include <stdio.h>
