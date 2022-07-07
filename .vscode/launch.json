@@ -1,0 +1,95 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Tiling Matrix Mult example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "projectName": "The-Cetus-Project_33c94ac5",
+            "args": "-loop-tiling ./resources/examples/ScalarPriv.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Loop Inter",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "projectName": "The-Cetus-Project_33c94ac5",
+            "args": "-loop-tiling ./resources/examples/Loop Inter.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch MergeTwoSortedLists",
+            "request": "launch",
+            "mainClass": "cetus.gui.MergeTwoSortedLists",
+            "projectName": "The-Cetus-Project_33c94ac5"
+        },
+        {
+            "type": "java",
+            "name": "Launch ValidParentheses",
+            "request": "launch",
+            "mainClass": "cetus.gui.ValidParentheses",
+            "projectName": "The-Cetus-Project_33c94ac5"
+        },
+        {
+            "type": "java",
+            "name": "Launch TCPServer",
+            "request": "launch",
+            "mainClass": "cetus.server.TCPServer",
+            "projectName": "The-Cetus-Project_33c94ac5"
+        },
+        {
+            "type": "java",
+            "name": "Launch CetusGUI",
+            "request": "launch",
+            "mainClass": "cetus.server.speed_up.CetusGUI",
+            "projectName": "The-Cetus-Project_33c94ac5"
+        },
+        {
+            "type": "java",
+            "name": "Launch TestTripletRunner",
+            "request": "launch",
+            "mainClass": "cetus.unittest.TestTripletRunner",
+            "projectName": "The-Cetus-Project_33c94ac5"
+        },
+        {
+            "type": "java",
+            "name": "Launch OMP2GPUDriver",
+            "request": "launch",
+            "mainClass": "omp2gpu.exec.OMP2GPUDriver",
+            "projectName": "The-Cetus-Project_33c94ac5"
+        },
+        {
+            "name": "C/C++: gcc.exe Compilar y depurar el archivo activo",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "C:/opt/msys64/mingw64/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\opt\\msys64\\mingw64\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Habilitar la impresión con sangría para gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Establecer tipo de desensamblado en Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: gcc.exe compilar archivo activo"
+        }
+    ]
+}
