@@ -347,6 +347,10 @@ public class Driver {
         options.add(options.TRANSFORM,
                 "loop-tiling",
                 "To apply loop tiling. Not fully implemented yet");
+
+        options.add(options.TRANSFORM,
+                ParallelAwareTilingPass.PARAM_NAME,
+                "To apply parallel aware tiling. Not fully implemented yet");
     }
 
     /**
@@ -778,6 +782,7 @@ public class Driver {
         // }
 
         PrintTools.printlnStatus("[Driver] print all options :\n" + options.dumpOptions(), 4);
+        System.out.println(program);
 
         if (getOptionValue("teliminate-branch") != null && !getOptionValue("teliminate-branch").equals("0")) {
             TransformPass.run(new BranchEliminator(program));
@@ -842,6 +847,11 @@ public class Driver {
         if (getOptionValue("profile-loops") != null) {
             TransformPass.run(new LoopProfiler(program));
         }
+
+        if (getOptionValue(ParallelAwareTilingPass.PARAM_NAME) != null) {
+            TransformPass.run(new ParallelAwareTilingPass(program));
+        }
+
     }
 
     /**
