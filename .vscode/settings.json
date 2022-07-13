@@ -4,6 +4,7 @@
         "type_traits": "cpp",
         "stdio.h": "c",
         "random": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "omp.h": "c"
     }
 }

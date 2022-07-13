@@ -13,7 +13,15 @@
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-loop-tiling ./resources/examples/ScalarPriv.c"
+            "args": "-paw-tiling ./resources/examples/MatrixMult.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Dependencies test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "projectName": "The-Cetus-Project_33c94ac5",
+            "args": "-paw-tiling ./resources/examples/DependenciesLoop.c"
         },
         {
             "type": "java",
@@ -21,7 +29,7 @@
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-loop-tiling ./resources/examples/Loop Inter.c"
+            "args": "-loop_interchange ./resources/examples/LoopInterchange.c"
         },
         {
             "type": "java",
