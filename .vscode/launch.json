@@ -13,15 +13,23 @@
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-paw-tiling ./resources/examples/MatrixMult.c"
+            "args": "-ddt -loop-tiling ./resources/examples/MatrixMult.c"
         },
         {
             "type": "java",
-            "name": "Launch Driver Dependencies test",
+            "name": "Launch Driver Dependencies Test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-paw-tiling ./resources/examples/DependenciesLoop.c"
+            "args": "-outputFile=out/logs.txt -paw-tiling ./resources/examples/DDTLoops.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Tilable loops Test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "projectName": "The-Cetus-Project_33c94ac5",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/TilableLoops.c"
         },
         {
             "type": "java",

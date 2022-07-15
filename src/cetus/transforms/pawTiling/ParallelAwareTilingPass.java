@@ -1,4 +1,4 @@
-package cetus.transforms;
+package cetus.transforms.pawTiling;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +10,7 @@ import cetus.analysis.DDGraph;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
 import cetus.analysis.DDGraph.Arc;
+import cetus.exec.CommandLineOptionSet;
 import cetus.hir.ArrayAccess;
 import cetus.hir.AssignmentExpression;
 import cetus.hir.DFIterator;
@@ -23,16 +24,32 @@ import cetus.hir.Loop;
 import cetus.hir.Program;
 import cetus.hir.Statement;
 import cetus.hir.Symbolic;
+import cetus.transforms.TransformPass;
 import cetus.utils.DataDependenceUtils;
 
 public class ParallelAwareTilingPass extends TransformPass {
 
     public final static String PARAM_NAME = "paw-tiling";
 
+    private CommandLineOptionSet commandLineOptions;
+
     private int processors;
 
+    private List<Loop> selectedOutermostLoops;
+
+    private PawAnalysisData analysisData = new PawAnalysisData();
+
     public ParallelAwareTilingPass(Program program) {
+        this(program, null);
+    }
+
+    public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions) {
         super(program);
+        this.commandLineOptions = commandLineOptions;
+        if (commandLineOptions.getValue("verbosity").equals("1")) {
+            System.out.println("Verbosity activated");
+            analysisData.verbosity = true;
+        }
     }
 
     @Override
@@ -48,7 +65,57 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         System.out.println("Printing direction matrix ");
         DataDependenceUtils.printDirectionMatrix(program);
+
+        List<Loop> outermostLoops = LoopTools.getOutermostLoops(program);
+        List<Loop> perfectLoops = filterValidLoops(outermostLoops);
+        this.selectedOutermostLoops = perfectLoops;
+
+        System.out.println(analysisData);
+
     }
+
+    public List<Loop> filterValidLoops(List<Loop> loops) {
+        List<Loop> perfectLoops = new ArrayList<>();
+        for (Loop loop : loops) {
+            if (isCanonical(loop) && isPerfectNest(loop) && !containsFunctionCalls(loop)) {
+                perfectLoops.add(loop);
+            }
+        }
+
+        return perfectLoops;
+    }
+
+    public boolean isCanonical(Loop loop) {
+        if (!LoopTools.isCanonical(loop)) {
+            analysisData.nonCanonicalLoops.add(loop);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean isPerfectNest(Loop loop) {
+        if (!LoopTools.isPerfectNest(loop)) {
+            analysisData.nonPerfectNestLoops.add(loop);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean containsFunctionCalls(Loop loop) {
+        if (LoopTools.containsFunctionCall(loop)) {
+            analysisData.withFunctionCallLoops.add(loop);
+            return true;
+        }
+        return false;
+    }
+
+    // public void stripmining() {
+    // chooseStrip();
+    // }
+
+    // public int chooseStrip(Loop loop) {
+
+    // }
 
     /**
      * Reusability Test to determine the innermost loop in the nest for Max

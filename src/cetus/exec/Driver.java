@@ -11,6 +11,8 @@ import cetus.hir.Program;
 import cetus.hir.SymbolTools;
 import cetus.hir.Tools;
 import cetus.transforms.*;
+import cetus.transforms.pawTiling.ParallelAwareTilingPass;
+import cetus.utils.LoggingUtils;
 
 import java.io.*;
 import java.util.Arrays;
@@ -849,7 +851,7 @@ public class Driver {
         }
 
         if (getOptionValue(ParallelAwareTilingPass.PARAM_NAME) != null) {
-            TransformPass.run(new ParallelAwareTilingPass(program));
+            TransformPass.run(new ParallelAwareTilingPass(program, options));
         }
 
     }
@@ -905,6 +907,7 @@ public class Driver {
     public static void main(String[] args) {
 
         // checkUpdate();
+        LoggingUtils.redirectOutput(args);
         if (args.length > 0 && args[0].toLowerCase().equals("-gui")) {
             // if (args.length == 0 || args[0].toLowerCase().equals("-gui")) {
             t2 = new ThreadUpdate(10, true);
