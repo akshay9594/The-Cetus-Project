@@ -25,11 +25,19 @@
         },
         {
             "type": "java",
-            "name": "Launch Driver Tilable loops Test",
+            "name": "Launch Driver PawTiling Tilable loops Test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "projectName": "The-Cetus-Project_33c94ac5",
             "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/TilableLoops.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver PawTiling Jacobi example test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "projectName": "The-Cetus-Project_33c94ac5",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange ./resources/examples/JacobiExample.c"
         },
         {
             "type": "java",
