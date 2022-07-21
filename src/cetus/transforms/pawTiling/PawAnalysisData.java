@@ -15,6 +15,7 @@ public class PawAnalysisData {
     protected List<Loop> nonCanonicalLoops = new ArrayList<>();
     protected List<Loop> nonPerfectNestLoops = new ArrayList<>();
     protected List<Loop> withFunctionCallLoops = new ArrayList<>();
+    protected List<Loop> nonIncreasingOrderLoops = new ArrayList<>();
 
     @Override
     public String toString() {
