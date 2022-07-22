@@ -13,7 +13,7 @@
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-ddt -loop-tiling ./resources/examples/MatrixMult.c"
+            "args": "-ddt -paw-tiling ./resources/examples/LoopCost.c"
         },
         {
             "type": "java",
@@ -37,7 +37,7 @@
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange ./resources/examples/JacobiExample.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/JacobiExample.c"
         },
         {
             "type": "java",

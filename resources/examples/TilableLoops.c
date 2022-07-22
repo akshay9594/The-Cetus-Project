@@ -42,15 +42,6 @@ int main()
         }
     }
 
-    // Tilable loop
-    for (i = 0; i < n; i++)
-    {
-        for (j = 0; j < n; j++)
-        {
-            c[n] = a[i] + b[j];
-        }
-    }
-
     // Non tilable loop : Non canonical
     for (i = 0;;)
     {
@@ -60,8 +51,8 @@ int main()
         }
     }
 
-    // Tilable Or not? tilable loop : Non canonical 
-    // The idea is to parallelize the outermost
+    // Tilable Or not? innermost loop is non canonical (and infinite)
+    // Take into account that the idea is to parallelize the outermost
     for (i = 0; i < n; i++)
     {
         for (j = 0;;)
@@ -69,6 +60,15 @@ int main()
             c[n] = a[i] + b[j];
         }
     }
-    
+
+    // Tilable loop
+    for (i = 0; i < n; i++)
+    {
+        for (j = 0; j < n; j++)
+        {
+            c[n] = a[i] + b[j];
+        }
+    }
+
     return 0;
 }

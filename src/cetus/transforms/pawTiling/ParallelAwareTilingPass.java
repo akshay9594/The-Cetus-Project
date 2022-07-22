@@ -64,10 +64,26 @@ public class ParallelAwareTilingPass extends TransformPass {
         List<Loop> perfectLoops = filterValidLoops(outermostLoops);
         this.selectedOutermostLoops = perfectLoops;
 
+        System.out.println("#### Selected loops: " + selectedOutermostLoops.size() + "\n");
+        for (Loop outermostLoop : selectedOutermostLoops) {
+            System.out.println(outermostLoop + "\n");
+        }
+        System.out.println("#### END Selected loops");
+
         System.out.println(analysisData);
 
         for (Loop outermostLoop : selectedOutermostLoops) {
-            runPawTiling(outermostLoop);
+            try {
+                runPawTiling(outermostLoop);
+            } catch (Exception e) {
+                System.out.println(" ----");
+                System.out.println("Error trying to run paw tiling");
+                System.out.println("Loop:");
+                System.err.println(outermostLoop);
+                System.out.println("Error:");
+                e.printStackTrace();
+                System.out.println(" ---- ");
+            }
         }
 
     }
@@ -132,7 +148,10 @@ public class ParallelAwareTilingPass extends TransformPass {
     public List<Loop> filterValidLoops(List<Loop> loops) {
         List<Loop> validLoops = new ArrayList<>();
         for (Loop loop : loops) {
-            if (isCanonical(loop) && isPerfectNest(loop) && !containsFunctionCalls(loop) && isIncreasingOrder(loop)) {
+            if (isCanonical(loop)
+                    && isPerfectNest(loop)
+                    && !containsFunctionCalls(loop)
+                    && isIncreasingOrder(loop)) {
                 validLoops.add(loop);
             }
         }

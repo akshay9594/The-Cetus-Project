@@ -21,11 +21,12 @@ public class PawAnalysisData {
     public String toString() {
         String format = "Non canonical loops: %s\nNon perfect nest loops: %s\nWith function calls: %s\n";
         if (verbosity) {
-            format += "#### Non canonical loops ####\n%s\n#### Non perfect nest loops ####\n%s\n#### With function calls ####\n%s\n";
+            format += "#### Non canonical loops ####\n%s\n#### Non perfect nest loops ####\n%s\n#### With function calls ####\n%s\n#### Non increasing order loops ####\n%s\n";
         }
         return String.format(format, nonCanonicalLoops.size(), nonPerfectNestLoops.size(),
                 withFunctionCallLoops.size(), getFormattedLoops(nonCanonicalLoops),
-                getFormattedLoops(nonPerfectNestLoops), getFormattedLoops(withFunctionCallLoops));
+                getFormattedLoops(nonPerfectNestLoops), getFormattedLoops(withFunctionCallLoops),
+                getFormattedLoops(nonIncreasingOrderLoops));
     }
 
     private String getFormattedLoops(List<Loop> loops) {

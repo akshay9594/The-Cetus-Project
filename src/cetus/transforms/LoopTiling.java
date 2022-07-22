@@ -450,7 +450,18 @@ public class LoopTiling extends TransformPass {
 
         // reuseDistance = LoopTools.getReuseDistance(loops.get(0), arrays.get(0),
         // arrays.get(1));
-        // System.out.println("reuse dist : " + reuseDistance);
+        // System.out.println("reuse dist : " + reuseDistance);\
+
+        System.out.print("self group reuse value: < ");
+        for (int z = 0; z < reuseValue.length; z++) {
+            if (z == reuseValue.length - 1) {
+                System.out.print("" + reuseValue[z]);
+            } else {
+                System.out.println(reuseValue[z] + ", ");
+            }
+        }
+
+        System.out.println(" >");
         return 0;
 
     }
@@ -464,6 +475,7 @@ public class LoopTiling extends TransformPass {
         kernelVector = new long[loopSize];
 
         for (int i = 0; i < arrays.size(); i++) {
+
             kernelVector = getKernelVector(loops, arrays.get(i));
 
             System.out.println();
@@ -478,6 +490,17 @@ public class LoopTiling extends TransformPass {
             // System.out.print(reuseValue[j]+ " ");
             // System.out.println();
         }
+
+        System.out.print("self reuse value: < ");
+        for (int i = 0; i < reuseValue.length; i++) {
+            if (i == reuseValue.length - 1) {
+                System.out.print("" + reuseValue[i]);
+            } else {
+                System.out.println(reuseValue[i] + ", ");
+            }
+        }
+
+        System.out.println(" >");
 
         return 1;
     }
@@ -523,6 +546,21 @@ public class LoopTiling extends TransformPass {
         int numLoops = loops.size();
         int numIndices = array.getNumIndices();
         double[][] matrix = getLoopMatrix(loops, array);
+
+        System.out.println("### Loop Matrix ### ");
+
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                System.out.print(" " + matrix[i][j]);
+                if (j != matrix[0].length - 1) {
+                    System.out.print(",");
+                }
+            }
+            System.out.println();
+        }
+
+        System.out.println("### END Loop Matrix ### ");
+
         matrix = GaussJordan(matrix, numIndices, numLoops);
         // System.out.println("Final = ");
         // printMatrix(matrix);
