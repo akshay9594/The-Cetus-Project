@@ -843,7 +843,7 @@ public class Driver {
         }
 
         if (getOptionValue("loop-tiling") != null) {
-            TransformPass.run(new LoopTiling(program));
+            TransformPass.run(new LoopTiling(program, options));
         }
 
         if (getOptionValue("profile-loops") != null) {

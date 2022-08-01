@@ -4,8 +4,12 @@ import cetus.analysis.AnalysisPass;
 import cetus.analysis.DDGraph;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
+import cetus.exec.CommandLineOptionSet;
+import cetus.exec.Driver;
 import cetus.hir.*;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,8 +20,15 @@ import java.util.List;
 public class LoopTiling extends TransformPass {
     // protected Program program;
 
+    private CommandLineOptionSet options;
+
     public LoopTiling(Program program) {
+        this(program, null);
+    }
+
+    public LoopTiling(Program program, CommandLineOptionSet options) {
         super(program);
+        this.options = options;
     }
 
     public String getPassName() {
@@ -137,6 +148,7 @@ public class LoopTiling extends TransformPass {
                             e.printStackTrace();
                         }
                     }
+
                 } else if (firstNonZero > 0) {
                     reuse_in_innermost++;
                 } else
@@ -155,6 +167,9 @@ public class LoopTiling extends TransformPass {
 
             }
         }
+
+        reRunPasses();
+
         System.out.println("# of single loops : " + num_single);
         System.out.println("# of non-perfect loops : " + num_non_perfect);
         System.out.println("# of function nested loops : " + num_contain_func);
@@ -163,6 +178,46 @@ public class LoopTiling extends TransformPass {
         System.out.println("# of no reuse in loops : " + no_reuse);
         System.out.println("# of tiled loops : " + numOfTiling);
         return;
+    }
+
+    private void reRunPasses() {
+        System.out.println("###### re running passes");
+        try {
+            File temp = File.createTempFile("CetusTemp", ".c");
+            FileWriter fr = new FileWriter(temp);
+            fr.write(program.toString());
+            fr.close();
+
+            String tempPath = temp.getAbsolutePath();
+
+            ArrayList<String> argsList = new ArrayList<>();
+
+            for (String key : options.name_to_record.keySet()) {
+                if (key.equals("loop-tiling")) {
+                    continue;
+                }
+                String value = options.getValue(key);
+
+                if (value == null) {
+                    continue;
+                }
+
+                String arg = "-" + key + "=" + value;
+                argsList.add(arg);
+
+            }
+
+            argsList.add(tempPath);
+
+            String[] args = new String[argsList.size()];
+            argsList.toArray(args);
+            Driver.main(args);
+
+        } catch (Exception e) {
+            System.out.println("Cannot re run passes");
+            e.printStackTrace();
+        }
+
     }
 
     /**
@@ -457,7 +512,7 @@ public class LoopTiling extends TransformPass {
             if (z == reuseValue.length - 1) {
                 System.out.print("" + reuseValue[z]);
             } else {
-                System.out.println(reuseValue[z] + ", ");
+                System.out.print(reuseValue[z] + ", ");
             }
         }
 
@@ -496,7 +551,7 @@ public class LoopTiling extends TransformPass {
             if (i == reuseValue.length - 1) {
                 System.out.print("" + reuseValue[i]);
             } else {
-                System.out.println(reuseValue[i] + ", ");
+                System.out.print(reuseValue[i] + ", ");
             }
         }
 
@@ -559,11 +614,21 @@ public class LoopTiling extends TransformPass {
             System.out.println();
         }
 
-        System.out.println("### END Loop Matrix ### ");
+        System.out.println("### GAUSS JORDAN Elimination Loop Matrix ### ");
 
         matrix = GaussJordan(matrix, numIndices, numLoops);
         // System.out.println("Final = ");
         // printMatrix(matrix);
+
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                System.out.print(" " + matrix[i][j]);
+                if (j != matrix[0].length - 1) {
+                    System.out.print(",");
+                }
+            }
+            System.out.println();
+        }
 
         long kernel[] = new long[numLoops];
         for (int i = 0; i < numLoops; i++)
@@ -574,10 +639,15 @@ public class LoopTiling extends TransformPass {
                 if (matrix[i][j] != 0)
                     kernel[j - 1] = 0;
 
-        // System.out.println("Kernel vector");
-        // for(int i = 0; i < numLoops; i++)
-        // System.out.print(kernel[i]+" ");
-        // System.out.println();
+        System.out.print("Kernel vector: < ");
+        for (int i = 0; i < numLoops; i++) {
+            if (i == numLoops - 1) {
+                System.out.print(kernel[i] + " >");
+            } else {
+                System.out.print(kernel[i] + ", ");
+            }
+        }
+        System.out.println();
 
         return kernel;
     }
