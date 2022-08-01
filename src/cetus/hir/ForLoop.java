@@ -5,9 +5,9 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
-* <b>ForLoop</b> represents a C-style for loop, typically having an initial
-* statement, a condition expression, and a step expression.
-*/
+ * <b>ForLoop</b> represents a C-style for loop, typically having an initial
+ * statement, a condition expression, and a step expression.
+ */
 public class ForLoop extends Statement implements Loop, SymbolTable {
 
     /** The default print method for the loop */
@@ -19,7 +19,7 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
             params[0] = ForLoop.class;
             params[1] = PrintWriter.class;
             class_print_method = params[0].getMethod("defaultPrint", params);
-        } catch(NoSuchMethodException e) {
+        } catch (NoSuchMethodException e) {
             throw new InternalError();
         }
     }
@@ -28,20 +28,20 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
     private Map<IDExpression, Declaration> symbol_table;
 
     /**
-    * Constructs a new for loop with the given initial expression <b>init</b>,
-    * the condition expression <b>condition</b>, the step expression
-    * <b>step</b>, and the body statement <b>body</b>. Any non-compound body
-    * statement is internally normalized to a compound statement.
-    *
-    * @param init the initial statement.
-    * @param condition the condition expression.
-    * @param step the step expression.
-    * @param body the body statement.
-    * @throws NotAnOrphanException if <b>init</b>, <b>condition</b>,
-    *       <b>step</b>, or <b>body</b> has a parent.
-    */
+     * Constructs a new for loop with the given initial expression <b>init</b>,
+     * the condition expression <b>condition</b>, the step expression
+     * <b>step</b>, and the body statement <b>body</b>. Any non-compound body
+     * statement is internally normalized to a compound statement.
+     *
+     * @param init      the initial statement.
+     * @param condition the condition expression.
+     * @param step      the step expression.
+     * @param body      the body statement.
+     * @throws NotAnOrphanException if <b>init</b>, <b>condition</b>,
+     *                              <b>step</b>, or <b>body</b> has a parent.
+     */
     public ForLoop(Statement init, Expression condition, Expression step,
-                   Statement body) {
+            Statement body) {
         super(4);
         object_print_method = class_print_method;
         symbol_table = new LinkedHashMap<IDExpression, Declaration>(4);
@@ -63,8 +63,6 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
         setBody(body);
     }
 
-   
-
     /* SymbolTable interface */
     public void addDeclaration(Declaration decl) {
         throw new UnsupportedOperationException(
@@ -84,11 +82,11 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
     }
 
     /**
-    * Prints the for loop to the given print writer.
-    *
-    * @param l The loop to print.
-    * @param o The writer on which to print the loop.
-    */
+     * Prints the for loop to the given print writer.
+     *
+     * @param l The loop to print.
+     * @param o The writer on which to print the loop.
+     */
     public static void defaultPrint(ForLoop l, PrintWriter o) {
         o.print("for (");
         if (l.getInitialStatement() != null) {
@@ -115,21 +113,21 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
 
     /* Loop interface */
     public Statement getBody() {
-        return (Statement)children.get(3);
+        return (Statement) children.get(3);
     }
 
     /* Loop interface */
     public Expression getCondition() {
-        return (Expression)children.get(1);
+        return (Expression) children.get(1);
     }
 
     /**
-    * Returns the initial statement of the for loop allowing null.
-    *
-    * @return the initial statement.
-    */
+     * Returns the initial statement of the for loop allowing null.
+     *
+     * @return the initial statement.
+     */
     public Statement getInitialStatement() {
-        return (Statement)children.get(0);
+        return (Statement) children.get(0);
     }
 
     /* SymbolTable interface */
@@ -138,31 +136,31 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
     }
 
     /**
-    * Returns the step expression of the for loop allowing null.
-    *
-    * @return the step expression.
-    */
+     * Returns the step expression of the for loop allowing null.
+     *
+     * @return the step expression.
+     */
     public Expression getStep() {
-        return (Expression)children.get(2);
+        return (Expression) children.get(2);
     }
 
     /**
-    * Returns the internal look-up table. This method is protected for
-    * consistent management of symbols.
-    *
-    * @return the look-up table.
-    */
+     * Returns the internal look-up table. This method is protected for
+     * consistent management of symbols.
+     *
+     * @return the look-up table.
+     */
     protected Map<IDExpression, Declaration> getTable() {
         return symbol_table;
     }
 
     /**
-    * Sets the body statement of the loop with the given statement <b>body</b>.
-    * Any non-compound body statement is normalized to a compound statement.
-    * 
-    * @param body the new body statement.
-    * @throws NotAnOrphanException if <b>body</b> has a parent.
-    */
+     * Sets the body statement of the loop with the given statement <b>body</b>.
+     * Any non-compound body statement is normalized to a compound statement.
+     * 
+     * @param body the new body statement.
+     * @throws NotAnOrphanException if <b>body</b> has a parent.
+     */
     public void setBody(Statement body) {
         if (!(body instanceof CompoundStatement)) {
             CompoundStatement cs = new CompoundStatement();
@@ -175,21 +173,21 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
     }
 
     /**
-    * Overrides the class print method, so that all subsequently created
-    * objects will use the supplied method.
-    *
-    * @param m The new print method.
-    */
+     * Overrides the class print method, so that all subsequently created
+     * objects will use the supplied method.
+     *
+     * @param m The new print method.
+     */
     static public void setClassPrintMethod(Method m) {
         class_print_method = m;
     }
 
     /**
-    * Sets the condition expression with the given expression <b>cond</b>.
-    *
-    * @param cond the new condition expression (null is allowed).
-    * @throws NotAnOrphanException if <b>cond</b> has a parent object.
-    */
+     * Sets the condition expression with the given expression <b>cond</b>.
+     *
+     * @param cond the new condition expression (null is allowed).
+     * @throws NotAnOrphanException if <b>cond</b> has a parent object.
+     */
     public void setCondition(Expression cond) {
         if (cond != null && cond.getParent() != null) {
             throw new NotAnOrphanException();
@@ -205,11 +203,11 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
     }
 
     /**
-    * Sets the initial statement with the given statement <b>stmt</b>.
-    *
-    * @param stmt the new initial statement (null is allowed).
-    * @throws NotAnOrphanException if <b>stmt</b> has a parent object.
-    */
+     * Sets the initial statement with the given statement <b>stmt</b>.
+     *
+     * @param stmt the new initial statement (null is allowed).
+     * @throws NotAnOrphanException if <b>stmt</b> has a parent object.
+     */
     public void setInitialStatement(Statement stmt) {
         if (stmt != null && stmt.getParent() != null) {
             throw new NotAnOrphanException();
@@ -221,19 +219,18 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
         if (stmt != null) {
             stmt.setParent(this);
             if (stmt instanceof DeclarationStatement) {
-                Declaration decl =
-                        ((DeclarationStatement)stmt).getDeclaration();
+                Declaration decl = ((DeclarationStatement) stmt).getDeclaration();
                 SymbolTools.addSymbols(this, decl);
             }
         }
     }
 
     /**
-    * Sets the step expression with the given expression <b>step</b>.
-    *
-    * @param step the new step expression (null is allowed).
-    * @throws NotAnOrphanException if <b>step</b> has a parent object.
-    */
+     * Sets the step expression with the given expression <b>step</b>.
+     *
+     * @param step the new step expression (null is allowed).
+     * @throws NotAnOrphanException if <b>step</b> has a parent object.
+     */
     public void setStep(Expression step) {
         if (step != null && step.getParent() != null) {
             throw new NotAnOrphanException();
@@ -248,20 +245,14 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
         }
     }
 
-    /**
-    * Returns a clone of this for loop.
-    *
-    * @return the cloned for loop.
-    */
-    @Override public ForLoop clone() {
-        ForLoop fl = (ForLoop)super.clone();
+    public ForLoop clone(boolean mustHaveAnnotations) {
+        ForLoop fl = (ForLoop) super.clone(mustHaveAnnotations);
         // Builds the internal look-up table.
         // There is no need for building an internal look-up table for the loop
         // in a C program (declarations are within the compound statement) but
         // it doesn't harm to make the clone operation consistent.
         fl.symbol_table = new LinkedHashMap<IDExpression, Declaration>(4);
-        DFIterator<Declaration> iter =
-                new DFIterator<Declaration>(fl, Declaration.class);
+        DFIterator<Declaration> iter = new DFIterator<Declaration>(fl, Declaration.class);
         iter.pruneOn(Declaration.class);
         iter.pruneOn(CompoundStatement.class);
         iter.reset();
@@ -271,6 +262,16 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
         // Fixes obsolete symbol references in the IR.
         SymbolTools.relinkSymbols(fl);
         return fl;
+    }
+
+    /**
+     * Returns a clone of this for loop.
+     *
+     * @return the cloned for loop.
+     */
+    @Override
+    public ForLoop clone() {
+        return clone(true);
     }
 
     /* SymbolTable interface */
@@ -287,7 +288,7 @@ public class ForLoop extends Statement implements Loop, SymbolTable {
     public boolean containsSymbol(Symbol symbol) {
         for (IDExpression id : symbol_table.keySet()) {
             if (id instanceof Identifier &&
-                symbol.equals(((Identifier) id).getSymbol())) {
+                    symbol.equals(((Identifier) id).getSymbol())) {
                 return true;
             }
         }
