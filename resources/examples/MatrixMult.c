@@ -1,20 +1,24 @@
 
-int a[10000][10000], b[10000][10000], d[10000][10000];
+#include <stdio.h>
+
 
 int main(int argc, char const *argv[])
 {
 
-    int n = 10000, m = 10000;
+    int n = 1000, m = 1000;
+
+    int a[n][n], b[n][m], d[n][m];
+
 
     int i, j, k;
     // Matrix Multiplication kernel
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < n; i++)
     {
 
-        for (j = 0; j < 10000; j++)
+        for (j = 0; j < m; j++)
         {
 
-            for (k = 0; k < 10000; k++)
+            for (k = 0; k < n; k++)
             {
 
                 d[i][j] = d[i][j] + a[i][k] * b[k][j];
@@ -22,5 +26,6 @@ int main(int argc, char const *argv[])
         }
     }
 
+    printf("FINISH");
     return 0;
 }
