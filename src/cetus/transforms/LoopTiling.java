@@ -7,10 +7,12 @@ import cetus.analysis.LoopTools;
 import cetus.exec.CommandLineOptionSet;
 import cetus.exec.Driver;
 import cetus.hir.*;
+import cetus.utils.DataDependenceUtils;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -36,6 +38,9 @@ public class LoopTiling extends TransformPass {
     }
 
     public void start() {
+
+        DataDependenceUtils.printDirectionMatrix(program);
+
         LinkedList<Loop> loops = new LinkedList<Loop>();
         List<Statement> outer_loops = new ArrayList<Statement>();
         List<DependenceVector> depVec = new ArrayList<DependenceVector>();
@@ -489,6 +494,18 @@ public class LoopTiling extends TransformPass {
         return true;
     }
 
+    /**
+     * Calculate for each loop the reuse distance between every pair of arrays in
+     * the arrays passed as paramters. Then, if the reuse distance is greater than
+     * the old reuse value for that loop in the reuseValue vector, then the
+     * algorithm will replace it
+     * 
+     * @param loops      loop nest, ordered from the outermost to the innermost
+     *                   loop.
+     * @param arrays     array accesses to be analyzed for the group reuse.
+     * @param reuseValue a reuse value of size the amount of loops in the loop nest.
+     * @return
+     */
     private int getGroupReuseAll(LinkedList<Loop> loops, List<ArrayAccess> arrays, int[] reuseValue) {
         long reuseDistance;
         int i, j, k;
@@ -520,6 +537,32 @@ public class LoopTiling extends TransformPass {
         return 0;
 
     }
+
+    /**
+     * Calculate the amount of reusability for each loop in the loop list, based on
+     * the array accesses passed as parameter.
+     * First, the algorithm calculate for each loop if it has incidence in the array
+     * accesess.
+     * Next, if the loop has incidence in the array accesses, the algorithm identify
+     * with arrays's specifier represents the most space in memory to be used. i.e.
+     * if one of the array access is
+     * for integers but the other one is for double or long, due to double uses 64
+     * bits in memory and integer only 32 bits, the program will use 64 bits to
+     * calculate the reuse for the loops that has incidence in that array access.
+     * Finally, the algorithm evaluates the value of self reusing, (basically, the
+     * specifier that will use the most memory space in the program) and if the
+     * calculated value is greater than some older value in the reuse vector passed
+     * as parameter, the algorithm will replace that information.
+     * 
+     * @param loops      loop nest as list, organized from outermost to innermost
+     *                   position.
+     * @param arrays     array access to analyze. Expected: Array accesses in the
+     *                   innermost given a perfect loop nest
+     * @param reuseValue list of reuse value to save or replace values resulting
+     *                   from the algorithm
+     * @return not used, always return 1. It can be used to validate if the
+     *         algorithm ran successfully
+     */
 
     private int getSelfReuseAll(LinkedList<Loop> loops, List<ArrayAccess> arrays, int[] reuseValue) {
         long[] kernelVector;
@@ -560,6 +603,15 @@ public class LoopTiling extends TransformPass {
         return 1;
     }
 
+    /**
+     * Get the size in bits of an specific type/specifier in an array.
+     * Example: if array is a boolean array, the return type will be 1. 32 for
+     * Integer
+     * 
+     * @param array An array with an specific type of specifier
+     * @return An integer that represents the size in bits of the type of the
+     *         array's specifier passed as a paramteer.
+     */
     private int getTypeSize(ArrayAccess array) {
         int typeSize;
         List types;
@@ -596,6 +648,16 @@ public class LoopTiling extends TransformPass {
 
         return typeSize;
     }
+
+    /**
+     * Analyze if each of the loops has an incidence in the array access
+     * passed as parameter
+     * 
+     * @param loops the loop nest to analyze incidence
+     * @param array the array accesses to be analyzed
+     * @return An array with lenght = count of loops in the loops list passed as
+     *         parameter.
+     */
 
     private long[] getKernelVector(LinkedList<Loop> loops, ArrayAccess array) {
         int numLoops = loops.size();
@@ -652,8 +714,36 @@ public class LoopTiling extends TransformPass {
         return kernel;
     }
 
+    /**
+     * Matriz which represents the indicence / weight matrix of comparing
+     * loops against array accesses.
+     * Note: The matrix created is augmented and the first row will be a 0 vector
+     * Example: Given an matrix 'a' with lenght nxn:
+     * for (int i = 0; i < n; i++) {
+     * for (int j = 0; j < n; j++) {
+     *  a[i][j]=a[i*2][j*3]+a[i*4][j*5];
+     * }
+     * }
+     * The result matrix, when analyzing the matrix access a[i*2][j*3], should be:
+     *                    0, i, j, 0 : note, columns are organized by loop hierarchy
+     * ----------
+     * emptyrow :     | [ 0, 0, 0, 0
+     * 1stAccess :    |   0, 2, 0, 0
+     * secondAccess : |   0, 0, 3, 0
+     * nthAccess :    |   ........ . ]
+     * 
+     * note: rows are organized by index access order
+     * 
+     * @param loops loops in a loopNest
+     * @param array A matrix with the following dimensions: array
+     * @return An array with length: num indices + 1 X loops count + 2 which
+     *         represents the loopNest's matrix incidence
+     * 
+     */
+
     private double[][] getLoopMatrix(LinkedList<Loop> loops, ArrayAccess array) {
         double matrix[][];
+
         int numLoops = loops.size();
         int numIndices = array.getNumIndices();
         matrix = new double[numIndices + 1][numLoops + 2];
