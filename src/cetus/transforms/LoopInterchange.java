@@ -151,6 +151,7 @@ public class LoopInterchange extends TransformPass {
 
                 List<Expression> MemoryOrder = ReusabilityAnalysis(program, loops.get(0), LoopAssnExprs, arrays, loops);
 
+                System.out.println("Memory order" + MemoryOrder);
                 // If the Original Nest is already in the desired order, no need for further
                 // analysis.
 
@@ -655,6 +656,10 @@ public class LoopInterchange extends TransformPass {
 
                 Expression se1 = (Expression) Symbolic_scores.get(k);
 
+                if(Symbolic.getVariables(se1).size() == 0) {
+                    continue;
+                }
+                
                 variable = Symbolic.getVariables(se1).get(0);
 
                 ListOfExpressionVariables.add(variable);

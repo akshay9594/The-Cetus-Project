@@ -3,6 +3,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch Driver",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
             "name": "Launch Current File",
             "request": "launch",
             "mainClass": "${file}"
@@ -12,15 +19,27 @@
             "name": "Launch Driver Tiling Matrix Mult example",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-loop-tiling ./resources/examples/TilingTest.c"
+            "args": "-loop-tiling ./resources/examples/MatrixMult.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInterchange Matrix Mult example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-loop_interchange ./resources/examples/tiling/SimpleTilingExample.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Tiling Tiling test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-loop-tiling ./resources/examples/tiling/SimpleTilingExample.c"
         },
         {
             "type": "java",
             "name": "Launch Driver Dependencies Test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "projectName": "The-Cetus-Project_33c94ac5",
             "args": "-outputFile=out/logs.txt -paw-tiling ./resources/examples/DDTLoops.c"
         },
         {
@@ -28,15 +47,20 @@
             "name": "Launch Driver PawTiling Tilable loops Test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "projectName": "The-Cetus-Project_33c94ac5",
             "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/TilableLoops.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Reduction Array red example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -reduction ./resources/examples/ScalarRed.c"
         },
         {
             "type": "java",
             "name": "Launch Driver PawTiling Jacobi example test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "projectName": "The-Cetus-Project_33c94ac5",
             "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/JacobiExample.c"
         },
         {
@@ -44,7 +68,6 @@
             "name": "Launch Driver PawTiling Matrix Mult",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "projectName": "The-Cetus-Project_33c94ac5",
             "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/MatrixMult.c"
         },
         {
@@ -52,50 +75,43 @@
             "name": "Launch Driver Loop Inter",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "projectName": "The-Cetus-Project_33c94ac5",
-            "args": "-loop_interchange ./resources/examples/LoopInterchange.c"
+            "args": "-loop_interchange ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
         },
         {
             "type": "java",
             "name": "Launch MergeTwoSortedLists",
             "request": "launch",
             "mainClass": "cetus.gui.MergeTwoSortedLists",
-            "projectName": "The-Cetus-Project_33c94ac5"
         },
         {
             "type": "java",
             "name": "Launch ValidParentheses",
             "request": "launch",
             "mainClass": "cetus.gui.ValidParentheses",
-            "projectName": "The-Cetus-Project_33c94ac5"
         },
         {
             "type": "java",
             "name": "Launch TCPServer",
             "request": "launch",
             "mainClass": "cetus.server.TCPServer",
-            "projectName": "The-Cetus-Project_33c94ac5"
         },
         {
             "type": "java",
             "name": "Launch CetusGUI",
             "request": "launch",
             "mainClass": "cetus.server.speed_up.CetusGUI",
-            "projectName": "The-Cetus-Project_33c94ac5"
         },
         {
             "type": "java",
             "name": "Launch TestTripletRunner",
             "request": "launch",
             "mainClass": "cetus.unittest.TestTripletRunner",
-            "projectName": "The-Cetus-Project_33c94ac5"
         },
         {
             "type": "java",
             "name": "Launch OMP2GPUDriver",
             "request": "launch",
             "mainClass": "omp2gpu.exec.OMP2GPUDriver",
-            "projectName": "The-Cetus-Project_33c94ac5"
         },
         {
             "name": "C/C++: gcc.exe Compilar y depurar el archivo activo",
@@ -122,6 +138,32 @@
                 }
             ],
             "preLaunchTask": "C/C++: gcc.exe compilar archivo activo"
+        },
+        {
+            "name": "C/C++: gcc-11 build and debug active file",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: gcc-11 build active file",
+            "miDebuggerPath": "gdb"
         }
     ]
 }

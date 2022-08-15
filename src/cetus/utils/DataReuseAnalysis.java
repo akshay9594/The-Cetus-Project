@@ -218,9 +218,7 @@ public class DataReuseAnalysis {
         while (loopCostIter.hasNext()) {
             Expression keyExpr = loopCostIter.next();
             Object loopCost = loopCostMap.get(keyExpr);
-            System.out.println("#### Loop:");
-            System.out.println(keyExpr);
-            System.out.println("#### Loop cost: " + loopCost);
+            System.out.println("#### Loop: "+ keyExpr + ", cost:"+ loopCost);
         }
 
         System.out.println("#### end loop costs ####");
