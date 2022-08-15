@@ -1,14 +1,12 @@
 
 #include <stdio.h>
 
-
 int main(int argc, char const *argv[])
 {
 
     int n = 1000, m = 1000;
 
     int a[n][n], b[n][m], d[n][m];
-
 
     int i, j, k;
     // Matrix Multiplication kernel
@@ -20,7 +18,6 @@ int main(int argc, char const *argv[])
 
             for (k = 0; k < n; k++)
             {
-
                 d[i][j] = d[i][j] + a[i][k] * b[k][j];
             }
         }

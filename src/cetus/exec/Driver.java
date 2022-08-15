@@ -352,6 +352,9 @@ public class Driver {
 
         options.add(options.TRANSFORM,
                 ParallelAwareTilingPass.PARAM_NAME,
+                "" + ParallelAwareTilingPass.DEFAULT_PROCESSORS,
+                "" + ParallelAwareTilingPass.DEFAULT_PROCESSORS,
+                "N",
                 "To apply parallel aware tiling. Not fully implemented yet");
     }
 

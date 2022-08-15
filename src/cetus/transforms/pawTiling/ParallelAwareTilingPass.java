@@ -12,13 +12,18 @@ import cetus.hir.AssignmentExpression;
 import cetus.hir.AssignmentOperator;
 import cetus.hir.BinaryExpression;
 import cetus.hir.BinaryOperator;
+import cetus.hir.CompoundStatement;
 import cetus.hir.ConditionalExpression;
 import cetus.hir.DFIterator;
 import cetus.hir.Declaration;
+import cetus.hir.Declarator;
 import cetus.hir.DepthFirstIterator;
 import cetus.hir.Expression;
 import cetus.hir.ForLoop;
+import cetus.hir.IDExpression;
 import cetus.hir.Identifier;
+import cetus.hir.IfStatement;
+import cetus.hir.Initializer;
 import cetus.hir.IntegerLiteral;
 import cetus.hir.Loop;
 import cetus.hir.NameID;
@@ -38,16 +43,18 @@ import cetus.utils.DataDependenceUtils;
 public class ParallelAwareTilingPass extends TransformPass {
 
     public final static String PARAM_NAME = "paw-tiling";
+    public final static int DEFAULT_PROCESSORS = 4;
+    public final static int MAX_NEST_LEVEL = 20;
+    public final static String TILE_SUFFIX = "Tile";
+    public final static String BALANCED_TILE_SIZE_NAME = "balancedTileSize";
 
-    private CommandLineOptionSet commandLineOptions;
+    private int numOfProcessors;
 
-    private int processors;
+    private boolean verbosity = false;
 
     private List<Loop> selectedOutermostLoops;
 
     private PawAnalysisData analysisData = new PawAnalysisData();
-
-    private LoopInterchange loopInterchangePass = null;
 
     public ParallelAwareTilingPass(Program program) {
         this(program, null);
@@ -55,13 +62,17 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions) {
         super(program);
-        this.commandLineOptions = commandLineOptions;
-        if (commandLineOptions.getValue("verbosity").equals("1")) {
-            System.out.println("Verbosity activated");
-            analysisData.verbosity = true;
-        }
 
-        loopInterchangePass = new LoopInterchange(program);
+        try {
+            numOfProcessors = Integer.parseInt(commandLineOptions.getValue(PARAM_NAME));
+            assert numOfProcessors > 0;
+        } catch (Exception e) {
+            System.out.println(
+                    "Error on setting num of processors. The default value: " + DEFAULT_PROCESSORS + " will be used");
+            numOfProcessors = DEFAULT_PROCESSORS;
+        }
+        verbosity = commandLineOptions.getValue("verbosity").equals("1");
+        analysisData.verbosity = verbosity;
     }
 
     @Override
@@ -82,17 +93,19 @@ public class ParallelAwareTilingPass extends TransformPass {
         List<Loop> perfectLoops = filterValidLoops(outermostLoops);
         this.selectedOutermostLoops = perfectLoops;
 
-        System.out.println("#### Selected loops: " + selectedOutermostLoops.size() + "\n");
-        for (Loop outermostLoop : selectedOutermostLoops) {
-            System.out.println(outermostLoop + "\n");
-        }
-        System.out.println("#### END Selected loops");
+        if (verbosity) {
+            System.out.println("#### Selected loops: " + selectedOutermostLoops.size() + "\n");
+            for (Loop outermostLoop : selectedOutermostLoops) {
+                System.out.println(outermostLoop + "\n");
+            }
+            System.out.println("#### END Selected loops");
 
-        System.out.println(analysisData);
+            System.out.println(analysisData);
+        }
 
         for (Loop outermostLoop : selectedOutermostLoops) {
             try {
-                runPawTiling(outermostLoop);
+                runPawTiling((ForLoop) outermostLoop);
             } catch (Exception e) {
                 System.out.println(" ----");
                 System.out.println("Error trying to run paw tiling");
@@ -106,13 +119,195 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     }
 
-    private void runPawTiling(Loop loopNest) {
-        runDataReuseAnalysis(loopNest);
-        createTiledVersions(loopNest);
+    private void runPawTiling(ForLoop loopNest) throws Exception {
+        try {
+            runLoopInterchange(loopNest);
+        } catch (Exception e) {
+            if (verbosity) {
+                System.out.println(
+                        "It was not possible to perform loop interchange. However, paw tiling will continue. Error:");
+                e.printStackTrace();
+            }
+        }
+
+        runReuseAnalysis(loopNest);
+
+        CompoundStatement variableDeclarations = new CompoundStatement();
+        List<ForLoop> tiledVersions = createTiledVersions(loopNest, variableDeclarations);
+        for (ForLoop tiledVersion : tiledVersions) {
+
+        }
+
+        Expression totalOfInstructions = getTotalOfInstructions(loopNest);
+        BinaryExpression condition = new BinaryExpression(totalOfInstructions, BinaryOperator.COMPARE_LE,
+                new IntegerLiteral(100000));
+
+        ForLoop leastCostTiledVersion = tiledVersions.get(0);
+        Expression rawTileSize = computeRawTileSize();
+
+        Expression balancedTileSize = computeBalancedTileSize(totalOfInstructions, numOfProcessors,
+                rawTileSize);
+
+        // create two versions if iterations isn't enough to parallelize
+        CompoundStatement leastCostVersionStm = new CompoundStatement();
+        leastCostVersionStm.addStatement(leastCostTiledVersion.clone(false));
+
+        IfStatement ifStm = new IfStatement(condition, loopNest.clone(false), leastCostVersionStm);
+
+        replaceTileSize(variableDeclarations, balancedTileSize);
+
+        addNewVariableDeclaratios(leastCostVersionStm,
+                filterValidDeclarations(variableDeclarations, leastCostTiledVersion));
+
+        updateAttributes(loopNest);
+
+        replaceLoop(loopNest, ifStm);
+
     }
 
-    private List<Expression> runDataReuseAnalysis(Loop loopNest) {
+    // TODO: Update reduction/private variable attributes
+    private void updateAttributes(ForLoop loopNest) {
 
+    }
+
+    private List<Declaration> filterValidDeclarations(CompoundStatement variableDeclarations,
+            ForLoop loopNest) {
+
+        List<Declaration> declarations = new ArrayList<>();
+
+        List<ForLoop> loops = new ArrayList<>();
+        new DFIterator<ForLoop>(loopNest, ForLoop.class).forEachRemaining(loops::add);
+
+        IDExpression balancedTileSize = new NameID(BALANCED_TILE_SIZE_NAME);
+        declarations.add(variableDeclarations.findSymbol(balancedTileSize));
+
+        for (ForLoop loop : loops) {
+            Symbol symbol = LoopTools.getLoopIndexSymbol(loop);
+
+            if (symbol == null) {
+                continue;
+            }
+
+            NameID name = new NameID(symbol.getSymbolName());
+
+            Declaration declaration = variableDeclarations.findSymbol(name);
+
+            if (declaration != null) {
+                declarations.add(declaration);
+            }
+
+            Expression rawStepExpr = loop.getStep();
+            if (!(rawStepExpr instanceof AssignmentExpression)) {
+                continue;
+            }
+
+            AssignmentExpression stepExpr = (AssignmentExpression) rawStepExpr;
+            Expression RHSExpr = stepExpr.getRHS();
+
+            NameID assignationName = new NameID(RHSExpr.toString());
+
+            Declaration assignationDeclaration = variableDeclarations.findSymbol(assignationName);
+
+            if (assignationDeclaration != null) {
+                declarations.add(assignationDeclaration);
+            }
+        }
+
+        return declarations;
+    }
+
+    private Expression getTotalOfInstructions(ForLoop loopNest) throws Exception {
+        List<ForLoop> loops = new ArrayList<>();
+        new DFIterator<ForLoop>(loopNest, ForLoop.class).forEachRemaining(loops::add);
+
+        Expression loopNestCond = loopNest.getCondition();
+        if (!(loopNestCond instanceof BinaryExpression)) {
+            throw new Exception("Condition should be a binary expression");
+        }
+
+        BinaryExpression cond = (BinaryExpression) loopNestCond;
+        Expression totalOfInstructions = cond.getRHS();
+        for (int i = 1; i < loops.size(); i++) {
+            Expression loopCond = loops.get(i).getCondition();
+            if ((loopCond instanceof BinaryExpression)) {
+                totalOfInstructions = Symbolic.multiply(totalOfInstructions, ((BinaryExpression) loopCond).getRHS());
+            }
+        }
+
+        return totalOfInstructions;
+    }
+
+    private void replaceTileSize(SymbolTable variableDeclarationSpace,
+            Expression newTileSize) {
+
+        Identifier balancedTileVariable = declareVariable(variableDeclarationSpace, BALANCED_TILE_SIZE_NAME,
+                newTileSize);
+
+        for (Declaration declaration : variableDeclarationSpace.getDeclarations()) {
+            List<Traversable> children = declaration.getChildren();
+            Declarator declarator = null;
+
+            for (Traversable child : children) {
+                if (!(child instanceof Declarator)) {
+                    continue;
+                }
+
+                declarator = (Declarator) child;
+                break;
+            }
+
+            if (declarator == null) {
+                continue;
+            }
+
+            IDExpression id = declarator.getID();
+            if (!id.getName().contains(TILE_SUFFIX)) {
+                continue;
+            }
+
+            if (id.getName().equals(BALANCED_TILE_SIZE_NAME)) {
+                continue;
+            }
+            Initializer init = new Initializer(balancedTileVariable.clone());
+            declarator.setInitializer(init);
+        }
+    }
+
+    private Expression computeBalancedTileSize(Expression numOfInstructions, int numOfProcessors,
+            Expression rawTileSize) {
+
+        Expression numOfProcessorsExp = new IntegerLiteral(numOfProcessors);
+
+        // (numOfInstructions / (processors * rawSize)) * processors
+        Expression divisor = Symbolic.multiply(
+                Symbolic.divide(numOfInstructions, Symbolic.multiply(numOfProcessorsExp, rawTileSize)),
+                numOfProcessorsExp);
+
+        // instructions / ( ( instructions / (processors * rawSize) ) * processors )
+        return Symbolic.divide(numOfInstructions, divisor);
+    }
+
+    // TODO
+    private Expression computeRawTileSize() {
+        return new IntegerLiteral(2);
+    }
+
+    private void runReuseAnalysis(ForLoop loopNest) {
+
+    }
+
+    private void addNewVariableDeclaratios(Traversable loopNest, List<Declaration> variableDeclarations) {
+
+        SymbolTable variableDeclarationSpace = getVariableDeclarationSpace(loopNest);
+        for (Declaration declaration : variableDeclarations) {
+            variableDeclarationSpace.addDeclaration(declaration.clone());
+        }
+
+    }
+
+    private List<Expression> runLoopInterchange(Loop loopNest) {
+
+        LoopInterchange loopInterchangePass = new LoopInterchange(program);
         loopInterchangePass.start();
 
         LinkedList<Loop> loopNestList = LoopTools.calculateInnerLoopNest(loopNest);
@@ -134,161 +329,68 @@ public class ParallelAwareTilingPass extends TransformPass {
         return memoryOrder;
     }
 
-    private void createTiledVersions(Loop loopNest) {
+    private List<ForLoop> createTiledVersions(Loop loopNest, SymbolTable variableDeclarationSpace) throws Exception {
 
-        DFIterator<ForLoop> nestedLoopsIter = new DFIterator<>(loopNest, ForLoop.class);
         List<ForLoop> nestedLoops = new ArrayList<>();
-        while (nestedLoopsIter.hasNext()) {
-            ForLoop loop = nestedLoopsIter.next();
-            nestedLoops.add(loop);
-        }
+        new DFIterator<ForLoop>(loopNest, ForLoop.class).forEachRemaining(nestedLoops::add);
 
-        ForLoop outermostLoop = nestedLoops.get(0);
-        ForLoop outermostClone = outermostLoop.clone(false);
+        List<ForLoop> tiledVersions = new ArrayList<>();
+        HashMap<String, Boolean> stripminedBySymbol = new HashMap<>();
 
-        ForLoop innermostLoop = nestedLoops.get(nestedLoops.size() - 1);
-        ForLoop innermostClone = innermostLoop.clone(false);
+        if (nestedLoops.size() < MAX_NEST_LEVEL) {
+            createTiledVersions(variableDeclarationSpace, (ForLoop) loopNest, 20,
+                    stripminedBySymbol,
+                    tiledVersions);
 
-        SymbolTable variableDeclarationSpace = getVariableDeclarationSpace(outermostLoop);
+            if (verbosity) {
+                System.out.println("########## PRINTING TILED VERSIONS\n");
 
-        try {
-
-            // i,j
-            // i,i1,j
-            // i,i1,j,j1
-            // i,j,j1
-
-            // i,j,k
-
-            // i,j,k,k1
-            // i,j,j1,k,k1
-            // i,i1,j,j1,k,k1
-
-            // i,j,j1,k
-            // i,i1,j,j1,k
-
-            // i,i1,j,k
-            // i,i1,j,k,k1
-
-            // ForLoop innerClone = innermostLoop.clone(false);
-            // Loop stripminnedLoop = stripmining(variableDeclarationSpace,
-            // outermostLoop, 20);
-
-            // Loop stripminnedLoop2 = stripmining(variableDeclarationSpace,
-            // innermostLoop, 20);
-            // ForLoop outerClone = outermostLoop.clone();
-
-            List<ForLoop> tiledVersions = createTiledVersion(variableDeclarationSpace, nestedLoops, 20, true, 0);
-
-            HashMap<String, Boolean> loopsByStringRepresentation = new HashMap<>();
-            List<ForLoop> filteredTiledVersions = new ArrayList<>();
-            for (int i = 0; i < tiledVersions.size(); i++) {
-                ForLoop tiledVersion = tiledVersions.get(i);
-                if (!loopsByStringRepresentation.containsKey(tiledVersion.toString())) {
-                    filteredTiledVersions.add(tiledVersion);
+                for (ForLoop tiledVersion : tiledVersions) {
+                    System.out.println("######## TILED VERSION #########\n");
+                    System.out.println(tiledVersion);
+                    System.out.println("######## END TILED VERSION #########\n");
                 }
-                loopsByStringRepresentation.put(tiledVersion.toString(), true);
-
             }
 
-            System.out.println("########## PRINTING TILED VERSIONS\n");
-
-            for (ForLoop tiledVersion : filteredTiledVersions) {
-                System.out.println("######## TILED VERSION #########\n");
-                System.out.println(tiledVersion);
-                System.out.println("######## END TILED VERSION #########\n");
-            }
-
-            // System.out.println("PROGRAM BEFORE REPLACE");
-            // System.out.println(program);
-
-            // replaceLoop(innermostLoop, stripminnedLoop);
-            // System.out.println("PROGRAM AFTER REPLACE");
-            // System.out.println(program);
-        } catch (Exception e) {
-            System.out.println("It was not possible to do stripmining over loop:");
-            System.out.println(loopNest);
-            e.printStackTrace();
         }
+
+        return tiledVersions;
+
     }
 
-    private List<ForLoop> createTiledVersion(SymbolTable variableDeclarationSpace, List<ForLoop> loopNest, int strip,
-            boolean stripmine, int loopIdx) throws Exception {
+    private void createTiledVersions(SymbolTable variableDeclarationSpace, ForLoop loopNest,
+            int strip,
+            HashMap<String, Boolean> stripmined, List<ForLoop> versions) throws Exception {
 
-        List<ForLoop> retVersions = new ArrayList<>();
+        List<ForLoop> nestedLoops = new ArrayList<>();
+        new DFIterator<ForLoop>(loopNest, ForLoop.class).forEachRemaining(nestedLoops::add);
+        int loopNestSize = nestedLoops.size();
 
-        if (loopIdx >= loopNest.size()) {
-            return new ArrayList<>();
-        }
+        for (int i = loopNestSize - 1; i >= 0; i--) {
 
-        if (!stripmine) {
-            List<ForLoop> loops = new ArrayList<>();
-            ForLoop targetLoop = loopNest.get(loopIdx);
-            ForLoop noStripminedLoop = new ForLoop(targetLoop.getInitialStatement().clone(),
-                    targetLoop.getCondition().clone(),
-                    targetLoop.getStep().clone(),
-                    targetLoop.getBody().clone(false));
-            loops.add(noStripminedLoop);
-
-            return loops;
-        }
-
-        ForLoop targetLoop = loopNest.get(loopIdx);
-
-        // retVersions.add(targetLoop);
-
-        ForLoop stripminedLoop = (ForLoop) stripmining(variableDeclarationSpace, targetLoop, strip);
-        retVersions.add(stripminedLoop);
-
-        List<ForLoop> subStripminedVersions = createTiledVersion(variableDeclarationSpace, loopNest, strip, true,
-                loopIdx + 1);
-
-        List<ForLoop> noStripminedVersions = createTiledVersion(variableDeclarationSpace, loopNest, strip, false,
-                loopIdx + 1);
-
-        List<ForLoop> stripminedVersions = new ArrayList<>();
-        stripminedVersions.addAll(subStripminedVersions);
-        stripminedVersions.addAll(noStripminedVersions);
-
-        for (ForLoop stripminedVersion : stripminedVersions) {
-
-            if (stripminedVersion.toString() == null) {
+            String loopSymbolName = LoopTools.getLoopIndexSymbol(nestedLoops.get(i)).getSymbolName();
+            if (stripmined.containsKey(loopSymbolName)) {
                 continue;
             }
-            DFIterator<ForLoop> bodyIter = new DFIterator<>(stripminedLoop, ForLoop.class);
-            List<ForLoop> nestedStripminedLoops = new ArrayList<>();
-            while (bodyIter.hasNext()) {
-                nestedStripminedLoops.add(bodyIter.next());
+
+            ForLoop stripminedLoop = (ForLoop) tiling(variableDeclarationSpace, loopNest.clone(false),
+                    strip, i, stripmined);
+            versions.add(stripminedLoop);
+
+            HashMap<String, Boolean> newStripmined = new HashMap<>();
+            for (String symbol : stripmined.keySet()) {
+                newStripmined.put(symbol, true);
             }
 
-            ForLoop inStripLoop = nestedStripminedLoops.get(nestedStripminedLoops.size() - 2);
+            createTiledVersions(variableDeclarationSpace, stripminedLoop.clone(false),
+                    strip,
+                    newStripmined, versions);
 
-            Statement oriStatement = inStripLoop.getInitialStatement();
-            Expression oriCond = inStripLoop.getCondition();
-            Expression oriStep = inStripLoop.getStep();
-
-            ForLoop newInStripLoop = new ForLoop(oriStatement.clone(),
-                    oriCond.clone(),
-                    oriStep.clone(),
-                    stripminedVersion.clone(false));
-
-            oriStatement = stripminedLoop.getInitialStatement();
-            oriCond = stripminedLoop.getCondition();
-            oriStep = stripminedLoop.getStep();
-
-            ForLoop newCrossStripLoop = new ForLoop(oriStatement.clone(),
-                    oriCond.clone(),
-                    oriStep.clone(),
-                    newInStripLoop);
-
-            retVersions.add(newCrossStripLoop);
         }
-
-        return retVersions;
 
     }
 
-    private void replaceLoop(ForLoop originalLoop, Loop newLoop) {
+    private void replaceLoop(ForLoop originalLoop, IfStatement ifStm) {
         Traversable originalParent = originalLoop.getParent();
 
         int originalLoopIdx = -1;
@@ -299,7 +401,42 @@ public class ParallelAwareTilingPass extends TransformPass {
             }
         }
 
-        originalParent.setChild(originalLoopIdx, newLoop);
+        originalParent.setChild(originalLoopIdx, ifStm);
+    }
+
+    private Loop tiling(SymbolTable variableDeclarationSpace, ForLoop outermostLoop, int strip,
+            int targetLoopPos, HashMap<String, Boolean> stripmined) throws Exception {
+        List<ForLoop> loops = new ArrayList<>();
+        new DFIterator<ForLoop>(outermostLoop, ForLoop.class).forEachRemaining(loops::add);
+
+        ForLoop targetLoop = loops.get(targetLoopPos);
+        ForLoop crossStripLoop = (ForLoop) stripmining(variableDeclarationSpace, targetLoop, strip);
+
+        stripmined.put(LoopTools.getLoopIndexSymbol(targetLoop).getSymbolName(), true);
+        stripmined.put(LoopTools.getLoopIndexSymbol(crossStripLoop).getSymbolName(), true);
+
+        if (targetLoopPos - 1 >= 0) {
+            ForLoop parentLoop = loops.get(targetLoopPos - 1);
+            parentLoop.setBody(crossStripLoop);
+            permuteLoop(crossStripLoop, parentLoop);
+        }
+
+        return outermostLoop;
+    }
+
+    private void permuteLoop(ForLoop loop, ForLoop targetLoop) {
+
+        Statement originalInitStm = targetLoop.getInitialStatement().clone();
+        Expression originalCond = targetLoop.getCondition().clone();
+        Expression originalStep = targetLoop.getStep().clone();
+
+        targetLoop.setInitialStatement(loop.getInitialStatement().clone());
+        targetLoop.setCondition(loop.getCondition().clone());
+        targetLoop.setStep(loop.getStep().clone());
+
+        loop.setInitialStatement(originalInitStm);
+        loop.setCondition(originalCond);
+        loop.setStep(originalStep);
     }
 
     private Loop stripmining(SymbolTable variableDeclarationSpace, ForLoop loop, int strip) throws Exception {
@@ -313,17 +450,20 @@ public class ParallelAwareTilingPass extends TransformPass {
         }
 
         Symbol loopSymbol = LoopTools.getLoopIndexSymbol(loop);
-        Identifier newIndexVariable = declareIndexVariable(variableDeclarationSpace,
-                loopSymbol.getSymbolName() + "_tiling");
+        Identifier newIndexVariable = declareVariable(variableDeclarationSpace,
+                loopSymbol.getSymbolName() + loopSymbol.getSymbolName());
 
-        Loop inStripLoop = createInStripLoop(loop, strip, newIndexVariable);
-        Loop crossStripLoop = createCrossStripLoop(loop, strip, newIndexVariable, (Statement) inStripLoop);
+        Identifier stripIdentifier = declareVariable(variableDeclarationSpace,
+                loopSymbol.getSymbolName() + TILE_SUFFIX, new IntegerLiteral(strip));
+
+        Loop inStripLoop = createInStripLoop(loop, stripIdentifier, newIndexVariable);
+        Loop crossStripLoop = createCrossStripLoop(loop, stripIdentifier, newIndexVariable, (Statement) inStripLoop);
 
         return crossStripLoop;
 
     }
 
-    private Loop createInStripLoop(ForLoop loop, int strip, Identifier newIndexVariable) throws Exception {
+    private Loop createInStripLoop(ForLoop loop, Expression stripExpr, Identifier newIndexVariable) throws Exception {
         Statement originalInitStatement = loop.getInitialStatement();
         List<Traversable> originalInitStatements = originalInitStatement.getChildren();
         if (originalInitStatements.size() > 1) {
@@ -363,9 +503,8 @@ public class ParallelAwareTilingPass extends TransformPass {
             throw new Exception("LHS is not a symbol");
         }
 
-        Expression stripExp = new IntegerLiteral(strip);
-        Expression stripCondition = Symbolic.add(newIndexVariable, stripExp);
-        stripCondition = Symbolic.subtract(stripCondition, new IntegerLiteral(1));
+        Expression stripCondition = Symbolic.subtract(stripExpr, new IntegerLiteral(1));
+        stripCondition = Symbolic.add(stripCondition, newIndexVariable);
         Expression minExp = new ConditionalExpression(
                 new BinaryExpression(stripCondition.clone(), BinaryOperator.COMPARE_LT, condRHS.clone()),
                 stripCondition.clone(), condRHS.clone());
@@ -378,29 +517,14 @@ public class ParallelAwareTilingPass extends TransformPass {
         Statement newLoopInitStm = loop.getInitialStatement().clone();
         ((Expression) newLoopInitStm.getChildren().get(0)).swapWith(newLoopInitExp);
 
-        Statement newLoopBody = loop.getBody().clone();
-
-        DFIterator<ForLoop> bodyIter = new DFIterator<>(loop.getBody(), ForLoop.class);
-
-        boolean isBodyALoop = bodyIter.hasNext();
-
-        if (isBodyALoop) {
-
-            List<ForLoop> childLoops = new ArrayList<>();
-            while (bodyIter.hasNext()) {
-                childLoops.add(bodyIter.next());
-            }
-
-            ForLoop outermostChildLoop = childLoops.get(childLoops.size() - 1);
-            newLoopBody = outermostChildLoop.clone(false);
-        }
+        Statement newLoopBody = loop.getBody().clone(false);
 
         ForLoop inStripLoop = new ForLoop(newLoopInitStm, newLoopCondition, newLoopStepExp, newLoopBody);
 
         return inStripLoop;
     }
 
-    private Loop createCrossStripLoop(ForLoop loop, int strip, Identifier newIndexVariable,
+    private Loop createCrossStripLoop(ForLoop loop, Expression stripExpr, Identifier newIndexVariable,
             Statement inStripLoop) throws Exception {
 
         Statement originalInitStatement = loop.getInitialStatement();
@@ -449,7 +573,7 @@ public class ParallelAwareTilingPass extends TransformPass {
                 newIndexVariable.clone(), condOperator, condRHS.clone());
 
         Expression stepLHS = newIndexVariable;
-        Expression stepRHS = new IntegerLiteral(strip);
+        Expression stepRHS = stripExpr;
         Expression newLoopStepExp = new AssignmentExpression(stepLHS.clone(), AssignmentOperator.ADD, stepRHS.clone());
 
         Statement newLoopInitStm = loop.getInitialStatement().clone();
@@ -461,6 +585,10 @@ public class ParallelAwareTilingPass extends TransformPass {
     }
 
     private SymbolTable getVariableDeclarationSpace(Traversable traversable) {
+
+        if (traversable instanceof SymbolTable) {
+            return (SymbolTable) traversable;
+        }
         Traversable auxTraversable = traversable.getParent();
         while (auxTraversable != null && auxTraversable.getParent() != null
                 && !(auxTraversable instanceof SymbolTable)) {
@@ -470,13 +598,27 @@ public class ParallelAwareTilingPass extends TransformPass {
         return (SymbolTable) auxTraversable;
     }
 
-    private Identifier declareIndexVariable(SymbolTable variableDeclarationSpace, String varName) {
+    private Identifier declareVariable(SymbolTable variableDeclarationSpace, String varName) {
+
+        return declareVariable(variableDeclarationSpace, varName, null);
+    }
+
+    private Identifier declareVariable(SymbolTable variableDeclarationSpace, String varName,
+            Expression value) {
 
         NameID variableNameID = new NameID(varName);
+
         VariableDeclarator varDeclarator = new VariableDeclarator(variableNameID);
+
+        if (value != null) {
+            Initializer initializer = new Initializer(value);
+            varDeclarator.setInitializer(initializer);
+        }
         Declaration varDeclaration = new VariableDeclaration(Specifier.INT, varDeclarator);
 
-        variableDeclarationSpace.addDeclaration(varDeclaration);
+        if (variableDeclarationSpace.findSymbol(variableNameID) == null) {
+            variableDeclarationSpace.addDeclaration(varDeclaration);
+        }
 
         Identifier varIdentifier = new Identifier(varDeclarator);
 
@@ -554,13 +696,5 @@ public class ParallelAwareTilingPass extends TransformPass {
         }
         return false;
     }
-
-    // public void stripmining() {
-    // chooseStrip();
-    // }
-
-    // public int chooseStrip(Loop loop) {
-
-    // }
 
 }
