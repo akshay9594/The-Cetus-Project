@@ -10,12 +10,12 @@ import java.util.Set;
  * Stores and manipulates direction vectors for loop-based dependences
  */
 public class DependenceVector {
-    static final String[] depstr = {"*", "<", "=", ">"};
-    static final int nil = -1;
-    static final int any = 0;
-    static final int less = 1;
-    static final int equal = 2;
-    static final int greater = 3;
+    public static final String[] depstr = {"*", "<", "=", ">"};
+    public static final int nil = -1;
+    public static final int any = 0;
+    public static final int less = 1;
+    public static final int equal = 2;
+    public static final int greater = 3;
     static final int cartesian_prod[][] = {
             {any, less, equal, greater},
             {less, less, nil, nil},

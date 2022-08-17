@@ -33,6 +33,9 @@ public class LoopInterchange extends TransformPass {
 
     Boolean SymbolicIter;
 
+    public HashMap<Expression, Long> LoopCostMap = new HashMap<>();
+    public HashMap<Expression, Expression> Symbolic_LoopCostMap = new HashMap<Expression, Expression>();
+
     public LoopInterchange(Program program) {
         super(program);
     }
@@ -389,8 +392,8 @@ public class LoopInterchange extends TransformPass {
         long count;
 
         List<Expression> LoopNestOrder = new ArrayList<Expression>();
-        HashMap<Expression, Long> LoopCostMap = new HashMap<Expression, Long>();
-        HashMap<Expression, Expression> Symbolic_LoopCostMap = new HashMap<Expression, Expression>();
+        LoopCostMap = new HashMap<Expression, Long>();
+        Symbolic_LoopCostMap = new HashMap<Expression, Expression>();
 
         List<Long> scores = new ArrayList<>();
         List<Expression> Symbolic_scores = new ArrayList<>();
@@ -611,8 +614,6 @@ public class LoopInterchange extends TransformPass {
 
         if (!LoopCostMap.isEmpty()) {
 
-            DataReuseAnalysis.printLoopCosts(LoopCostMap);
-
             Collections.sort(scores, Collections.reverseOrder());
 
             long MinScore = Collections.min(scores);
@@ -642,8 +643,6 @@ public class LoopInterchange extends TransformPass {
         else {
 
             // For Symbolic Loop Costs
-            DataReuseAnalysis.printLoopCosts(Symbolic_LoopCostMap);
-
             int counter = 0;
 
             List<Expression> DominantTerms = new ArrayList<>();
