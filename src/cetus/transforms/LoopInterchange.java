@@ -384,7 +384,7 @@ public class LoopInterchange extends TransformPass {
      * @return - - Order of the loops in the nest for max reusability
      */
 
-    public List ReusabilityAnalysis(Program OriginalProgram, Loop LoopNest,
+    public List<Expression> ReusabilityAnalysis(Program OriginalProgram, Loop LoopNest,
             List<AssignmentExpression> LoopExprs, List<ArrayAccess> LoopArrays, LinkedList<Loop> LoopNestList) {
 
         int i, j, k, l;

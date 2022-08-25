@@ -1,15 +1,23 @@
 package cetus.transforms.pawTiling;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
+import cetus.analysis.AnalysisPass;
+import cetus.analysis.ArrayPrivatization;
 import cetus.analysis.DDGraph;
 import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
+import cetus.analysis.Reduction;
 import cetus.exec.CommandLineOptionSet;
 import cetus.hir.ArrayAccess;
 import cetus.hir.AssignmentExpression;
@@ -63,13 +71,17 @@ public class ParallelAwareTilingPass extends TransformPass {
     public final static String TILE_SUFFIX = "Tile";
     public final static String BALANCED_TILE_SIZE_NAME = "balancedTileSize";
 
+    private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
+
     private int numOfProcessors = DEFAULT_PROCESSORS;
     private int cacheSize = DEFAULT_CACHE_SIZE;
 
-    //TODO: non implemented yet
+    // TODO: non implemented yet
     private boolean isCacheDistributed = false;
 
-    private boolean verbosity = false;
+    // For reuse analysis
+    private List<Expression> memoryOrder;
+    private HashMap<Expression, ?> loopCostMap;
 
     private List<Loop> selectedOutermostLoops;
 
@@ -82,11 +94,16 @@ public class ParallelAwareTilingPass extends TransformPass {
     public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions) {
         super(program);
 
+        if (commandLineOptions.getValue("verbosity").equals("1")) {
+            setLogger(true);
+            analysisData.verbosity = true;
+        }
+
         try {
             numOfProcessors = Integer.parseInt(commandLineOptions.getValue(CORES_PARAM_NAME));
             assert numOfProcessors > 0;
         } catch (Exception e) {
-            System.out.println(
+            logger.warning(
                     "Error on setting num of processors. The default value: " + DEFAULT_PROCESSORS + " will be used");
         }
 
@@ -94,7 +111,7 @@ public class ParallelAwareTilingPass extends TransformPass {
             cacheSize = Integer.parseInt(commandLineOptions.getValue(CACHE_PARAM_NAME));
             assert cacheSize > 0;
         } catch (Exception e) {
-            System.out.println(
+            logger.warning(
                     "Error on setting cache size. The default value: " + DEFAULT_CACHE_SIZE + " will be used");
         }
 
@@ -104,11 +121,28 @@ public class ParallelAwareTilingPass extends TransformPass {
                 isCacheDistributed = true;
             }
         } catch (Exception e) {
-            System.out.println(
+            logger.warning(
                     "Error on setting cache type. The cache will be considered as non distributed");
         }
-        verbosity = commandLineOptions.getValue("verbosity").equals("1");
-        analysisData.verbosity = verbosity;
+
+    }
+
+    private void setLogger(boolean verbosity) {
+        if (verbosity) {
+            logger.setLevel(Level.ALL);
+        } else {
+            logger.setLevel(Level.WARNING);
+        }
+
+        FileHandler handler;
+        try {
+            handler = new FileHandler("./out/" + this.getClass().getSimpleName() + ".log");
+            handler.setFormatter(new SimpleFormatter());
+            handler.setEncoding("utf-8");
+            logger.addHandler(handler);
+        } catch (SecurityException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -118,38 +152,30 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     @Override
     public void start() {
-        System.out.println(program);
-        System.out.println("Printing DD Graph");
-        DataDependenceUtils.printDependenceArcs(program);
-
-        System.out.println("Printing direction matrix ");
-        DataDependenceUtils.printDirectionMatrix(program);
-
+     
         List<Loop> outermostLoops = LoopTools.getOutermostLoops(program);
         List<Loop> perfectLoops = filterValidLoops(outermostLoops);
         this.selectedOutermostLoops = perfectLoops;
 
-        if (verbosity) {
-            System.out.println("#### Selected loops: " + selectedOutermostLoops.size() + "\n");
-            for (Loop outermostLoop : selectedOutermostLoops) {
-                System.out.println(outermostLoop + "\n");
-            }
-            System.out.println("#### END Selected loops");
-
-            System.out.println(analysisData);
+        logger.info("#### Selected loops: " + selectedOutermostLoops.size() + "\n");
+        for (Loop outermostLoop : selectedOutermostLoops) {
+            logger.info(outermostLoop + "\n");
         }
+        logger.info("#### END Selected loops");
+
+        logger.info(analysisData.toString());
 
         for (Loop outermostLoop : selectedOutermostLoops) {
             try {
                 runPawTiling((ForLoop) outermostLoop);
             } catch (Exception e) {
-                System.out.println(" ----");
-                System.out.println("Error trying to run paw tiling");
-                System.out.println("Loop:");
+                logger.info(" ----");
+                logger.info("Error trying to run paw tiling");
+                logger.info("Loop:");
                 System.err.println(outermostLoop);
-                System.out.println("Error:");
+                logger.info("Error:");
                 e.printStackTrace();
-                System.out.println(" ---- ");
+                logger.info(" ---- ");
             }
         }
 
@@ -157,26 +183,21 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     private void runPawTiling(ForLoop loopNest) throws Exception {
         try {
-            runLoopInterchange(loopNest);
+            runReusabilityAnalysis(loopNest);
         } catch (Exception e) {
-            if (verbosity) {
-                System.out.println(
-                        "It was not possible to perform loop interchange. However, paw tiling will continue. Error:");
-                e.printStackTrace();
-            }
-        }
+            logger.severe(
+                    "It was not possible to perform loop interchange. However, paw tiling will continue. Error:");
+            e.printStackTrace();
 
+        }
         CompoundStatement variableDeclarations = new CompoundStatement();
 
         List<ForLoop> tiledVersions = createTiledVersions(loopNest, variableDeclarations);
-
         ForLoop leastCostTiledVersion = chooseOptimalVersion(loopNest, tiledVersions);
 
-        if (verbosity) {
-            System.out.println("### TILED VERSION SELECTION ###");
-            System.out.println(leastCostTiledVersion);
-            System.out.println("### SELECTED VERSION ###");
-        }
+        logger.info("### TILED VERSION SELECTION ###");
+        logger.info(leastCostTiledVersion.toString());
+        logger.info("### SELECTED VERSION ###");
 
         Expression totalOfInstructions = getTotalOfInstructions(loopNest);
 
@@ -200,7 +221,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         replaceLoop(loopNest, twoVersionsStm);
 
-        // updateAttributes(loopNest);
+        updateAttributes();
 
     }
 
@@ -233,20 +254,85 @@ public class ParallelAwareTilingPass extends TransformPass {
         List<DependenceVector> firstTiledVersionDVs = calculateDependenceVectors(parent, loopIdx, firstTiledVersion);
         outerParallelLoopIndex = getOuterParallelLoopIdx(firstTiledVersion, firstTiledVersionDVs);
 
+        List<ForLoop> loopsWithSameParallelization = new ArrayList<>();
+
+        loopsWithSameParallelization.add(firstTiledVersion);
+
+        // decide version based on parallelizability
         for (int i = 1; i < tiledVersions.size(); i++) {
             ForLoop tiledVersion = tiledVersions.get(i);
             List<DependenceVector> dependenceVectors = calculateDependenceVectors(parent, loopIdx, tiledVersion);
             int auxOuterParallelLoopIdx = getOuterParallelLoopIdx(tiledVersion, dependenceVectors);
-            if (auxOuterParallelLoopIdx < outerParallelLoopIndex) {
-                outerParallelLoopIndex = auxOuterParallelLoopIdx;
-                choosenVersion = tiledVersion;
+
+            logger.info("### Tiled version: ");
+            logger.info(tiledVersion + "\n");
+            logger.info("### Outer parallelizable loop position: " + auxOuterParallelLoopIdx);
+
+            if (auxOuterParallelLoopIdx == -1) {
+                continue;
+            }
+            if (auxOuterParallelLoopIdx == outerParallelLoopIndex) {
+                loopsWithSameParallelization.add(tiledVersion);
             }
 
+            else if (auxOuterParallelLoopIdx < outerParallelLoopIndex) {
+                outerParallelLoopIndex = auxOuterParallelLoopIdx;
+                choosenVersion = tiledVersion;
+                loopsWithSameParallelization.clear();
+                loopsWithSameParallelization.add(choosenVersion);
+            }
         }
 
+        // decide tiled version to take based on reuse analysis
+        if (loopsWithSameParallelization.size() > 0) {
+            if (this.loopCostMap != null) {
+
+                // init expresion for the most reusable loop
+                Expression initExpr = memoryOrder.get(memoryOrder.size() - 1);
+                int positionOfMostReusableInnerLoop = getByIndexInLoopNestPosition(choosenVersion, initExpr);
+
+                for (ForLoop loop : loopsWithSameParallelization) {
+                    int auxPosition = getByIndexInLoopNestPosition(loop, initExpr);
+                    if (auxPosition == -1 || auxPosition == positionOfMostReusableInnerLoop) {
+                        continue;
+                    }
+
+                    if (auxPosition > positionOfMostReusableInnerLoop) {
+                        positionOfMostReusableInnerLoop = auxPosition;
+                        choosenVersion = loop;
+                    }
+                }
+            }
+        }
+
+        // back the program to its original state.
         parent.setChild(loopIdx, originalLoopNest);
 
         return choosenVersion;
+    }
+
+    private int getByIndexInLoopNestPosition(ForLoop loopNest, Expression indexExpression) {
+        List<ForLoop> loops = new ArrayList<>();
+        LoopTools.calculateInnerLoopNest(loopNest).descendingIterator()
+                .forEachRemaining((loop) -> loops.add((ForLoop) loop));
+
+        if (loops.get(0) != loopNest) {
+            Collections.reverse(loops);
+        }
+
+        int position = -1;
+
+        for (int i = 0; i < loops.size(); i++) {
+            ForLoop loop = loops.get(i);
+            Expression initStm = loop.getStep();
+            if (initStm.findExpression(indexExpression).size() == 0) {
+                continue;
+            }
+
+            position = i;
+        }
+
+        return position;
     }
 
     private List<DependenceVector> calculateDependenceVectors(Traversable parentOfLoop, int loopIdx,
@@ -267,15 +353,11 @@ public class ParallelAwareTilingPass extends TransformPass {
         new DFIterator<Loop>(tiledVersion, Loop.class).forEachRemaining(loops::add);
         dependenceVectors = ddGraph.getDirectionMatrix(loops);
 
-        if (verbosity) {
-            System.out.println("### Tiled version ###");
-            System.out.println(tiledVersion);
-            System.out.println();
+        logger.info("### Tiled version ###");
+        logger.info(tiledVersion + "\n");
 
-            System.out.println("### Direction vector");
-            System.out.println(dependenceVectors);
-            System.out.println();
-        }
+        logger.info("### Direction vector");
+        logger.info(dependenceVectors + "\n");
 
         return dependenceVectors;
 
@@ -292,7 +374,6 @@ public class ParallelAwareTilingPass extends TransformPass {
         }
 
         if (loops.get(0) != loopNest) {
-
             // to have a list with ordered loops from the outermost to the innermost
             Collections.reverse(loops);
         }
@@ -311,8 +392,10 @@ public class ParallelAwareTilingPass extends TransformPass {
     }
 
     // TODO: Update reduction/private variable attributes
-    private void updateAttributes(ForLoop loopNest) {
-
+    private void updateAttributes() {
+        AnalysisPass.run(new ArrayPrivatization(program));
+        AnalysisPass.run(new DDTDriver(program));
+        AnalysisPass.run(new Reduction(program));
     }
 
     private List<Declaration> filterValidDeclarations(CompoundStatement variableDeclarations,
@@ -441,20 +524,22 @@ public class ParallelAwareTilingPass extends TransformPass {
     // By Monica D. Lam, Edward E. Rothberg, Michael E. Wolf
     private int computeRawTileSize(int matrixSize, int cacheSize) {
 
-        int addr, di, dj, maxWidth;
+        // int addr, di, dj, maxWidth;
 
-        maxWidth = Math.min(matrixSize, cacheSize);
-        addr = matrixSize / 2;
-        while (true) {
-            addr = +cacheSize;
-            di = addr / matrixSize;
-            dj = Math.abs((addr % matrixSize) - matrixSize / 2);
-            int auxMinMaxWidth = Math.min(maxWidth, dj);
-            if (di >= auxMinMaxWidth) {
-                return Math.round(Math.min(maxWidth, di));
-            }
-            maxWidth = auxMinMaxWidth;
-        }
+        // maxWidth = Math.min(matrixSize, cacheSize);
+        // addr = matrixSize / 2;
+        // while (true) {
+        // addr += cacheSize;
+        // di = (int) Math.round((double) matrixSize / (double) addr);
+        // dj = Math.abs((addr % matrixSize) - matrixSize / 2);
+        // int auxMinMaxWidth = Math.min(maxWidth, dj);
+        // if (di >= auxMinMaxWidth) {
+        // return Math.round(Math.min(maxWidth, di));
+        // }
+        // maxWidth = auxMinMaxWidth;
+        // }
+
+        return 1000;
     }
 
     private void addNewVariableDeclarations(Traversable traversable, List<Declaration> variableDeclarations) {
@@ -466,31 +551,31 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     }
 
-    private List<Expression> runLoopInterchange(Loop loopNest) {
+    private List<Expression> runReusabilityAnalysis(Loop loopNest) {
 
         LoopInterchange loopInterchangePass = new LoopInterchange(program);
         loopInterchangePass.start();
 
         LinkedList<Loop> loopNestList = LoopTools.calculateInnerLoopNest(loopNest);
 
-        List<Expression> memoryOrder = loopInterchangePass.ReusabilityAnalysis(program, loopNest,
+        memoryOrder = loopInterchangePass.ReusabilityAnalysis(program, loopNest,
                 getLoopAssingmentExpressions(loopNest), getLoopArrayAccesses(loopNest), loopNestList);
 
-        HashMap<Expression, ?> loopCostMap = loopInterchangePass.LoopCostMap != null ? loopInterchangePass.LoopCostMap
+        loopCostMap = loopInterchangePass.LoopCostMap != null ? loopInterchangePass.LoopCostMap
                 : loopInterchangePass.Symbolic_LoopCostMap;
 
         DataReuseAnalysis.printLoopCosts(loopCostMap);
 
-        System.out.println(program.toString());
+        logger.info(program.toString());
 
-        System.out.println("### REUSABILITY ###");
+        logger.info("### REUSABILITY ###");
 
         for (int i = 0; i < memoryOrder.size(); i++) {
             Expression expr = memoryOrder.get(i);
-            System.out.println(expr);
+            logger.info(expr + "\n");
         }
 
-        System.out.println("### REUSABILITY END ###");
+        logger.info("### REUSABILITY END ###");
 
         return memoryOrder;
     }
@@ -508,16 +593,26 @@ public class ParallelAwareTilingPass extends TransformPass {
                     stripminedBySymbol,
                     tiledVersions);
 
-            if (verbosity) {
-                System.out.println("########## PRINTING TILED VERSIONS\n");
-
-                for (ForLoop tiledVersion : tiledVersions) {
-                    System.out.println("######## TILED VERSION #########\n");
-                    System.out.println(tiledVersion);
-                    System.out.println("######## END TILED VERSION #########\n");
+            int originalLoopNestIdx = -1;
+            ForLoop originalLoopNestNoAnnotations = ((ForLoop) loopNest).clone(false);
+            for (int i = 0; i < tiledVersions.size(); i++) {
+                if (tiledVersions.get(i).equals(originalLoopNestNoAnnotations)) {
+                    originalLoopNestIdx = i;
+                    break;
                 }
             }
 
+            if (originalLoopNestIdx != -1) {
+                tiledVersions.remove(originalLoopNestIdx);
+            }
+
+            logger.info("########## PRINTING TILED VERSIONS\n");
+
+            for (ForLoop tiledVersion : tiledVersions) {
+                logger.info("######## TILED VERSION #########\n");
+                logger.info(tiledVersion + "\n");
+                logger.info("######## END TILED VERSION #########\n");
+            }
         }
 
         return tiledVersions;
@@ -585,9 +680,11 @@ public class ParallelAwareTilingPass extends TransformPass {
             ForLoop parentLoop = loops.get(targetLoopPos - 1);
             parentLoop.setBody(crossStripLoop);
             permuteLoop(crossStripLoop, parentLoop);
+
+            return outermostLoop;
         }
 
-        return outermostLoop;
+        return crossStripLoop;
     }
 
     private void permuteLoop(ForLoop loop, ForLoop targetLoop) {
