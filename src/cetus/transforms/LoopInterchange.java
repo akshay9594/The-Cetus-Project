@@ -459,9 +459,7 @@ public class LoopInterchange extends TransformPass {
             else
                 SymbolicLoopStride = true;
 
-            List<List<ArrayAccess>> ReferenceGroups = DataReuseAnalysis.RefGroup(loop, LoopArrays, LoopNestOrder);
-
-            DataReuseAnalysis.printRefGroup(ReferenceGroups);
+            List<List<ArrayAccess>> ReferenceGroups = RefGroup(loop, LoopArrays, LoopNestOrder);
 
             if (!SymbolicIter)
                 trip_currentLoop = (long) LoopNestIterationMap.get(LoopIdx);
@@ -655,10 +653,10 @@ public class LoopInterchange extends TransformPass {
 
                 Expression se1 = (Expression) Symbolic_scores.get(k);
 
-                if(Symbolic.getVariables(se1).size() == 0) {
+                if (Symbolic.getVariables(se1).size() == 0) {
                     continue;
                 }
-                
+
                 variable = Symbolic.getVariables(se1).get(0);
 
                 ListOfExpressionVariables.add(variable);

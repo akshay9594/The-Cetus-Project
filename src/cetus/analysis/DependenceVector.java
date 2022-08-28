@@ -25,6 +25,11 @@ public class DependenceVector {
     LinkedHashMap<Loop, Integer> directionVector;
     private boolean valid = true;
 
+    public DependenceVector(int... directions) {
+        this.valid=true;
+        
+    }
+
     public DependenceVector(LinkedList <Loop> nest) {
         this.valid = true;
         directionVector = new LinkedHashMap<Loop,Integer>();

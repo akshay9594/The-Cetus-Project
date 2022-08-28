@@ -151,9 +151,11 @@ public class LoopTools {
      * Returns a simplified upper bound expression for the loop
      * 
      * @param loop
+     * @param applyRangeAnalysis a boolean to decide if range analysis should be
+     *                           applied
      * @return the upper bound of the loop.
      */
-    public static Expression getUpperBoundExpression(Loop loop) {
+    public static Expression getUpperBoundExpression(Loop loop, boolean applyRangeAnalysis) {
         Expression ub = null;
         if (loop instanceof ForLoop) {
             ForLoop for_loop = (ForLoop) loop;
@@ -171,11 +173,21 @@ public class LoopTools {
                 ub = Symbolic.add(rhs, step_size);
             }
         }
-        if (!(ub instanceof IntegerLiteral)) {
+        if (!(ub instanceof IntegerLiteral) && applyRangeAnalysis) {
             RangeDomain rd = RangeAnalysis.query((Statement) loop);
             ub = rd.substituteForward(ub);
         }
         return ub;
+    }
+
+    /**
+     * Returns a simplified upper bound expression for the loop
+     * 
+     * @param loop
+     * @return the upper bound of the loop.
+     */
+    public static Expression getUpperBoundExpression(Loop loop) {
+        return getUpperBoundExpression(loop, true);
     }
 
     /**

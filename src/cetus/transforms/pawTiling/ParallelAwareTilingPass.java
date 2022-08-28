@@ -152,7 +152,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     @Override
     public void start() {
-     
+
         List<Loop> outermostLoops = LoopTools.getOutermostLoops(program);
         List<Loop> perfectLoops = filterValidLoops(outermostLoops);
         this.selectedOutermostLoops = perfectLoops;
@@ -164,6 +164,12 @@ public class ParallelAwareTilingPass extends TransformPass {
         logger.info("#### END Selected loops");
 
         logger.info(analysisData.toString());
+
+        //In case of rollback
+        List<Loop> originalLoopNestCopy = new ArrayList<>();
+        outermostLoops.forEach(loop -> {
+            originalLoopNestCopy.add(((ForLoop) loop).clone(false));
+        });
 
         for (Loop outermostLoop : selectedOutermostLoops) {
             try {
@@ -182,8 +188,20 @@ public class ParallelAwareTilingPass extends TransformPass {
     }
 
     private void runPawTiling(ForLoop loopNest) throws Exception {
+
         try {
             runReusabilityAnalysis(loopNest);
+        } catch (Exception e) {
+            logger.severe(
+                    "It was not possible to perform reuse analysis. Only parallelism will take into account for deciding over tiled versions. Error:");
+            e.printStackTrace();
+
+        }
+
+        try {
+            // TODO: Need a rollback if we want to conserve the original loopNest
+
+            runLoopInterchage();
         } catch (Exception e) {
             logger.severe(
                     "It was not possible to perform loop interchange. However, paw tiling will continue. Error:");
@@ -223,6 +241,19 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         updateAttributes();
 
+    }
+
+    private List<DependenceVector> getPostTilingDirectionVectors(List<DependenceVector> originalDVs,
+            ForLoop originalLoopNest,
+            int targetLoopPos) {
+        return originalDVs;
+    }
+
+    private DependenceVector getPostTilingDirectionVector(DependenceVector dv, ForLoop originalLoopNest,
+            int targetLoopPos) {
+        DependenceVector newDV = new DependenceVector(dv);
+
+        return newDV;
     }
 
     private Statement createTwoVersionsStm(Expression maxOfInstructions, Statement trueClause, Statement falseClause) {
@@ -551,33 +582,34 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     }
 
-    private List<Expression> runReusabilityAnalysis(Loop loopNest) {
-
+    public void runLoopInterchage() {
         LoopInterchange loopInterchangePass = new LoopInterchange(program);
         loopInterchangePass.start();
 
-        LinkedList<Loop> loopNestList = LoopTools.calculateInnerLoopNest(loopNest);
-
-        memoryOrder = loopInterchangePass.ReusabilityAnalysis(program, loopNest,
-                getLoopAssingmentExpressions(loopNest), getLoopArrayAccesses(loopNest), loopNestList);
-
-        loopCostMap = loopInterchangePass.LoopCostMap != null ? loopInterchangePass.LoopCostMap
-                : loopInterchangePass.Symbolic_LoopCostMap;
-
-        DataReuseAnalysis.printLoopCosts(loopCostMap);
-
         logger.info(program.toString());
+    }
 
-        logger.info("### REUSABILITY ###");
+    private void runReusabilityAnalysis(Loop loopNest) {
+
+        DataReuseAnalysis reuseAnalysis = new DataReuseAnalysis(loopNest);
+        memoryOrder = reuseAnalysis.getLoopNestMemoryOrder();
+
+        logger.info("### REUSE ANALYSIS ###");
+
+        logger.info("#### LOOP COSTS:");
+        logger.info(DataReuseAnalysis.printLoopCosts(reuseAnalysis.getLoopCosts()));
+        logger.info("#### LOOP COSTS END");
+
+        logger.info("#### Memory order:");
 
         for (int i = 0; i < memoryOrder.size(); i++) {
             Expression expr = memoryOrder.get(i);
             logger.info(expr + "\n");
         }
 
+        logger.info("#### Memory order END");
         logger.info("### REUSABILITY END ###");
 
-        return memoryOrder;
     }
 
     private List<ForLoop> createTiledVersions(Loop loopNest, SymbolTable variableDeclarationSpace) throws Exception {
