@@ -18,7 +18,7 @@ import cetus.hir.Program;
 import cetus.hir.Statement;
 import cetus.hir.Traversable;
 
-public class DataDependenceUtils {
+public final class DataDependenceUtils {
 
     public static void printDependenceArcs(Program program) {
         DDGraph ddGraph = program.getDDGraph();
@@ -28,10 +28,6 @@ public class DataDependenceUtils {
         }
         List<Arc> arcs = ddGraph.getAllArcs();
         int n = arcs.size();
-        // HashMap<String,
-        // for (int i = 0; i < n; i++) {
-
-        // }
 
         if (arcs.isEmpty()) {
             System.out.println("No dependencies");
@@ -46,7 +42,7 @@ public class DataDependenceUtils {
             Statement sinkStatement = arc.getSinkStatement();
 
             // loop only for deps in the same loop. No cross-loops deps (for now)
-            if(getLoopParent(sourceStatement) != getLoopParent(sinkStatement)) {
+            if (getLoopParent(sourceStatement) != getLoopParent(sinkStatement)) {
                 continue;
             }
 
@@ -65,16 +61,6 @@ public class DataDependenceUtils {
 
             System.err.println("----END DEPENDENCE----\n");
             System.out.println();
-            // System.err.println("----DEPENDENCE BEGIN----");
-            // System.out.println("Dependency type: " + dependencyType);
-            // System.out.printf("# Source for: %s\n## Source: %s\n",
-            // getPrintableParentStatement(sourceStatement),
-            // sourceStatement);
-            // System.out.printf("# sink for: %s\n## Sink: %s\n",
-            // getPrintableParentStatement(sinkStatement),
-            // sinkStatement);
-            // System.err.println("----END DEPENDENCE----");
-
         }
     }
 
@@ -94,7 +80,6 @@ public class DataDependenceUtils {
     private static void printDirectionMatrix(Loop enclosingLoop, List<DependenceVector> dependenceVectors) {
         int n = dependenceVectors.size();
         System.out.println("--- ENCLOSING LOOP ---");
-        Statement loopBody = enclosingLoop.getBody();
         Expression condition = enclosingLoop.getCondition();
         System.out.println(condition);
         System.out.println("--- ENCLOSING LOOP ---");

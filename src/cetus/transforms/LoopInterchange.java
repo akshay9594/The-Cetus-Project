@@ -11,7 +11,7 @@ import cetus.analysis.LoopTools;
 import cetus.analysis.RangeAnalysis;
 import cetus.analysis.RangeDomain;
 import cetus.hir.*;
-import cetus.utils.DataReuseAnalysis;
+import cetus.utils.reuseAnalysis.DataReuseAnalysis;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -112,130 +113,8 @@ public class LoopInterchange extends TransformPass {
                 loopMap.put((ForLoop) loops.get(0), "Function-call");
             } else {
                 target_loops++;
-                Statement stm = ((ForLoop) loops.get(loops.size() - 1)).getBody();
-                List<ArrayAccess> arrays = new ArrayList<ArrayAccess>(); // Arrays in loop body
-                DepthFirstIterator iter2 = new DepthFirstIterator(stm);
-                List<Expression> PermutedLoopOrder = new ArrayList<>();
-
-                while (iter2.hasNext()) {
-                    Object child = iter2.next();
-                    if (child instanceof ArrayAccess) {
-
-                        ArrayAccess array = (ArrayAccess) child;
-                        arrays.add(array);
-                    }
-
-                    if (child instanceof AssignmentExpression) {
-                        LoopAssnExprs.add((AssignmentExpression) child);
-                    }
-
-                }
-
-                /*
-                 * Begin reusability test to determine Reusability for each loop in the Nest
-                 * Result of reusability test is the Order of the loops in the nest for max
-                 * reusability
-                 * TODO: Implementing the Nearby Permutation alogirthm in the scenario where the
-                 * MemoryOrder cannot be reached.
-                 * 
-                 */
-
-                HashMap LoopNestIterMap = LoopIterationMap(loops.get(0));
-
-                if (HasSymbolicBounds(LoopNestIterMap)) {
-                    SymbolicIter = true;
-                } else if (HasNonSymbolicBounds(LoopNestIterMap)) {
-                    SymbolicIter = false;
-
-                } else {
-                    loopMap.put((ForLoop) loops.get(0), "ComplexBounds");
-                    continue;
-                }
-
-                List<Expression> MemoryOrder = ReusabilityAnalysis(program, loops.get(0), LoopAssnExprs, arrays, loops);
-
-                System.out.println("Memory order" + MemoryOrder);
-                // If the Original Nest is already in the desired order, no need for further
-                // analysis.
-
-                if (OriginalLoopOrder.equals(MemoryOrder)) {
-
-                    loopMap.put((ForLoop) loops.get(0), "AlreadyInOrder");
-                    continue;
-                }
-
-                int r = 0, j, until = loops.size();
-                int target_index = 0;
-                boolean icFlag = true;
-                List<Integer> rank;
-                int rankSize;
-
-                OuterWhileLoop: while (icFlag) {
-                    Expression exp;
-                    expList.clear();
-                    for (j = 0; j < until; j++) {
-                        exp = LoopTools.getIndexVariable((ForLoop) loops.get(j));
-                        if (exp != null)
-                            expList.add(exp);
-                    }
-
-                    rank = getRank(arrays, expList, target_index);
-
-                    rankSize = rank.size();
-
-                    for (j = 0; j < rankSize; j++) {
-                        r = getRank2(rank, expList, loops);
-
-                        rank.remove(rank.indexOf(r));
-
-                        if (expList.size() < until)
-                            until = expList.size();
-
-                        for (int k = r + 1; k < until; k++) {
-
-                            ForLoop l = (ForLoop) loops.get(0);
-                            ForLoop outermostLoop = (ForLoop) LoopTools.getOutermostLoop(l);
-                            LinkedList innerLoops = LoopTools.calculateInnerLoopNest(outermostLoop);
-
-                            if (isLegal(loops, r, k)) {
-
-                                ForLoop loop1 = (ForLoop) loops.get(r);
-                                ForLoop loop2 = (ForLoop) loops.get(k);
-
-                                swapLoop(loop1, loop2);
-                                num_loop_interchange++;
-                                Collections.swap(expList, r, k);
-                                r = k;
-
-                                PermutedLoopOrder = new ArrayList<>();
-
-                                for (int q = 0; q < loops.size(); q++) {
-
-                                    PermutedLoopOrder.add(LoopTools.getIndexVariable(loops.get(q)));
-
-                                }
-
-                                if (PermutedLoopOrder.equals(MemoryOrder)) {
-                                    loopMap.put(l, "Permuted");
-                                    icFlag = false;
-                                    break OuterWhileLoop;
-
-                                }
-
-                            }
-
-                        }
-                        until = r;
-                    }
-                    target_index++;
-                    if (until == 0)
-                        icFlag = false;
-
-                }
-
-                if (PermutedLoopOrder.equals(OriginalLoopOrder) ||
-                        PermutedLoopOrder.isEmpty())
-                    loopMap.put((ForLoop) loops.get(0), "Non-Permuted");
+                num_loop_interchange += interchangeLoops(loops.get(0), loops.get(loops.size() - 1), loops, loopMap,
+                        OriginalLoopOrder);
             }
 
         }
@@ -302,6 +181,141 @@ public class LoopInterchange extends TransformPass {
             System.out.println("[LoopInterchange] No loops have been interchanged\n");
 
         return;
+    }
+
+    public int interchangeLoops(Loop outermostLoop, Loop loop, LinkedList<Loop> loops,
+            Map<ForLoop, String> loopMap, List<Expression> OriginalLoopOrder) {
+
+        int num_loop_interchange = 0;
+        Statement stm = ((ForLoop) loop).getBody();
+        List<ArrayAccess> arrays = new ArrayList<ArrayAccess>(); // Arrays in loop body
+        DepthFirstIterator<Traversable> iter2 = new DepthFirstIterator<Traversable>(stm);
+        List<AssignmentExpression> LoopAssnExprs = new ArrayList<>();
+        List<Expression> PermutedLoopOrder = new ArrayList<>();
+        List<Expression> expList = new LinkedList<Expression>();
+
+        while (iter2.hasNext()) {
+            Object child = iter2.next();
+            if (child instanceof ArrayAccess) {
+
+                ArrayAccess array = (ArrayAccess) child;
+                arrays.add(array);
+            }
+
+            if (child instanceof AssignmentExpression) {
+                LoopAssnExprs.add((AssignmentExpression) child);
+            }
+
+        }
+
+        /*
+         * Begin reusability test to determine Reusability for each loop in the Nest
+         * Result of reusability test is the Order of the loops in the nest for max
+         * reusability
+         * TODO: Implementing the Nearby Permutation alogirthm in the scenario where the
+         * MemoryOrder cannot be reached.
+         * 
+         */
+
+        HashMap LoopNestIterMap = LoopIterationMap(outermostLoop);
+
+        if (HasSymbolicBounds(LoopNestIterMap)) {
+            SymbolicIter = true;
+        } else if (HasNonSymbolicBounds(LoopNestIterMap)) {
+            SymbolicIter = false;
+
+        } else {
+            loopMap.put((ForLoop) outermostLoop, "ComplexBounds");
+            return 0;
+        }
+
+        List<Expression> MemoryOrder = ReusabilityAnalysis(program, outermostLoop, LoopAssnExprs, arrays, loops);
+
+        System.out.println("Memory order" + MemoryOrder);
+        // If the Original Nest is already in the desired order, no need for further
+        // analysis.
+
+        if (OriginalLoopOrder.equals(MemoryOrder)) {
+
+            loopMap.put((ForLoop) loops.get(0), "AlreadyInOrder");
+            return 0;
+        }
+
+        int r = 0, j, until = loops.size();
+        int target_index = 0;
+        boolean icFlag = true;
+        List<Integer> rank;
+        int rankSize;
+
+        OuterWhileLoop: while (icFlag) {
+            Expression exp;
+            expList.clear();
+            for (j = 0; j < until; j++) {
+                exp = LoopTools.getIndexVariable((ForLoop) loops.get(j));
+                if (exp != null)
+                    expList.add(exp);
+            }
+
+            rank = getRank(arrays, expList, target_index);
+
+            rankSize = rank.size();
+
+            for (j = 0; j < rankSize; j++) {
+                r = getRank2(rank, expList, loops);
+
+                rank.remove(rank.indexOf(r));
+
+                if (expList.size() < until)
+                    until = expList.size();
+
+                for (int k = r + 1; k < until; k++) {
+
+                    ForLoop l = (ForLoop) loops.get(0);
+                    ForLoop auxOutermostLoop = (ForLoop) LoopTools.getOutermostLoop(l);
+                    LinkedList innerLoops = LoopTools.calculateInnerLoopNest(auxOutermostLoop);
+
+                    if (isLegal(loops, r, k)) {
+
+                        ForLoop loop1 = (ForLoop) loops.get(r);
+                        ForLoop loop2 = (ForLoop) loops.get(k);
+
+                        swapLoop(loop1, loop2);
+                        num_loop_interchange++;
+                        Collections.swap(expList, r, k);
+                        r = k;
+
+                        PermutedLoopOrder = new ArrayList<>();
+
+                        for (int q = 0; q < loops.size(); q++) {
+
+                            PermutedLoopOrder.add(LoopTools.getIndexVariable(loops.get(q)));
+
+                        }
+
+                        if (PermutedLoopOrder.equals(MemoryOrder)) {
+                            loopMap.put(l, "Permuted");
+                            icFlag = false;
+                            break OuterWhileLoop;
+
+                        }
+
+                    }
+
+                }
+                until = r;
+            }
+            target_index++;
+            if (until == 0)
+                icFlag = false;
+
+        }
+
+        if (PermutedLoopOrder.equals(OriginalLoopOrder) ||
+                PermutedLoopOrder.isEmpty())
+            loopMap.put((ForLoop) loops.get(0), "Non-Permuted");
+
+        return num_loop_interchange;
+
     }
 
     /**

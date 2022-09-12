@@ -841,6 +841,22 @@ public class LoopTools {
         is_loop_named = true;
     }
 
+    /**
+     * Adds a unique loop name to each for loop.
+     * 
+     * @param program   the input program.
+     * @param overwrite flag to overwrite loop names even if they were already
+     *                  named. If flag is false but loops have not been named, then
+     *                  this method will name all of them
+     */
+    public static void addLoopName(Program program, boolean overwrite) {
+        if (overwrite) {
+            is_loop_named = false;
+        }
+        addLoopName(program);
+
+    }
+
     /* Adds a unique loop name to each for loop - recursive call */
     private static void addLoopName(
             Traversable tr, String header, LinkedList<Integer> nums) {

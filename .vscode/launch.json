@@ -23,10 +23,17 @@
         },
         {
             "type": "java",
+            "name": "Launch Driver Paw tiling No reuse example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-paw-tiling ./resources/examples/tiling/noReuseLoop.c"
+        },
+        {
+            "type": "java",
             "name": "Launch Driver LoopInterchange Matrix Mult example",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-loop_interchange ./resources/examples/tiling/SimpleTilingExample.c"
+            "args": "-loop_interchange ./resources/examples/MatrixMult.c"
         },
         {
             "type": "java",

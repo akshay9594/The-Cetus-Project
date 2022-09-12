@@ -1,6 +1,5 @@
 package cetus.transforms;
 
-import cetus.analysis.AnalysisPass;
 import cetus.analysis.DDGraph;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
@@ -12,7 +11,6 @@ import cetus.utils.DataDependenceUtils;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 

@@ -11,7 +11,7 @@ import cetus.hir.Program;
 import cetus.hir.SymbolTools;
 import cetus.hir.Tools;
 import cetus.transforms.*;
-import cetus.transforms.pawTiling.ParallelAwareTilingPass;
+import cetus.transforms.tiling.pawTiling.ParallelAwareTilingPass;
 import cetus.utils.LoggingUtils;
 
 import java.io.*;
@@ -351,8 +351,8 @@ public class Driver {
                 "To apply loop tiling. Not fully implemented yet");
 
         options.add(options.TRANSFORM,
-                ParallelAwareTilingPass.PARAM_NAME,
-                "" + ParallelAwareTilingPass.DEFAULT_PROCESSORS,
+                ParallelAwareTilingPass.PAW_TILING,
+                null,
                 "" + ParallelAwareTilingPass.DEFAULT_PROCESSORS,
                 "N",
                 "To apply parallel aware tiling. Not fully implemented yet");
@@ -796,6 +796,7 @@ public class Driver {
             CallGraph cg = new CallGraph(program);
             cg.print(System.out);
         }
+
         if (getOptionValue("tsingle-declarator") != null) {
             TransformPass.run(new SingleDeclarator(program));
         }
@@ -818,13 +819,14 @@ public class Driver {
             TransformPass.run(new IVSubstitution(program));
         }
 
+        if (getOptionValue("ddt") != null && !getOptionValue("ddt").equals("0")) {
+            AnalysisPass.run(new DDTDriver(program));
+        }
+
         if (getOptionValue("privatize") != null && !getOptionValue("privatize").equals("0")) {
             AnalysisPass.run(new ArrayPrivatization(program));
         }
 
-        if (getOptionValue("ddt") != null && !getOptionValue("ddt").equals("0")) {
-            AnalysisPass.run(new DDTDriver(program));
-        }
         if (getOptionValue("reduction") != null && !getOptionValue("reduction").equals("0")) {
             AnalysisPass.run(new Reduction(program));
         }
@@ -853,7 +855,7 @@ public class Driver {
             TransformPass.run(new LoopProfiler(program));
         }
 
-        if (getOptionValue(ParallelAwareTilingPass.PARAM_NAME) != null) {
+        if (getOptionValue(ParallelAwareTilingPass.PAW_TILING) != null) {
             TransformPass.run(new ParallelAwareTilingPass(program, options));
         }
 
