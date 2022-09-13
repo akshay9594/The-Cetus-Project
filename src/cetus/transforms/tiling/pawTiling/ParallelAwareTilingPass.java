@@ -182,14 +182,8 @@ public class ParallelAwareTilingPass extends TransformPass {
     private void runPawTiling(ForLoop loopNest) throws Exception {
 
         DataReuseAnalysis reuseAnalysis = null;
-        try {
-            reuseAnalysis = runReuseAnalysis(loopNest);
-        } catch (Exception e) {
-            logger.severe(
-                    "It was not possible to perform reuse analysis. Only parallelism will take into account for deciding over tiled versions. Error:");
-            e.printStackTrace();
 
-        }
+        reuseAnalysis = runReuseAnalysis(loopNest);
 
         if (!hasReuse(reuseAnalysis)) {
             return;

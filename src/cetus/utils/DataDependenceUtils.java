@@ -1,6 +1,5 @@
 package cetus.utils;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,8 +32,6 @@ public final class DataDependenceUtils {
             System.out.println("No dependencies");
             return;
         }
-
-        HashMap<String, List<Statement[]>> byLoopsDeps = new HashMap<>();
 
         for (int i = 0; i < n; i++) {
             Arc arc = arcs.get(i);
