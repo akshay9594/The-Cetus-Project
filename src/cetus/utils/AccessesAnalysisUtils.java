@@ -1,4 +1,4 @@
-package cetus.utils.reuseAnalysis;
+package cetus.utils;
 
 import cetus.hir.BinaryExpression;
 import cetus.hir.Expression;

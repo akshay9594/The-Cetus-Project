@@ -22,6 +22,18 @@ public class TiledLoop extends ForLoop {
                 loopNest.getStep().clone(),
                 loopNest.getBody().clone(false));
 
+        setDependenceVectors(dvs);
+
+    }
+
+    public boolean isCrossStripParallel() {
+
+        Expression stepExpr = LoopTools.getIncrementExpression(outermostParallelizableLoop);
+
+        return stepExpr.toString().contains("tile");
+    }
+
+    private void setDependenceVectors(List<DependenceVector> dvs) throws Exception {
         for (DependenceVector dv : dvs) {
 
             DependenceVector newDV = new DependenceVector();

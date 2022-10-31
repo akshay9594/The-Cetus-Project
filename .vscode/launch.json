@@ -16,10 +16,10 @@
         },
         {
             "type": "java",
-            "name": "Launch Driver Tiling Matrix Mult example",
+            "name": "Launch Driver Matrix Mult example",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-loop-tiling ./resources/examples/MatrixMult.c"
+            "args": "./resources/examples/MatrixMult.c"
         },
         {
             "type": "java",
@@ -51,10 +51,10 @@
         },
         {
             "type": "java",
-            "name": "Launch Driver PawTiling Tilable loops Test",
+            "name": "Launch Driver PawTiling vector multiplication",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/TilableLoops.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
         },
         {
             "type": "java",

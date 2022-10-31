@@ -244,6 +244,10 @@ public class Optimizer {
             Collections.reverse(loops);
         }
 
+        if (dependenceVectors.size() == 0) {
+            return 0;
+        }
+
         for (int i = 0; i < loops.size(); i++) {
             ForLoop loop = loops.get(i);
             for (DependenceVector dependenceVector : dependenceVectors) {

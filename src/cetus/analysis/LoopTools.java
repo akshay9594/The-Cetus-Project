@@ -1,6 +1,7 @@
 package cetus.analysis;
 
 import cetus.hir.*;
+import cetus.transforms.tiling.TilingUtils;
 
 import java.util.*;
 
@@ -1008,6 +1009,10 @@ public class LoopTools {
             if (!(new_inc instanceof IntegerLiteral)) {
                 eligible_inc = false;
             } else {
+                eligible_inc = true;
+            }
+
+            if (new_inc.toString().contains(TilingUtils.TILE_SUFFIX)) {
                 eligible_inc = true;
             }
         }

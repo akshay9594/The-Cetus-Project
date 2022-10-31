@@ -1,17 +1,10 @@
 
 package cetus.transforms;
 
-import cetus.analysis.AliasAnalysis;
-import cetus.analysis.AnalysisPass;
-import cetus.analysis.ArrayPrivatization;
 import cetus.analysis.DDGraph;
-import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
-import cetus.analysis.RangeAnalysis;
-import cetus.analysis.RangeDomain;
 import cetus.hir.*;
-import cetus.utils.reuseAnalysis.DataReuseAnalysis;
 
 import java.util.ArrayList;
 import java.util.Collections;
