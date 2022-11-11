@@ -1,4 +1,4 @@
-package cetus.transforms.tiling.pawTiling;
+package cetus.transforms.tiling.pawTiling.optimizer.providers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,31 +16,104 @@ import cetus.hir.Loop;
 import cetus.hir.SymbolTable;
 import cetus.transforms.tiling.TiledLoop;
 import cetus.transforms.tiling.TilingUtils;
+import cetus.transforms.tiling.pawTiling.optimizer.ComplexVersionChooser;
+import cetus.transforms.tiling.pawTiling.optimizer.VersionChooser;
 import cetus.utils.reuseAnalysis.DataReuseAnalysis;
 
-public class Optimizer {
+public class ComplexChooserProvider implements VersionChooserProvider {
 
     public final static int MAX_NEST_LEVEL = 20;
 
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 
-    private TiledLoop originalLoopNest;
-    private List<TiledLoop> tiledVersions;
-    private TiledLoop choosenVersion;
+    @Override
+    public VersionChooser chooseOptimalVersion(SymbolTable symbolTable, Loop loopNest, List<DependenceVector> dvs,
+            DataReuseAnalysis reuseAnalysis) {
 
-    public Optimizer(SymbolTable symbolTable, Loop loopNest, List<DependenceVector> dvs) throws Exception {
-        this.originalLoopNest = new TiledLoop((ForLoop) loopNest, dvs);
-
-        this.tiledVersions = createTiledVersions(loopNest, symbolTable, dvs);
+        try {
+            return chooseOptimalVersion(loopNest, dvs, createTiledVersions(loopNest, symbolTable, dvs), reuseAnalysis);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    public List<TiledLoop> getTiledVersions() {
-        return tiledVersions;
-    }
+    public VersionChooser chooseOptimalVersion(Loop originalLoopNest, List<DependenceVector> dvs,
+            List<TiledLoop> tiledVersions,
+            DataReuseAnalysis reuseAnalysis) throws Exception {
 
-    public TiledLoop chooseOptimalVersion(DataReuseAnalysis reuseAnalysis) {
-        this.choosenVersion = chooseOptimalVersion(originalLoopNest, tiledVersions, reuseAnalysis);
-        return choosenVersion;
+        int outerParallelLoopIndex = -1;
+
+        TiledLoop choosenVersion = new TiledLoop((ForLoop) originalLoopNest, dvs);
+
+        if (tiledVersions.size() == 0) {
+            return new ComplexVersionChooser(originalLoopNest, dvs, tiledVersions, choosenVersion);
+        }
+
+        TiledLoop firstTiledVersion = tiledVersions.get(0);
+
+        List<DependenceVector> firstTiledVersionDVs = calculateDependenceVectors(firstTiledVersion);
+        outerParallelLoopIndex = getOuterParallelLoopIdx(firstTiledVersion, firstTiledVersionDVs);
+
+        List<TiledLoop> loopsWithSameParallelization = new ArrayList<>();
+
+        loopsWithSameParallelization.add(firstTiledVersion);
+
+        // decide version based on parallelizability
+        for (int i = 1; i < tiledVersions.size(); i++) {
+            TiledLoop tiledVersion = tiledVersions.get(i);
+
+            List<DependenceVector> dependenceVectors = calculateDependenceVectors(tiledVersion);
+            int auxOuterParallelLoopIdx = getOuterParallelLoopIdx(tiledVersion, dependenceVectors);
+
+            logger.info("### Tiled version: ");
+            logger.info(tiledVersion + "\n");
+            logger.info("### Outer parallelizable loop position: " + auxOuterParallelLoopIdx);
+
+            if (auxOuterParallelLoopIdx == -1) {
+                continue;
+            }
+            if (auxOuterParallelLoopIdx == outerParallelLoopIndex) {
+                loopsWithSameParallelization.add(tiledVersion);
+            }
+
+            else if (auxOuterParallelLoopIdx < outerParallelLoopIndex) {
+                outerParallelLoopIndex = auxOuterParallelLoopIdx;
+                choosenVersion = tiledVersion;
+                loopsWithSameParallelization.clear();
+                loopsWithSameParallelization.add(choosenVersion);
+            }
+        }
+
+        // there is no need to analyze the reuse analysis data
+        if (loopsWithSameParallelization.size() == 0 || reuseAnalysis == null
+                || reuseAnalysis.getLoopNestMemoryOrder().size() == 0) {
+
+            choosenVersion.setOutermostParallelizableLoop(outerParallelLoopIndex);
+            return new ComplexVersionChooser(originalLoopNest, dvs, tiledVersions, choosenVersion);
+        }
+
+        // init expresion for the most reusable loop
+        List<Expression> memoryOrder = reuseAnalysis.getLoopNestMemoryOrder();
+        Expression initExpr = memoryOrder.get(memoryOrder.size() - 1);
+        int positionOfMostReusableInnerLoop = getByIndexInLoopNestPosition(choosenVersion, initExpr);
+
+        for (TiledLoop loop : loopsWithSameParallelization) {
+            int auxPosition = getByIndexInLoopNestPosition(loop, initExpr);
+            if (auxPosition == -1 || auxPosition == positionOfMostReusableInnerLoop) {
+                continue;
+            }
+
+            if (auxPosition > positionOfMostReusableInnerLoop) {
+                positionOfMostReusableInnerLoop = auxPosition;
+                choosenVersion = loop;
+            }
+        }
+
+        choosenVersion.setOutermostParallelizableLoop(outerParallelLoopIndex);
+
+        return new ComplexVersionChooser(originalLoopNest, dvs, tiledVersions, choosenVersion);
+
     }
 
     private List<TiledLoop> createTiledVersions(Loop loopNest, SymbolTable symbolTable,
@@ -53,7 +126,7 @@ public class Optimizer {
         Map<String, Boolean> stripminedBySymbol = new HashMap<>();
 
         if (nestedLoops.size() < MAX_NEST_LEVEL) {
-            createTiledVersions(symbolTable, (ForLoop) loopNest, 20,
+            createTiledVersions(symbolTable, (ForLoop) loopNest, DEFAULT_STRIP,
                     stripminedBySymbol,
                     tiledVersions, dependenceVectors);
 
@@ -114,82 +187,6 @@ public class Optimizer {
 
         }
 
-    }
-
-    private TiledLoop chooseOptimalVersion(TiledLoop originalLoopNest, List<TiledLoop> tiledVersions,
-            DataReuseAnalysis reuseAnalysis) {
-
-        int outerParallelLoopIndex = -1;
-
-        TiledLoop choosenVersion = originalLoopNest;
-
-        if (tiledVersions.size() == 0) {
-            return originalLoopNest;
-        }
-
-        TiledLoop firstTiledVersion = tiledVersions.get(0);
-
-        List<DependenceVector> firstTiledVersionDVs = calculateDependenceVectors(firstTiledVersion);
-        outerParallelLoopIndex = getOuterParallelLoopIdx(firstTiledVersion, firstTiledVersionDVs);
-
-        List<TiledLoop> loopsWithSameParallelization = new ArrayList<>();
-
-        loopsWithSameParallelization.add(firstTiledVersion);
-
-        // decide version based on parallelizability
-        for (int i = 1; i < tiledVersions.size(); i++) {
-            TiledLoop tiledVersion = tiledVersions.get(i);
-
-            List<DependenceVector> dependenceVectors = calculateDependenceVectors(tiledVersion);
-            int auxOuterParallelLoopIdx = getOuterParallelLoopIdx(tiledVersion, dependenceVectors);
-
-            logger.info("### Tiled version: ");
-            logger.info(tiledVersion + "\n");
-            logger.info("### Outer parallelizable loop position: " + auxOuterParallelLoopIdx);
-
-            if (auxOuterParallelLoopIdx == -1) {
-                continue;
-            }
-            if (auxOuterParallelLoopIdx == outerParallelLoopIndex) {
-                loopsWithSameParallelization.add(tiledVersion);
-            }
-
-            else if (auxOuterParallelLoopIdx < outerParallelLoopIndex) {
-                outerParallelLoopIndex = auxOuterParallelLoopIdx;
-                choosenVersion = tiledVersion;
-                loopsWithSameParallelization.clear();
-                loopsWithSameParallelization.add(choosenVersion);
-            }
-        }
-
-        // there is no need to analyze the reuse analysis data
-        if (loopsWithSameParallelization.size() == 0 || reuseAnalysis == null
-                || reuseAnalysis.getLoopNestMemoryOrder().size() == 0) {
-
-            choosenVersion.setOutermostParallelizableLoop(outerParallelLoopIndex);
-            return choosenVersion;
-        }
-
-        // init expresion for the most reusable loop
-        List<Expression> memoryOrder = reuseAnalysis.getLoopNestMemoryOrder();
-        Expression initExpr = memoryOrder.get(memoryOrder.size() - 1);
-        int positionOfMostReusableInnerLoop = getByIndexInLoopNestPosition(choosenVersion, initExpr);
-
-        for (TiledLoop loop : loopsWithSameParallelization) {
-            int auxPosition = getByIndexInLoopNestPosition(loop, initExpr);
-            if (auxPosition == -1 || auxPosition == positionOfMostReusableInnerLoop) {
-                continue;
-            }
-
-            if (auxPosition > positionOfMostReusableInnerLoop) {
-                positionOfMostReusableInnerLoop = auxPosition;
-                choosenVersion = loop;
-            }
-        }
-
-        choosenVersion.setOutermostParallelizableLoop(outerParallelLoopIndex);
-
-        return choosenVersion;
     }
 
     private int getByIndexInLoopNestPosition(ForLoop loopNest, Expression indexExpression) {

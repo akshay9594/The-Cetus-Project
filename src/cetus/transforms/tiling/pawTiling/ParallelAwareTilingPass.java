@@ -49,12 +49,16 @@ import cetus.transforms.LoopInterchange;
 import cetus.transforms.TransformPass;
 import cetus.transforms.tiling.TiledLoop;
 import cetus.transforms.tiling.TilingUtils;
+import cetus.transforms.tiling.pawTiling.optimizer.VersionChooser;
+import cetus.transforms.tiling.pawTiling.optimizer.providers.ComplexChooserProvider;
+import cetus.transforms.tiling.pawTiling.optimizer.providers.NthGuidedChooserProvider;
+import cetus.transforms.tiling.pawTiling.optimizer.providers.VersionChooserProvider;
 import cetus.utils.CacheUtils;
 import cetus.utils.DataReuseAnalysisUtils;
 import cetus.utils.VariableDeclarationUtils;
 import cetus.utils.reuseAnalysis.DataReuseAnalysis;
-import cetus.utils.reuseAnalysis.factory.ReuseAnalysisFactory;
 import cetus.utils.reuseAnalysis.SimpleReuseAnalysisFactory;
+import cetus.utils.reuseAnalysis.factory.ReuseAnalysisFactory;
 
 public class ParallelAwareTilingPass extends TransformPass {
 
@@ -86,6 +90,8 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     private ReuseAnalysisFactory reuseAnalysisFactory;
 
+    private VersionChooserProvider chooserProvider;
+
     public ParallelAwareTilingPass(Program program) {
         this(program, null);
     }
@@ -96,10 +102,19 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions,
             ReuseAnalysisFactory reuseAnalysisFactory) {
+
+        this(program, commandLineOptions, reuseAnalysisFactory,
+                commandLineOptions.getValue(PAW_TILING) != null && commandLineOptions.getValue(PAW_TILING).equals("1")
+                        ? new ComplexChooserProvider()
+                        : new NthGuidedChooserProvider());
+    }
+
+    public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions,
+            ReuseAnalysisFactory reuseAnalysisFactory, VersionChooserProvider chooserFactory) {
         super(program);
 
-        this.reuseAnalysisFactory=reuseAnalysisFactory;
-
+        this.reuseAnalysisFactory = reuseAnalysisFactory;
+        this.chooserProvider = chooserFactory;
         if (commandLineOptions.getValue("verbosity").equals("1")) {
             setLogger(true);
             pawAnalysisUtils.verbosity = true;
@@ -130,7 +145,6 @@ public class ParallelAwareTilingPass extends TransformPass {
             logger.warning(
                     "Error on setting cache type. The cache will be considered as non distributed");
         }
-
     }
 
     private void setLogger(boolean verbosity) {
@@ -177,9 +191,16 @@ public class ParallelAwareTilingPass extends TransformPass {
             originalLoopNestCopy.add(((ForLoop) loop).clone(false));
         });
 
+        if (selectedOutermostLoops.size() == 0) {
+            return;
+        }
+
+        Expression cores = createCoresVariable(
+                VariableDeclarationUtils.getVariableDeclarationSpace(selectedOutermostLoops.get(0).getParent()));
+
         for (Loop outermostLoop : selectedOutermostLoops) {
             try {
-                runPawTiling((ForLoop) outermostLoop);
+                runPawTiling((ForLoop) outermostLoop, cores);
             } catch (Exception e) {
                 logger.info(" ----");
                 logger.info("Error trying to run paw tiling");
@@ -193,7 +214,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     }
 
-    private void runPawTiling(ForLoop loopNest) throws Exception {
+    private void runPawTiling(ForLoop loopNest, Expression cores) throws Exception {
 
         DataReuseAnalysis reuseAnalysis = null;
 
@@ -230,9 +251,10 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         logger.info("### ORIGINAL VERSION END ###");
 
-        Optimizer optimizer = new Optimizer(variableDeclarations, loopNest, dependenceVectors);
+        VersionChooser optimizer = chooserProvider.chooseOptimalVersion(variableDeclarations, loopNest,
+                dependenceVectors, reuseAnalysis);
 
-        TiledLoop leastCostTiledVersion = optimizer.chooseOptimalVersion(reuseAnalysis);
+        TiledLoop leastCostTiledVersion = optimizer.getChoosenVersion();
 
         logger.info("### TILED VERSION SELECTION ###");
         logger.info(leastCostTiledVersion.toString());
@@ -245,10 +267,10 @@ public class ParallelAwareTilingPass extends TransformPass {
         Expression balancedTileSize = null;
 
         if (leastCostTiledVersion.isCrossStripParallel()) {
-            balancedTileSize = computeBalancedCrossStripSize(totalOfInstructions, numOfProcessors,
+            balancedTileSize = computeBalancedCrossStripSize(totalOfInstructions, cores,
                     rawTileSize);
         } else {
-            balancedTileSize = computeBalanceInStripSize(numOfProcessors, rawTileSize);
+            balancedTileSize = computeBalanceInStripSize(cores, rawTileSize);
         }
 
         replaceTileSize(variableDeclarations, balancedTileSize);
@@ -263,13 +285,21 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         ForLoop newLoopNest = loopNest.clone(false);
 
-        Statement twoVersionsStm = createTwoVersionsStm(totalOfInstructions, newLoopNest,
-                leastCostVersionStm);
+        Statement twoVersionsStm = createTwoVersionsStm(totalOfInstructions,
+        newLoopNest,
+        leastCostVersionStm);
 
         replaceLoop(loopNest, twoVersionsStm);
 
-        updateAttributes(leastCostTiledVersion.getOutermostParallelizableLoop());
+        // updateAttributes(leastCostTiledVersion.getOutermostParallelizableLoop());
 
+    }
+
+    private Expression createCoresVariable(SymbolTable variableDeclarations) {
+        Identifier coresIdentifier = VariableDeclarationUtils.declareVariable(variableDeclarations, CORES_PARAM_NAME,
+                new IntegerLiteral(numOfProcessors));
+
+        return ((Expression) coresIdentifier);
     }
 
     private boolean hasReuse(DataReuseAnalysis reuseAnalysis) {
@@ -316,7 +346,6 @@ public class ParallelAwareTilingPass extends TransformPass {
         // new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
 
     }
-
 
     private List<Declaration> filterValidDeclarations(CompoundStatement variableDeclarations,
             ForLoop loopNest) {
@@ -405,25 +434,21 @@ public class ParallelAwareTilingPass extends TransformPass {
         }
     }
 
-    private Expression computeBalanceInStripSize(int numOfProcessors,
+    private Expression computeBalanceInStripSize(Expression numOfProcessors,
             Expression rawTileSize) {
 
-        Expression numOfProcessorsExp = new IntegerLiteral(numOfProcessors);
-
         // Making rawTile size multiple of num of processors
-        Expression strip = Symbolic.subtract(rawTileSize, Symbolic.mod(rawTileSize, numOfProcessorsExp));
+        Expression strip = Symbolic.subtract(rawTileSize, Symbolic.mod(rawTileSize, numOfProcessors));
         return strip;
     }
 
-    private Expression computeBalancedCrossStripSize(Expression numOfInstructions, int numOfProcessors,
+    private Expression computeBalancedCrossStripSize(Expression numOfInstructions, Expression numOfProcessors,
             Expression rawTileSize) {
-
-        Expression numOfProcessorsExp = new IntegerLiteral(numOfProcessors);
 
         // (numOfInstructions / (processors * rawSize)) * processors
         Expression divisor = Symbolic.multiply(
-                Symbolic.divide(numOfInstructions, Symbolic.multiply(numOfProcessorsExp, rawTileSize)),
-                numOfProcessorsExp);
+                Symbolic.divide(numOfInstructions, Symbolic.multiply(numOfProcessors, rawTileSize)),
+                numOfProcessors);
 
         // instructions / ( ( instructions / (processors * rawSize) ) * processors )
         Expression strip = Symbolic.divide(numOfInstructions, divisor);
@@ -494,7 +519,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     }
 
-    private void replaceLoop(ForLoop originalLoop, Statement ifStm) {
+    private void replaceLoop(ForLoop originalLoop, Statement newLoop) {
         Traversable originalParent = originalLoop.getParent();
 
         int originalLoopIdx = -1;
@@ -505,7 +530,7 @@ public class ParallelAwareTilingPass extends TransformPass {
             }
         }
 
-        originalParent.setChild(originalLoopIdx, ifStm);
+        originalParent.setChild(originalLoopIdx, newLoop);
     }
 
 }

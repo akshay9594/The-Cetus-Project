@@ -13,6 +13,7 @@ import cetus.hir.Statement;
 
 public class TiledLoop extends ForLoop {
 
+    private List<Loop> nestedLoops = new ArrayList<>();
     private List<DependenceVector> dependeceVectors = new ArrayList<>();
     private Loop outermostParallelizableLoop;
 
@@ -22,15 +23,37 @@ public class TiledLoop extends ForLoop {
                 loopNest.getStep().clone(),
                 loopNest.getBody().clone(false));
 
+        new DFIterator<Loop>(loopNest, Loop.class).forEachRemaining(loop -> nestedLoops.add(lookupLoop(loop, this)));
+
         setDependenceVectors(dvs);
+        calculateOutermostParallelLoop();
 
     }
 
-    public boolean isCrossStripParallel() {
+    private void calculateOutermostParallelLoop() {
 
-        Expression stepExpr = LoopTools.getIncrementExpression(outermostParallelizableLoop);
+        int loopIdx = -1;
 
-        return stepExpr.toString().contains("tile");
+        for (int i = 0; i < nestedLoops.size(); i++) {
+            Loop curLoop = nestedLoops.get(i);
+            int curIdx = i;
+            for (DependenceVector dv : dependeceVectors) {
+                int direction = dv.getDirection(curLoop);
+                if (direction != DependenceVector.equal) {
+                    curIdx = -1;
+                    break;
+                }
+            }
+            if (curIdx != -1) {
+                loopIdx = curIdx;
+                break;
+            }
+        }
+
+        if (loopIdx != -1) {
+            outermostParallelizableLoop = nestedLoops.get(loopIdx);
+        }
+
     }
 
     private void setDependenceVectors(List<DependenceVector> dvs) throws Exception {
@@ -61,6 +84,24 @@ public class TiledLoop extends ForLoop {
             return;
         }
         this.outermostParallelizableLoop = nestedLoops.get(positionOfParallelizableLoop);
+
+        int loopsSize = nestedLoops.size();
+        int outermostParLoopIdx = -1;
+        for (int i = 0; i < loopsSize; i++) {
+            Loop loop = nestedLoops.get(i);
+            outermostParLoopIdx=i;
+            for (DependenceVector dv : this.dependeceVectors) {
+                int direction = dv.getDirection(loop);
+                if (direction != DependenceVector.equal) {
+                    outermostParLoopIdx=-1;
+                    break;
+                }
+            }
+        }
+
+        if(outermostParLoopIdx!=-1) {
+            this.outermostParallelizableLoop=nestedLoops.get(outermostParLoopIdx);
+        }
     }
 
     public Loop getOutermostParallelizableLoop() {
@@ -112,6 +153,13 @@ public class TiledLoop extends ForLoop {
     public TiledLoop clone() {
 
         return clone(false);
+    }
+
+    public boolean isCrossStripParallel() {
+
+        Expression expr = LoopTools.getIncrementExpression(outermostParallelizableLoop);
+
+        return expr.toString().contains(TilingUtils.TILE_SUFFIX);
     }
 
 }

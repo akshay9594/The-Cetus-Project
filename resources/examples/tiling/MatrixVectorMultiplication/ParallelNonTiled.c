@@ -17,7 +17,7 @@ int main(int argc, char const *argv[])
         n = argv[0];
     }
 
-    int a[n], b[n], c[n];
+    int a[n*n], b[n], c[n];
 
     int i, j;
     #pragma omp parallel for private(i,j)

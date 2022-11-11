@@ -191,6 +191,13 @@ public class TilingUtils {
     }
 
     public static TiledLoop tiling(SymbolTable variableDeclarationSpace, ForLoop outermostLoop, int strip,
+            int targetLoopPos, List<DependenceVector> dependenceVectors)
+            throws Exception {
+        return tiling(variableDeclarationSpace, outermostLoop, strip, targetLoopPos, null,
+                dependenceVectors);
+    }
+
+    public static TiledLoop tiling(SymbolTable variableDeclarationSpace, ForLoop outermostLoop, int strip,
             int targetLoopPos, Map<String, Boolean> stripmined, List<DependenceVector> dependenceVectors)
             throws Exception {
 
@@ -203,8 +210,10 @@ public class TilingUtils {
         ForLoop crossStripLoop = (ForLoop) stripminedLoops[0];
         ForLoop inStripLoop = (ForLoop) stripminedLoops[1];
 
-        stripmined.put(LoopTools.getLoopIndexSymbol(targetLoop).getSymbolName(), true);
-        stripmined.put(LoopTools.getLoopIndexSymbol(crossStripLoop).getSymbolName(), true);
+        if (stripmined != null) {
+            stripmined.put(LoopTools.getLoopIndexSymbol(targetLoop).getSymbolName(), true);
+            stripmined.put(LoopTools.getLoopIndexSymbol(crossStripLoop).getSymbolName(), true);
+        }
 
         tiledLoop = crossStripLoop;
 
@@ -355,5 +364,12 @@ public class TilingUtils {
         }
 
         return direction;
+    }
+
+    public boolean isCrossStripParallel(Loop parallelLoop) {
+
+        Expression stepExpr = LoopTools.getIncrementExpression(parallelLoop);
+
+        return stepExpr.toString().contains("tile");
     }
 }

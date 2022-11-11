@@ -47,10 +47,12 @@ public class SimpleReuseAnalysisFactory implements ReuseAnalysisFactory {
             return loopNest;
         }
 
+        @Override
         public HashMap<Expression, ?> getLoopCosts() {
             return loopCosts;
         }
 
+        @Override
         public List<Expression> getLoopNestMemoryOrder() {
             return loopNestMemoryOrder;
         }

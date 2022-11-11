@@ -54,7 +54,7 @@
             "name": "Launch Driver PawTiling vector multiplication",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
         },
         {
             "type": "java",
@@ -75,7 +75,7 @@
             "name": "Launch Driver PawTiling Matrix Mult",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/MatrixMult.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
         },
         {
             "type": "java",
