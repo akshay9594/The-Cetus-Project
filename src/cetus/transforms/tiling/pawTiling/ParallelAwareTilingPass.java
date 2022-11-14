@@ -341,7 +341,8 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     }
 
-    // TODO: Update reduction/private variable attributes
+    // TODO: Fix order in Driver.java to use the pass directly from
+    // Driver instead of recalling them
     private void updateAttributes(TiledLoop loop) {
 
         Loop parallelLoop = loop.getOutermostParallelizableLoop();
