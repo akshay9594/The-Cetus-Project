@@ -3,6 +3,9 @@ package cetus.utils;
 import java.util.List;
 
 import cetus.hir.ArrayAccess;
+import cetus.hir.Expression;
+import cetus.hir.IntegerLiteral;
+import cetus.hir.Symbolic;
 
 public class CacheUtils {
 
@@ -16,11 +19,13 @@ public class CacheUtils {
      * @return the block size in bits required for all the array accesses.
      */
 
-    public static final int getRawBlockSize(int bitsCacheSize, List<ArrayAccess> arrayAccesses) {
+    public static final Expression getRawBlockSize(Expression bitsCacheSize, List<ArrayAccess> arrayAccesses) {
         int arrayBits = 0;
         for (ArrayAccess arrayAccess : arrayAccesses) {
             arrayBits += ArrayUtils.getTypeSize(arrayAccess);
         }
-        return bitsCacheSize/arrayBits;
+        IntegerLiteral arrayBitsLiteral= new IntegerLiteral(arrayBits);
+        return Symbolic.divide(bitsCacheSize, arrayBitsLiteral);
+        
     }
 }

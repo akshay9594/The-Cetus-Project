@@ -22,7 +22,7 @@ int main(int argc, char const *argv[])
     }
 
 
-    int a[n][n], b[n][m], d[n][m];
+    float a[n][n], b[n][m], d[n][m];
 
 
     int i, j, k;

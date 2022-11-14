@@ -24,7 +24,7 @@ int main(int argc, char const *argv[])
         m = argv[1];
     }
 
-    int a[n][n], b[n][m], d[n][m];
+    float a[n][n], b[n][m], d[n][m];
 
     int i, j, k, kk;
 

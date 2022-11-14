@@ -823,10 +823,6 @@ public class Driver {
             AnalysisPass.run(new DDTDriver(program));
         }
 
-        if (getOptionValue(ParallelAwareTilingPass.PAW_TILING) != null) {
-            TransformPass.run(new ParallelAwareTilingPass(program, options));
-        }
-
         if (getOptionValue("privatize") != null && !getOptionValue("privatize").equals("0")) {
             AnalysisPass.run(new ArrayPrivatization(program));
         }
@@ -840,9 +836,7 @@ public class Driver {
          * }
          * 
          */
-        if (getOptionValue("loop_interchange") != null) {
-            TransformPass.run(new LoopInterchange(program));
-        }
+      
 
         if (getOptionValue("parallelize-loops") != null && !getOptionValue("parallelize-loops").equals("0")) {
             AnalysisPass.run(new LoopParallelizationPass(program));
@@ -857,6 +851,14 @@ public class Driver {
 
         if (getOptionValue("profile-loops") != null) {
             TransformPass.run(new LoopProfiler(program));
+        }
+
+        if (getOptionValue("loop_interchange") != null) {
+            TransformPass.run(new LoopInterchange(program));
+        }
+
+        if (getOptionValue(ParallelAwareTilingPass.PAW_TILING) != null) {
+            TransformPass.run(new ParallelAwareTilingPass(program, options));
         }
 
     }

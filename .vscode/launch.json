@@ -51,13 +51,6 @@
         },
         {
             "type": "java",
-            "name": "Launch Driver PawTiling vector multiplication",
-            "request": "launch",
-            "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
-        },
-        {
-            "type": "java",
             "name": "Launch Driver Reduction Array red example",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
@@ -65,17 +58,45 @@
         },
         {
             "type": "java",
-            "name": "Launch Driver PawTiling Jacobi example test",
+            "name": "Launch Driver Complex PawTiling Jacobi example test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/JacobiExample.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 ./resources/examples/JacobiExample.c"
         },
         {
             "type": "java",
-            "name": "Launch Driver PawTiling Matrix Mult",
+            "name": "Launch Driver Single PawTiling Jacobi example test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 ./resources/examples/JacobiExample.c"
+        }, 
+        {
+            "type": "java",
+            "name": "Launch Driver Complex PawTiling Matrix Mult",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Single PawTiling Matrix Mult",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Complex PawTiling vector multiplication",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Single PawTiling vector multiplication",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
         },
         {
             "type": "java",

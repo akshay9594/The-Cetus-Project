@@ -247,10 +247,12 @@ public class ComplexChooserProvider implements VersionChooserProvider {
 
         for (int i = 0; i < loops.size(); i++) {
             ForLoop loop = loops.get(i);
+            position=i;
             for (DependenceVector dependenceVector : dependenceVectors) {
                 int direction = dependenceVector.getDirection(loop);
-                if (direction == DependenceVector.less) {
-                    position = i;
+                if (direction != DependenceVector.equal) {
+                    position = -1;
+                    break;
                 }
             }
         }

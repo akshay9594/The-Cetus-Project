@@ -3,17 +3,12 @@
 #include <math.h>
 #include <stdio.h>
 
-#define SIZE 1024
-
-float a[SIZE + 2][SIZE + 2];
-float b[SIZE + 2][SIZE + 2];
-
 // Example extracted directly from: "Optimizing for Parallelism and Data Locality",
 // Kathryn S. McKinley
 
 int main()
 {
-    int n = 100000;
+    int n;
     int i, j;
     float a[n][n], b[n][n];
 

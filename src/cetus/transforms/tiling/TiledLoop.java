@@ -5,6 +5,7 @@ import java.util.List;
 
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
+import cetus.analysis.exceptions.IllegalDependenceVector;
 import cetus.hir.DFIterator;
 import cetus.hir.Expression;
 import cetus.hir.ForLoop;
@@ -28,6 +29,10 @@ public class TiledLoop extends ForLoop {
         setDependenceVectors(dvs);
         calculateOutermostParallelLoop();
 
+    }
+
+    public List<Loop> getNestedLoops() {
+        return nestedLoops;
     }
 
     private void calculateOutermostParallelLoop() {
@@ -58,6 +63,8 @@ public class TiledLoop extends ForLoop {
 
     private void setDependenceVectors(List<DependenceVector> dvs) throws Exception {
         for (DependenceVector dv : dvs) {
+            
+            boolean legal = false;
 
             DependenceVector newDV = new DependenceVector();
 
@@ -68,8 +75,16 @@ public class TiledLoop extends ForLoop {
                     throw new Exception(
                             "Error on setting dvs, a loop in one of the DVs does not correspond with any loop in the loopnest");
                 }
-                newDV.setDirection(loopInNest, dv.getDirection(dvLoop));
 
+                int direction = dv.getDirection(dvLoop);
+
+                if(direction == DependenceVector.greater && !legal) {
+                    throw new IllegalDependenceVector(dv, this);
+                }
+                if(direction == DependenceVector.less && !legal) {
+                    legal=true;
+                }
+                newDV.setDirection(loopInNest, direction);
             }
 
             dependeceVectors.add(newDV);
@@ -87,6 +102,11 @@ public class TiledLoop extends ForLoop {
 
         int loopsSize = nestedLoops.size();
         int outermostParLoopIdx = -1;
+
+        if(this.dependeceVectors.size()==0){
+            return;
+        }
+
         for (int i = 0; i < loopsSize; i++) {
             Loop loop = nestedLoops.get(i);
             outermostParLoopIdx=i;

@@ -82,6 +82,19 @@ public class LoopTools {
      */
     public static boolean isIncrementConstant(Loop loop) {
         Expression inc = getIncrementExpression(loop);
+        
+        //TODO: Hotfix for paw tiling
+        ForLoop floop = ((ForLoop)loop);
+        if(floop.getStep() instanceof AssignmentExpression) {
+            AssignmentExpression step = ((AssignmentExpression)floop.getStep());
+            if(step.getRHS().toString().contains(TilingUtils.TILE_SUFFIX)) {
+                return  true;
+            }
+        }
+
+        
+        //End hotfix for paw tiling
+        
         if (inc instanceof IntegerLiteral) {
             return true;
         }
@@ -1012,7 +1025,11 @@ public class LoopTools {
                 eligible_inc = true;
             }
 
-            if (new_inc.toString().contains(TilingUtils.TILE_SUFFIX)) {
+            // TODO: Fix this. It requires a way to work for strips when tiling was applied
+            ForLoop fLoop = ((ForLoop) loop);
+            AssignmentExpression step = ((AssignmentExpression) fLoop.getStep());
+
+            if (step.getRHS().toString().contains(TilingUtils.TILE_SUFFIX)) {
                 eligible_inc = true;
             }
         }
