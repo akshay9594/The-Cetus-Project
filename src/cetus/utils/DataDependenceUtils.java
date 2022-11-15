@@ -74,7 +74,7 @@ public final class DataDependenceUtils {
 
     }
 
-    private static void printDirectionMatrix(Loop enclosingLoop, List<DependenceVector> dependenceVectors) {
+    public static void printDirectionMatrix(Loop enclosingLoop, List<DependenceVector> dependenceVectors) {
         int n = dependenceVectors.size();
         System.out.println("--- ENCLOSING LOOP ---");
         Expression condition = enclosingLoop.getCondition();

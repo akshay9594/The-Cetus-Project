@@ -56,6 +56,7 @@ import cetus.transforms.tiling.pawTiling.optimizer.providers.ComplexChooserProvi
 import cetus.transforms.tiling.pawTiling.optimizer.providers.NthGuidedChooserProvider;
 import cetus.transforms.tiling.pawTiling.optimizer.providers.VersionChooserProvider;
 import cetus.utils.CacheUtils;
+import cetus.utils.DataDependenceUtils;
 import cetus.utils.DataReuseAnalysisUtils;
 import cetus.utils.VariableDeclarationUtils;
 import cetus.utils.reuseAnalysis.DataReuseAnalysis;
@@ -256,9 +257,9 @@ public class ParallelAwareTilingPass extends TransformPass {
         logger.info("### ORIGINAL VERSION ###");
         logger.info(loopNest.toString());
 
-        logger.info("#### DVs ####");
+        logger.info("#### ORIGINAL DVs ####");
         logger.info(dependenceVectors.toString());
-        logger.info("#### DVs END ####");
+        logger.info("#### ORIGINAL DVs END ####");
 
         logger.info("### ORIGINAL VERSION END ###");
 
@@ -355,7 +356,6 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         LoopTools.addLoopName(program, true);
 
-        updateDDGraph(loop);
 
         AnalysisPass.run(new ArrayPrivatization(program));
         AnalysisPass.run(new Reduction(program));
@@ -369,6 +369,8 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         Driver.setOptionValue("profitable-omp", profitableOmpCopy);
         new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
+
+        updateDDGraph(loop);
     }
 
     private void addCetusAnnotation(Loop loop, boolean parallel) {
@@ -382,10 +384,19 @@ public class ParallelAwareTilingPass extends TransformPass {
     private void updateDDGraph(TiledLoop tiledLoop) {
         AnalysisPass.run(new DDTDriver(program));
 
-        // LinkedList<Loop> nestedLoops = new LinkedList<>();
-        // new DFIterator<Loop>(tiledLoop, Loop.class).forEachRemaining(nestedLoops::add);
-        // List<DependenceVector> dependenceVectors = program.getDDGraph().getDirectionMatrix(nestedLoops);
 
+        LinkedList<Loop> nestedLoops = new LinkedList<>();
+        new DFIterator<Loop>(tiledLoop, Loop.class).forEachRemaining(nestedLoops::add);
+        List<DependenceVector> dependenceVectors = program.getDDGraph().getDirectionMatrix(nestedLoops);
+
+
+        logger.info("### AFTER TILING DVs ###");
+        DataDependenceUtils.printDirectionMatrix(tiledLoop, tiledLoop.getDependenceVectors());
+
+
+
+        logger.info("### Final DDT Driver DVs ###");
+        DataDependenceUtils.printDirectionMatrix(tiledLoop, dependenceVectors);
     }
 
     private List<Declaration> filterValidDeclarations(CompoundStatement variableDeclarations,
