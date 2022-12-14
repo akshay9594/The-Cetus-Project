@@ -58,45 +58,45 @@
         },
         {
             "type": "java",
-            "name": "Launch Driver Complex PawTiling Jacobi example test",
+            "name": "Launch Driver PawTiling Lv1 Jacobi example test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 ./resources/examples/JacobiExample.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=1 ./resources/examples/JacobiExample.c"
         },
         {
             "type": "java",
-            "name": "Launch Driver Single PawTiling Jacobi example test",
+            "name": "Launch Driver PawTiling Lv2 Jacobi example test",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 ./resources/examples/JacobiExample.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=2 ./resources/examples/JacobiExample.c"
         }, 
         {
             "type": "java",
-            "name": "Launch Driver Complex PawTiling Matrix Mult",
+            "name": "Launch Driver PawTiling Lv1 Matrix Mult",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=1 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
         },
         {
             "type": "java",
-            "name": "Launch Driver Single PawTiling Matrix Mult",
+            "name": "Launch Driver Single PawTiling Lv2 Matrix Mult",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=2 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
         },
         {
             "type": "java",
-            "name": "Launch Driver Complex PawTiling vector multiplication",
+            "name": "Launch Driver Single PawTiling Lv1 vector multiplication",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=1 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=1 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
         },
         {
             "type": "java",
-            "name": "Launch Driver Single PawTiling vector multiplication",
+            "name": "Launch Driver Single PawTiling Lv2 vector multiplication",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=2 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
         },
         {
             "type": "java",

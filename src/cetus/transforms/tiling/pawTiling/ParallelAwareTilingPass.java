@@ -3,9 +3,11 @@ package cetus.transforms.tiling.pawTiling;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,6 +57,7 @@ import cetus.transforms.tiling.pawTiling.optimizer.VersionChooser;
 import cetus.transforms.tiling.pawTiling.optimizer.providers.ComplexChooserProvider;
 import cetus.transforms.tiling.pawTiling.optimizer.providers.NthGuidedChooserProvider;
 import cetus.transforms.tiling.pawTiling.optimizer.providers.VersionChooserProvider;
+import cetus.utils.ArrayUtils;
 import cetus.utils.CacheUtils;
 import cetus.utils.DataDependenceUtils;
 import cetus.utils.DataReuseAnalysisUtils;
@@ -78,6 +81,9 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     public final static int MAX_ITERATIONS_TO_PARALLELIZE = 100000;
     public final static String BALANCED_TILE_SIZE_NAME = "balancedTileSize";
+
+    public static final String NTH_ORDER_PARAM = "tiling-level";
+    public static final int DEFAULT_NTH_ORDER = -1;
 
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 
@@ -274,16 +280,14 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         Expression totalOfInstructions = LoopInstructionsUtils.getTotalOfInstructions(loopNest);
 
-        Expression rawTileSize = computeRawTileSize(loopNest, cache);
+        Expression typesValuesInCache = getTypesValuesInCacheSize(loopNest, cache);
 
-        Expression balancedTileSize = null;
-
-        if (leastCostTiledVersion.isCrossStripParallel()) {
-            balancedTileSize = computeBalancedCrossStripSize(totalOfInstructions, cores,
-                    rawTileSize);
-        } else {
-            balancedTileSize = computeBalanceInStripSize(cores, rawTileSize);
-        }
+        Expression balancedTileSize = computeBalancedCrossStripSize(typesValuesInCache, cores);
+        // if (leastCostTiledVersion.isCrossStripParallel()) {
+        // balancedTileSize = computeBalancedCrossStripSize(dataMatrixSize, cores);
+        // } else {
+        // balancedTileSize = computeBalanceInStripSize(dataMatrixSize, cores);
+        // }
 
         replaceTileSize(variableDeclarations, balancedTileSize);
 
@@ -297,7 +301,9 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         ForLoop newLoopNest = loopNest.clone(false);
 
-        Statement twoVersionsStm = createTwoVersionsStm(totalOfInstructions,
+        Expression dataMatrixSize = computeFullDataSize(loopNest, cache);
+
+        Statement twoVersionsStm = createTwoVersionsStm(totalOfInstructions, cache, dataMatrixSize,
                 newLoopNest,
                 leastCostVersionStm);
 
@@ -331,10 +337,14 @@ public class ParallelAwareTilingPass extends TransformPass {
         return isReusable;
     }
 
-    private Statement createTwoVersionsStm(Expression maxOfInstructions, Statement trueClause, Statement falseClause) {
+    private Statement createTwoVersionsStm(Expression maxOfInstructions, Expression cache, Expression dataFullSize,
+            Statement trueClause, Statement falseClause) {
 
-        BinaryExpression condition = new BinaryExpression(maxOfInstructions, BinaryOperator.COMPARE_LE,
+        Expression instructionsCondition = new BinaryExpression(maxOfInstructions, BinaryOperator.COMPARE_LE,
                 new IntegerLiteral(MAX_ITERATIONS_TO_PARALLELIZE));
+
+        Expression cacheCond = new BinaryExpression(cache, BinaryOperator.COMPARE_LE, dataFullSize);
+        Expression condition = new BinaryExpression(instructionsCondition, BinaryOperator.LOGICAL_AND, cacheCond);
 
         IfStatement ifStm = new IfStatement(condition, trueClause, falseClause);
 
@@ -356,9 +366,17 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         LoopTools.addLoopName(program, true);
 
-
         AnalysisPass.run(new ArrayPrivatization(program));
-        AnalysisPass.run(new Reduction(program));
+
+        //TODO: ERROR ON RED
+
+        try {
+            AnalysisPass.run(new Reduction(program));
+            
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+            // e.printStackTrace(logger);
+        }
         addCetusAnnotation(parallelLoop, true);
 
         // AnalysisPass.run(new LoopParallelizationPass(program));
@@ -377,23 +395,19 @@ public class ParallelAwareTilingPass extends TransformPass {
         if (parallel) {
             CetusAnnotation note = new CetusAnnotation();
             note.put("parallel", "true");
-            ((Annotatable)loop).annotate(note);
+            ((Annotatable) loop).annotate(note);
         }
     }
 
     private void updateDDGraph(TiledLoop tiledLoop) {
         AnalysisPass.run(new DDTDriver(program));
 
-
         LinkedList<Loop> nestedLoops = new LinkedList<>();
         new DFIterator<Loop>(tiledLoop, Loop.class).forEachRemaining(nestedLoops::add);
         List<DependenceVector> dependenceVectors = program.getDDGraph().getDirectionMatrix(nestedLoops);
 
-
         logger.info("### AFTER TILING DVs ###");
         DataDependenceUtils.printDirectionMatrix(tiledLoop, tiledLoop.getDependenceVectors());
-
-
 
         logger.info("### Final DDT Driver DVs ###");
         DataDependenceUtils.printDirectionMatrix(tiledLoop, dependenceVectors);
@@ -486,24 +500,18 @@ public class ParallelAwareTilingPass extends TransformPass {
         }
     }
 
-    private Expression computeBalanceInStripSize(Expression numOfProcessors,
-            Expression rawTileSize) {
+    private Expression computeBalanceInStripSize(Expression rawTileSize, Expression numOfProcessors) {
 
         // Making rawTile size multiple of num of processors
-        Expression strip = Symbolic.subtract(rawTileSize, Symbolic.mod(rawTileSize, numOfProcessors));
+        Expression strip = Symbolic.subtract(rawTileSize, Symbolic.mod(rawTileSize,
+                numOfProcessors));
         return strip;
     }
 
-    private Expression computeBalancedCrossStripSize(Expression numOfInstructions, Expression numOfProcessors,
-            Expression rawTileSize) {
+    private Expression computeBalancedCrossStripSize(Expression rawTileSize, Expression numOfProcessors) {
 
-        // (numOfInstructions / (processors * rawSize)) * processors
-        Expression divisor = Symbolic.multiply(
-                Symbolic.divide(numOfInstructions, Symbolic.multiply(numOfProcessors, rawTileSize)),
-                numOfProcessors);
-
-        // instructions / ( ( instructions / (processors * rawSize) ) * processors )
-        Expression strip = Symbolic.divide(numOfInstructions, divisor);
+        // Making rawTile size multiple of num of processors
+        Expression strip = Symbolic.divide(rawTileSize, numOfProcessors);
         return strip;
     }
 
@@ -518,8 +526,27 @@ public class ParallelAwareTilingPass extends TransformPass {
      *             block size
      * @return the block size in bits to use from the cache
      */
-    private Expression computeRawTileSize(Loop loop, Expression cache) {
+    private Expression computeFullDataSize(Loop loop, Expression cache) {
 
+        List<ArrayAccess> arrayAccesses = new ArrayList<>();
+
+        Set<String> alreadyAdded = new HashSet<>();
+        new DFIterator<ArrayAccess>(loop, ArrayAccess.class).forEachRemaining(access -> {
+            String accessName = access.getArrayName().toString();
+            if (!alreadyAdded.contains(accessName)) {
+                arrayAccesses.add(access);
+                alreadyAdded.add(accessName);
+
+            }
+        });
+
+        // return CacheUtils.getRawBlockSize(cache, arrayAccesses);
+        return ArrayUtils.getFullSize(VariableDeclarationUtils.getVariableDeclarationSpace(loop.getParent()),
+                arrayAccesses);
+
+    }
+
+    private Expression getTypesValuesInCacheSize(Loop loop, Expression cache) {
         List<ArrayAccess> arrayAccesses = new ArrayList<>();
         new DFIterator<ArrayAccess>(loop, ArrayAccess.class).forEachRemaining(arrayAccesses::add);
 

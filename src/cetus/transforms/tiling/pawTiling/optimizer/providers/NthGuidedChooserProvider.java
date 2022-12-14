@@ -17,6 +17,7 @@ import cetus.hir.Symbol;
 import cetus.hir.SymbolTable;
 import cetus.transforms.tiling.TiledLoop;
 import cetus.transforms.tiling.TilingUtils;
+import cetus.transforms.tiling.pawTiling.ParallelAwareTilingPass;
 import cetus.transforms.tiling.pawTiling.optimizer.NthVersionChooser;
 import cetus.transforms.tiling.pawTiling.optimizer.VersionChooser;
 import cetus.utils.reuseAnalysis.DataReuseAnalysis;
@@ -25,25 +26,24 @@ public class NthGuidedChooserProvider implements VersionChooserProvider {
 
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 
-    public static final String NTH_ORDER_PARAM = "tiling-level";
-    public static final int DEFAULT_NTH_ORDER = -1;
-
     private int nthOrder;
 
     public NthGuidedChooserProvider() {
-        this(DEFAULT_NTH_ORDER);
+        this(ParallelAwareTilingPass.DEFAULT_NTH_ORDER);
     }
 
     public NthGuidedChooserProvider(CommandLineOptionSet commandLineOptions) {
 
-        this(commandLineOptions.getValue(NTH_ORDER_PARAM) != null ? DEFAULT_NTH_ORDER
-                : Integer.parseInt(commandLineOptions.getValue(NTH_ORDER_PARAM)));
+        this(commandLineOptions.getValue(ParallelAwareTilingPass.NTH_ORDER_PARAM) == null
+                && commandLineOptions.getValue(ParallelAwareTilingPass.NTH_ORDER_PARAM).equals("")
+                        ? ParallelAwareTilingPass.DEFAULT_NTH_ORDER
+                        : Integer.parseInt(commandLineOptions.getValue(ParallelAwareTilingPass.NTH_ORDER_PARAM)));
 
     }
 
     public NthGuidedChooserProvider(int nthOrder) {
         if (nthOrder <= 0) {
-            this.nthOrder = DEFAULT_NTH_ORDER;
+            this.nthOrder = ParallelAwareTilingPass.DEFAULT_NTH_ORDER;
         } else {
             this.nthOrder = nthOrder;
         }
@@ -62,7 +62,7 @@ public class NthGuidedChooserProvider implements VersionChooserProvider {
         new DFIterator<Loop>(loopNest, Loop.class).forEachRemaining(loop -> loops.add(loop));
 
         int nthLevel = nthOrder;
-        if (nthLevel == DEFAULT_NTH_ORDER) {
+        if (nthLevel == ParallelAwareTilingPass.DEFAULT_NTH_ORDER) {
             int targetLevel = loops.size() - 1;
             nthLevel = targetLevel > 0 ? 1 : targetLevel;
         }
@@ -74,7 +74,7 @@ public class NthGuidedChooserProvider implements VersionChooserProvider {
         TiledLoop curLoop = new TiledLoop(((ForLoop) loopNest), dvs);
         List<DependenceVector> curDvs = dvs;
         for (int i = 0; i < loops.size() && maxTilingLvl > 0; i++) {
-            int targetLoopPos = getLoopPosByIndex(loopNest, reusableOrder.get(i));
+            int targetLoopPos = getLoopPosByIndex(curLoop, reusableOrder.get(i));
 
             try {
                 curLoop = TilingUtils.tiling(symbolTable, ((ForLoop) curLoop).clone(false), DEFAULT_STRIP,

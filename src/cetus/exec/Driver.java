@@ -12,6 +12,7 @@ import cetus.hir.SymbolTools;
 import cetus.hir.Tools;
 import cetus.transforms.*;
 import cetus.transforms.tiling.pawTiling.ParallelAwareTilingPass;
+import cetus.transforms.tiling.pawTiling.optimizer.providers.NthGuidedChooserProvider;
 import cetus.utils.LoggingUtils;
 
 import java.io.*;
@@ -353,9 +354,26 @@ public class Driver {
         options.add(options.TRANSFORM,
                 ParallelAwareTilingPass.PAW_TILING,
                 null,
+                "0",
+                "N",
+                "To apply parallel aware tiling. Not fully implemented yet");
+
+        options.add(options.TRANSFORM,
+                ParallelAwareTilingPass.CORES_PARAM_NAME,
+                null,
                 "" + ParallelAwareTilingPass.DEFAULT_PROCESSORS,
                 "N",
                 "To apply parallel aware tiling. Not fully implemented yet");
+
+        options.add(options.TRANSFORM,
+                ParallelAwareTilingPass.CACHE_PARAM_NAME,
+                null,
+                "" + ParallelAwareTilingPass.DEFAULT_CACHE_SIZE,
+                "N",
+                "To define cache size");
+
+        options.add(options.TRANSFORM, ParallelAwareTilingPass.NTH_ORDER_PARAM, null,
+                "" + ParallelAwareTilingPass.DEFAULT_NTH_ORDER, "N", "To define the level of tiling");
     }
 
     /**
@@ -836,7 +854,6 @@ public class Driver {
          * }
          * 
          */
-      
 
         if (getOptionValue("parallelize-loops") != null && !getOptionValue("parallelize-loops").equals("0")) {
             AnalysisPass.run(new LoopParallelizationPass(program));
