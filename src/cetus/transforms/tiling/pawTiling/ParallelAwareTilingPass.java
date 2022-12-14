@@ -109,7 +109,7 @@ public class ParallelAwareTilingPass extends TransformPass {
         this(program, commandLineOptions, reuseAnalysisFactory,
                 commandLineOptions.getValue(PAW_TILING) != null && commandLineOptions.getValue(PAW_TILING).equals("1")
                         ? new ComplexChooserProvider()
-                        : new NthGuidedChooserProvider());
+                        : new NthGuidedChooserProvider(commandLineOptions));
     }
 
     public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions,

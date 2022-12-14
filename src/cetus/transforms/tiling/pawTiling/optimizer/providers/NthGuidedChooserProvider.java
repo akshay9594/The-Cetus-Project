@@ -1,10 +1,14 @@
 package cetus.transforms.tiling.pawTiling.optimizer.providers;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
+import cetus.analysis.exceptions.IllegalDependenceVector;
+import cetus.exec.CommandLineOptionSet;
 import cetus.hir.DFIterator;
 import cetus.hir.Expression;
 import cetus.hir.ForLoop;
@@ -19,12 +23,22 @@ import cetus.utils.reuseAnalysis.DataReuseAnalysis;
 
 public class NthGuidedChooserProvider implements VersionChooserProvider {
 
-    public static final int DEFAULT_NTH_ORDER = 1;
+    private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
+
+    public static final String NTH_ORDER_PARAM = "tiling-level";
+    public static final int DEFAULT_NTH_ORDER = -1;
 
     private int nthOrder;
 
     public NthGuidedChooserProvider() {
         this(DEFAULT_NTH_ORDER);
+    }
+
+    public NthGuidedChooserProvider(CommandLineOptionSet commandLineOptions) {
+
+        this(commandLineOptions.getValue(NTH_ORDER_PARAM) != null ? DEFAULT_NTH_ORDER
+                : Integer.parseInt(commandLineOptions.getValue(NTH_ORDER_PARAM)));
+
     }
 
     public NthGuidedChooserProvider(int nthOrder) {
@@ -43,21 +57,39 @@ public class NthGuidedChooserProvider implements VersionChooserProvider {
         Collections.reverse(reusableOrder);
 
         int reusableLoops = reusableOrder.size();
-        int maxTilingLvl = nthOrder < reusableLoops ? nthOrder : reusableLoops;
+
+        List<Loop> loops = new ArrayList<>();
+        new DFIterator<Loop>(loopNest, Loop.class).forEachRemaining(loop -> loops.add(loop));
+
+        int nthLevel = nthOrder;
+        if (nthLevel == DEFAULT_NTH_ORDER) {
+            int targetLevel = loops.size() - 1;
+            nthLevel = targetLevel > 0 ? 1 : targetLevel;
+        }
+
+        int maxTilingLvl = nthLevel < reusableLoops ? nthLevel : reusableLoops;
 
         TiledLoop optimalTileVersion = null;
 
         TiledLoop curLoop = new TiledLoop(((ForLoop) loopNest), dvs);
         List<DependenceVector> curDvs = dvs;
-        for (int i = 0; i < maxTilingLvl; i++) {
+        for (int i = 0; i < loops.size() && maxTilingLvl > 0; i++) {
             int targetLoopPos = getLoopPosByIndex(loopNest, reusableOrder.get(i));
-            curLoop = TilingUtils.tiling(symbolTable, ((ForLoop) curLoop).clone(false), DEFAULT_STRIP, targetLoopPos,
-                    curDvs);
+
+            try {
+                curLoop = TilingUtils.tiling(symbolTable, ((ForLoop) curLoop).clone(false), DEFAULT_STRIP,
+                        targetLoopPos,
+                        curDvs);
+                maxTilingLvl--;
+            } catch (IllegalDependenceVector exception) {
+                logger.info("Illegal DV on tiling curLoop:");
+                logger.info("" + exception.loopNest);
+                logger.info("" + exception.dependenceVector);
+
+            }
             curDvs = curLoop.getDependenceVectors();
         }
 
-        // TODO: Review line 57 - 93 of ComplexChooserProvider. I need the step here for
-        // setting the outermost parallelizable loop
         optimalTileVersion = curLoop;
 
         return new NthVersionChooser(loopNest, dvs, optimalTileVersion);
