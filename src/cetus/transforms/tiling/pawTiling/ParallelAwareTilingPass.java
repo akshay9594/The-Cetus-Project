@@ -544,7 +544,7 @@ public class ParallelAwareTilingPass extends TransformPass {
         });
 
         // return CacheUtils.getRawBlockSize(cache, arrayAccesses);
-        return ArrayUtils.getFullSize(VariableDeclarationUtils.getVariableDeclarationSpace(loop.getParent()),
+        return ArrayUtils.getFullSizeInBytes(VariableDeclarationUtils.getVariableDeclarationSpace(loop.getParent()),
                 arrayAccesses);
 
     }
