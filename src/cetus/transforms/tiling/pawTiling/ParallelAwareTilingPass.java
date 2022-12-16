@@ -380,9 +380,9 @@ public class ParallelAwareTilingPass extends TransformPass {
             logger.severe(e.getMessage());
             // e.printStackTrace(logger);
         }
-        addCetusAnnotation(parallelLoop, true);
+        // addCetusAnnotation(parallelLoop, true);
 
-        // AnalysisPass.run(new LoopParallelizationPass(program));
+        AnalysisPass.run(new LoopParallelizationPass(program));
 
         String profitableOmpCopy = Driver.getOptionValue("profitable-omp");
         Driver.setOptionValue("profitable-omp", "0");
@@ -391,10 +391,7 @@ public class ParallelAwareTilingPass extends TransformPass {
         Driver.setOptionValue("profitable-omp", profitableOmpCopy);
         // new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
 
-        
-
-        AnalysisPass.run(new LoopParallelizationPass(program));
-
+    
 
     }
 
