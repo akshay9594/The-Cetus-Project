@@ -17,6 +17,7 @@ import cetus.analysis.AnalysisPass;
 import cetus.analysis.ArrayPrivatization;
 import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
+import cetus.analysis.LoopParallelizationPass;
 import cetus.analysis.LoopTools;
 import cetus.analysis.Reduction;
 import cetus.analysis.loopTools.LoopInstructionsUtils;
@@ -343,7 +344,7 @@ public class ParallelAwareTilingPass extends TransformPass {
         Expression instructionsCondition = new BinaryExpression(maxOfInstructions, BinaryOperator.COMPARE_LE,
                 new IntegerLiteral(MAX_ITERATIONS_TO_PARALLELIZE));
 
-        Expression cacheCond = new BinaryExpression(cache, BinaryOperator.COMPARE_LE, dataFullSize);
+        Expression cacheCond = new BinaryExpression(cache, BinaryOperator.COMPARE_GT, dataFullSize);
         Expression condition = new BinaryExpression(instructionsCondition, BinaryOperator.LOGICAL_AND, cacheCond);
 
         IfStatement ifStm = new IfStatement(condition, trueClause, falseClause);
@@ -355,6 +356,8 @@ public class ParallelAwareTilingPass extends TransformPass {
     // TODO: Fix order in Driver.java to use the pass directly from
     // Driver instead of recalling them
     private void updateAttributes(TiledLoop loop) {
+
+        updateDDGraph(loop);
 
         Loop parallelLoop = loop.getOutermostParallelizableLoop();
 
@@ -386,9 +389,13 @@ public class ParallelAwareTilingPass extends TransformPass {
         CodeGenPass.run(new ompGen(program));
 
         Driver.setOptionValue("profitable-omp", profitableOmpCopy);
-        new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
+        // new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
 
-        updateDDGraph(loop);
+        
+
+        AnalysisPass.run(new LoopParallelizationPass(program));
+
+
     }
 
     private void addCetusAnnotation(Loop loop, boolean parallel) {
