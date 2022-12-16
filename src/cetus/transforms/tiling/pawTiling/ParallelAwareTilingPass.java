@@ -323,7 +323,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     private Expression createCacheVariable(SymbolTable variableDeclarations) {
         Identifier cacheIdentifier = VariableDeclarationUtils.declareVariable(variableDeclarations, CACHE_PARAM_NAME,
-                new IntegerLiteral(cacheSize, "L"));
+                new IntegerLiteral(cacheSize));
 
         return ((Expression) cacheIdentifier);
     }
