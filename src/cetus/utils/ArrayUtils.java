@@ -65,10 +65,10 @@ public class ArrayUtils {
         return typeSize;
     }
 
-    public static final Expression getFullSize(SymbolTable symbols, List<ArrayAccess> arrayAccesses) {
+    public static final Expression getFullSizeInBytes(SymbolTable symbols, List<ArrayAccess> arrayAccesses) {
         Expression dataSize = new IntegerLiteral("0");
         for (ArrayAccess arrayAccess : arrayAccesses) {
-            Expression typeSize = new IntegerLiteral(getTypeSize(arrayAccess));
+            Expression typeSize = new IntegerLiteral(getTypeSize(arrayAccess)/8);
             Expression arraySize = getArraySize(symbols, arrayAccess);
             dataSize = Symbolic.add(dataSize, Symbolic.multiply(typeSize, arraySize));
         }

@@ -302,7 +302,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         ForLoop newLoopNest = loopNest.clone(false);
 
-        Expression dataMatrixSize = computeFullDataSize(loopNest, cache);
+        Expression dataMatrixSize = computeFullDataSize(loopNest);
 
         Statement twoVersionsStm = createTwoVersionsStm(totalOfInstructions, cache, dataMatrixSize,
                 newLoopNest,
@@ -323,7 +323,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     private Expression createCacheVariable(SymbolTable variableDeclarations) {
         Identifier cacheIdentifier = VariableDeclarationUtils.declareVariable(variableDeclarations, CACHE_PARAM_NAME,
-                new IntegerLiteral(cacheSize));
+                new IntegerLiteral(cacheSize, "L"));
 
         return ((Expression) cacheIdentifier);
     }
@@ -523,17 +523,13 @@ public class ParallelAwareTilingPass extends TransformPass {
     }
 
     /**
-     * Compute the raw tile size based on the bits required for every array access
-     * in the loop
-     * and the cache size passed as parameter.
-     * This method use {@link cetus.utils.CacheUtils#getRawBlockSize(int, List)} for
-     * getting the block size
+     * Compute the data full size in bytes
      * 
      * @param loop the loop where to obtain the array accesses to calculate the
      *             block size
      * @return the block size in bits to use from the cache
      */
-    private Expression computeFullDataSize(Loop loop, Expression cache) {
+    private Expression computeFullDataSize(Loop loop) {
 
         List<ArrayAccess> arrayAccesses = new ArrayList<>();
 

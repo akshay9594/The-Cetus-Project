@@ -19,13 +19,13 @@ public class CacheUtils {
      * @return the block size in bits required for all the array accesses.
      */
 
-    public static final Expression getRawBlockSize(Expression cacheSizeInBits, List<ArrayAccess> arrayAccesses) {
+    public static final Expression getRawBlockSize(Expression cacheSizeInBytes, List<ArrayAccess> arrayAccesses) {
         int typeSizeInBits = 0;
         for (ArrayAccess arrayAccess : arrayAccesses) {
             typeSizeInBits = Math.max(typeSizeInBits, ArrayUtils.getTypeSize(arrayAccess));
         }
-        IntegerLiteral arrayBitsLiteral= new IntegerLiteral(typeSizeInBits);
-        return Symbolic.divide(cacheSizeInBits, arrayBitsLiteral);
+        IntegerLiteral arrayBytesLiteral= new IntegerLiteral(typeSizeInBits / 8);
+        return Symbolic.divide(cacheSizeInBytes, arrayBytesLiteral);
         
     }
 }
