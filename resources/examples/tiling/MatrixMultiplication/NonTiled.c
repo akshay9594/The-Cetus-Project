@@ -36,7 +36,9 @@ int main(int argc, char const *argv[])
             for (k = 0; k < n; k++)
             {
 
-                d[i][j] = d[i][j] + a[i][k] * b[k][j];
+                d[i][j] = d[i][j] + a[i][k] * b[k][j]; //(3*m*(jTile)*4)*cores <= cacheSize 
+
+                //
             }
         }
     }
