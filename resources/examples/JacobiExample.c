@@ -8,13 +8,13 @@
 
 int main()
 {
-    int n;
+    int m;
     int i, j;
-    float a[n][n], b[n][n];
+    float a[m][m], b[m][m];
 
-    for (i = 1; i < n - 1; i++)
+    for (i = 1; i < m - 1; i++)
     {
-        for (j = 1; j < n - 1; j++)
+        for (j = 1; j < m - 1; j++)
         {
             a[i][j] = 0.2 * (b[j][i] + b[j - 1][i] + b[j][i - 1] + b[j + 1][i] + b[j][i + 1]);
         }
