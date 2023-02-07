@@ -94,7 +94,7 @@ public class ompGen extends CodeGenPass {
         }
     }
 
-    private void genOmpParallelLoops(ForLoop loop) {
+    public void genOmpParallelLoops(ForLoop loop) {
         // currently, we check only omp parallel for construct
         // "cetus for" was added with reduction transformation pass.
         if (!loop.containsAnnotation(CetusAnnotation.class, "parallel") &&

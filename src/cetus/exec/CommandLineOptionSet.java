@@ -62,7 +62,7 @@ public class CommandLineOptionSet {
     }
 
     /** Storage for the entire set of options. */
-    private TreeMap<String, OptionRecord> name_to_record;
+    public TreeMap<String, OptionRecord> name_to_record;
 
     /** Default constructor */
     public CommandLineOptionSet() {

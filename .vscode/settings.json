@@ -3,6 +3,8 @@
         "timers.h": "c",
         "type_traits": "cpp",
         "stdio.h": "c",
-        "random": "c"
+        "random": "c",
+        "math.h": "c",
+        "omp.h": "c"
     }
 }
