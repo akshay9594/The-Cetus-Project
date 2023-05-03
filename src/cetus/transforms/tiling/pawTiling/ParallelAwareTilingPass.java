@@ -243,22 +243,11 @@ public class ParallelAwareTilingPass extends TransformPass {
             return;
         }
 
-        try {
-            // TODO: Need a rollback if we want to conserve the original loopNest
-            // runLoopInterchage(loopNest);
-        } catch (Exception e) {
-            logger.severe(
-                    "It was not possible to perform loop interchange. However, paw tiling will continue. Error:");
-            e.printStackTrace();
-        }
-
         LinkedList<Loop> nestedLoops = new LinkedList<>();
         new DFIterator<Loop>(loopNest, Loop.class).forEachRemaining(nestedLoops::add);
 
         CompoundStatement variableDeclarations = new CompoundStatement();
 
-        // DDGraph graph = program.getDDGraph();
-        // DataDependenceUtils.printDependenceArcs(program);
         List<DependenceVector> dependenceVectors = program.getDDGraph().getDirectionMatrix(nestedLoops);
 
         logger.info("### ORIGINAL VERSION ###");
@@ -284,11 +273,6 @@ public class ParallelAwareTilingPass extends TransformPass {
         Expression typesValuesInCache = getTypesValuesInCacheSize(loopNest, cache);
 
         Expression balancedTileSize = computeBalancedCrossStripSize(typesValuesInCache, cores);
-        // if (leastCostTiledVersion.isCrossStripParallel()) {
-        // balancedTileSize = computeBalancedCrossStripSize(dataMatrixSize, cores);
-        // } else {
-        // balancedTileSize = computeBalanceInStripSize(dataMatrixSize, cores);
-        // }
 
         replaceTileSize(variableDeclarations, balancedTileSize);
 
@@ -311,6 +295,8 @@ public class ParallelAwareTilingPass extends TransformPass {
         replaceLoop(loopNest, twoVersionsStm);
 
         updateAttributes(leastCostTiledVersion);
+
+        logger.info("### Updated attributes ###");
 
     }
 
@@ -371,16 +357,13 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         AnalysisPass.run(new ArrayPrivatization(program));
 
-        //TODO: ERROR ON RED
-
         try {
             AnalysisPass.run(new Reduction(program));
-            
+
         } catch (Exception e) {
             logger.severe(e.getMessage());
             // e.printStackTrace(logger);
         }
-        // addCetusAnnotation(parallelLoop, true);
 
         AnalysisPass.run(new LoopParallelizationPass(program));
 
@@ -390,8 +373,6 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         Driver.setOptionValue("profitable-omp", profitableOmpCopy);
         // new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
-
-    
 
     }
 

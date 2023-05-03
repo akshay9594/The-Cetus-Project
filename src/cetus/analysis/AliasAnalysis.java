@@ -53,6 +53,7 @@ public class AliasAnalysis extends AnalysisPass {
     private static final int NO_ALIAS_FORCED = 2;
     private static final int NO_ALIAS = 3;
 
+    
     // Specifies "*", which means that a symbol 
     // has alias set = "*" i.e. it is aliased to 
     // everything

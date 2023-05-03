@@ -6,5 +6,9 @@
         "random": "c",
         "math.h": "c",
         "omp.h": "c"
-    }
+    },
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\josee\\.ivy2\\cache\\org.apache.solr\\**\\*.jar"
+    ]
 }
