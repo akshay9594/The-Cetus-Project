@@ -6,7 +6,7 @@
             "name": "Launch Driver",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+            "args": "C:/workspace/java/cetus/polybench-c-4.2.1-beta/linear-algebra/kernels/3mm/3mm.c"
         },
         {
             "type": "java",
