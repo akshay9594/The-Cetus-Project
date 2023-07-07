@@ -230,7 +230,6 @@ public class PointsToAnalysis extends AnalysisPass {
             } else {
                 out_domain = in_domain.clone();
             }
-          
             // Add the successors of this node if there is an update in the 
             // points to relations
             Domain last_domain = curr_node.getData("points-to");
@@ -339,10 +338,8 @@ public class PointsToAnalysis extends AnalysisPass {
             if (s_ir instanceof ExpressionStatement &&
                 !(in_domain instanceof Universe) &&
                 !(in_domain instanceof NullDomain)) {
-                      
                 out_domain = basicPointsTo(curr_node, in_domain, null);
             } else {
-               
                 out_domain = in_domain.clone();
             }
             // Add the successors of this node if there is an update in the 
@@ -403,7 +400,6 @@ public class PointsToAnalysis extends AnalysisPass {
                     // If the rhs is a function call, use interprocedural
                     // information (if available)
                     if (IRTools.containsClass(rhs, FunctionCall.class)) {
-                        
                         // Intra-procedural analysis
                         if ((proc_node == null)) {
                             assigned = Universe.getUniverse();
@@ -963,10 +959,8 @@ public class PointsToAnalysis extends AnalysisPass {
             CallSite callsite = proc_node.getCallSite(call);
             Domain call_result = null;
             if (StandardLibrary.contains(call)) {
-               
                 return null;
             } else if (IPPointsToAnalysis.isSafeLibraryCall(call)) {
-               
                 return null;
             // User library call
             } else if (callsite.getCallee() == null) {

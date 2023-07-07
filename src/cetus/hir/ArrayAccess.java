@@ -3,11 +3,15 @@ package cetus.hir;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
 * Represents the access of an array or pointer variable: array[x][y]...
 */
+
+
 public class ArrayAccess extends Expression {
 
     private static Method class_print_method;
@@ -191,4 +195,6 @@ public class ArrayAccess extends Expression {
         class_print_method = m;
     }
 
+   
+   
 }

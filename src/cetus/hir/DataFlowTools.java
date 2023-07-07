@@ -71,10 +71,10 @@ public final class DataFlowTools {
             add2Map(Map<Expression, Set<Integer>> map, Expression expr) {
         if (map.containsKey(expr)) {
             Set<Integer> set = map.get(expr);
-            set.add(new Integer(System.identityHashCode(expr)));
+            set.add(System.identityHashCode(expr));
         } else {
             Set<Integer> set = new HashSet<Integer>();
-            set.add(new Integer(System.identityHashCode(expr)));
+            set.add(System.identityHashCode(expr));
             map.put(expr, set);
         }
     }

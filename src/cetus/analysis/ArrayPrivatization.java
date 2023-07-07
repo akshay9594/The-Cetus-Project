@@ -534,6 +534,7 @@ public class ArrayPrivatization extends AnalysisPass {
         // Do iterative steps
         while (!work_list.isEmpty()) {
             DFANode node = work_list.remove(work_list.firstKey());
+
             Section.MAP curr_map = null;
             for (DFANode pred : node.getPreds()) {
                 Section.MAP pred_map = pred.getData("def-out");

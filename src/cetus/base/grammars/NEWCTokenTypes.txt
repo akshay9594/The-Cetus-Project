@@ -157,3 +157,4 @@ Exponent=157
 IDMEAT=158
 WideCharLiteral=159
 WideStringLiteral=160
+LITERAL_float128=161

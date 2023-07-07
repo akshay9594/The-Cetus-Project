@@ -44,7 +44,7 @@ public class InlineExpansionPass extends TransformPass {
 				String opt = option.substring(0, eqIndex).trim();
 				if(!opt.equals(FUNCTIONS)) {
 					try {
-						int value = new Integer(option.substring(eqIndex+1).trim()).intValue();
+						int value = Integer.parseInt(option.substring(eqIndex+1).trim());
 						if(opt.equals(MODE)) {
 							inlineExpansion.setMode(value);
 						}

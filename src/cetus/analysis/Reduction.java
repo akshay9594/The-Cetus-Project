@@ -42,6 +42,7 @@ package cetus.analysis;
 import cetus.exec.Driver;
 import cetus.hir.*;
 
+import java.lang.reflect.Array;
 import java.sql.Ref;
 import java.util.*;
 
@@ -119,6 +120,7 @@ public class Reduction extends AnalysisPass {
                 }
             }
 
+           
             // find reduction variables in a loop
             Map<String, Set<Expression>> reduce_map = analyzeStatement(loop);
             // Insert reduction Annotation to the current loop
@@ -340,6 +342,8 @@ public class Reduction extends AnalysisPass {
                         reduction_set.remove(candidate);     
                     }
 */
+
+                    
                     if (simple_self_dependency_check(
                             (ArrayAccess)candidate, (ForLoop)istmt)) {
                         PrintTools.printlnStatus(2, pass_name,
@@ -608,10 +612,6 @@ public class Reduction extends AnalysisPass {
                     reduction_op =
                       ((BinaryExpression)parent_expr).getOperator().toString();
 
-                    if(reduction_op.equals("%") || reduction_op.equals("/")){
-                        return;
-                    }
-
                     if (reduction_op.equals("+")) {
                        
                         lhse_removed_rhse = Symbolic.subtract(rhse, lhse);
@@ -682,10 +682,8 @@ public class Reduction extends AnalysisPass {
                     isReduction = true;
                 }
             } else if (lhse instanceof ArrayAccess) {
-                ArrayAccess array = (ArrayAccess)lhse;
-                base_array_name = (array).getArrayName();
-                if (base_array_name instanceof Identifier &&
-                    array.getIndices().size() == 1) {
+                base_array_name = ((ArrayAccess)lhse).getArrayName();
+                if (base_array_name instanceof Identifier) {
                     Identifier id = (Identifier)base_array_name;
                     if (!IRTools.containsSymbol(
                                 lhse_removed_rhse, id.getSymbol())) {

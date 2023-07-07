@@ -37,7 +37,7 @@ public class PreprocessorInfoChannel
         List lines = new ArrayList();
         if (toknum == null) return lines;       
         for (int i = firstValidTokenNumber; i < toknum.intValue(); i++){
-            Integer inti = new Integer(i);
+            Integer inti = i;
             if ( lineLists.containsKey( inti ) ) {
                 List tokenLineVector = (List) lineLists.get( inti );
                 if ( tokenLineVector != null) {
@@ -58,7 +58,7 @@ public class PreprocessorInfoChannel
     {
         StringBuffer sb = new StringBuffer("PreprocessorInfoChannel:\n");
         for (int i = 0; i <= maxTokenNumber + 1; i++){
-            Integer inti = new Integer(i);
+            Integer inti = i;
             if ( lineLists.containsKey( inti ) ) {
                 List tokenLineVector = (List) lineLists.get( inti );
                 if ( tokenLineVector != null) {

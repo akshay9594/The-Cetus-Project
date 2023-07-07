@@ -54,6 +54,7 @@ public class SubscriptPair {
             Expression index = info.getLoopIndex();
             if (symbols_s1.contains(((Identifier)index).getSymbol()) ||
                     symbols_s2.contains(((Identifier)index).getSymbol())) {
+
                 present_loops.addLast(loop);
             }
         }

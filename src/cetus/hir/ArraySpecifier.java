@@ -2,6 +2,7 @@ package cetus.hir;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -53,6 +54,9 @@ public class ArraySpecifier extends Specifier {
         return dimensions.get(n);
     }
 
+    public List<Expression> getDimensions(){
+        return dimensions;
+    }
     /**
     * Returns the number of index expressions used in this array specifier.
     *

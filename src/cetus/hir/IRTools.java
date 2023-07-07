@@ -9,6 +9,7 @@ public final class IRTools {
 
     private IRTools() {
     }
+    private static Map<Expression,Expression> IfCond_Tag = new HashMap<>();
 
     /**
     * Searches the IR tree beginning at {@code t} for the Expression {@code e}.
@@ -784,6 +785,104 @@ public final class IRTools {
         while (iter.hasNext()) {
             iter.next().removeAnnotations(type);
         }
+    }
+
+    /*
+     * Tagging an expression with an if condition
+     */
+
+    public static void SetIfConditionTag(Expression expr, Expression ifCondition){
+        IfCond_Tag.put(expr, ifCondition);
+    }
+
+    /**
+     * Retrieving the if condition tagged to an expression
+     * @param expr
+     * @return
+     */
+    public static Expression get_IfConditionTag(Expression expr){
+        return IfCond_Tag.get(expr);
+    }
+
+    /**
+     * Checking if an expression has been tagged
+     * @param expr
+     * @return
+     */
+    public static boolean IsTagged(Expression expr){
+        
+       if(get_IfConditionTag(expr)!=null)
+            return true;
+        
+        List<Traversable> expr_childs = expr.getChildren();
+        for(Traversable child : expr_childs){
+            if(child instanceof Expression &&
+              get_IfConditionTag((Expression)child) != null){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Getting the tagged expression in an input expression or range expression
+     * @param expr
+     * @return
+     */
+
+    public static Expression getTaggedExpression(Expression expr){
+        
+        if(get_IfConditionTag(expr)!=null)
+             return expr;
+         
+         List<Traversable> expr_childs = expr.getChildren();
+         for(Traversable child : expr_childs){
+             if(child instanceof Expression &&
+               get_IfConditionTag((Expression)child) != null){
+                 return (Expression)child;
+             }
+         }
+         return null;
+     }
+
+
+    /**
+     * Returns the subscript array in the subscript expression. Useful
+     * when the subscript array has more than 1 levels of indirection.
+     * @param Subscript_expr
+     * @return
+     */
+
+    public static ArrayAccess getSubscriptArray(Expression Subscript_expr){
+
+        Set<Expression> array_expressions = new HashSet<>();
+        FlatIterator<ArrayAccess> iter = new FlatIterator<ArrayAccess>(Subscript_expr);
+        while(iter.hasNext()){
+            Traversable expr = (Traversable)iter.next();
+            if(IRTools.containsClass(expr, ArrayAccess.class)){
+              array_expressions.add((Expression)expr);
+            }
+        }
+
+        if(array_expressions.size() != 1)
+            return null;
+
+        Expression arr_expr = array_expressions.iterator().next();
+
+        arr_expr = Symbolic.simplify(arr_expr);
+
+        if(!(arr_expr instanceof BinaryExpression) &&
+            (arr_expr instanceof ArrayAccess))
+            return (ArrayAccess)arr_expr;
+
+        for(Traversable child : arr_expr.getChildren()){
+
+            if(child instanceof ArrayAccess){
+                return (ArrayAccess)child;
+            }
+        }
+        return null;
+
     }
 
     /**

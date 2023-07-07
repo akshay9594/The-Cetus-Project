@@ -110,11 +110,11 @@ public class KernelCallingProcCloning extends TransformPass {
 				if( ind > -1 ) {
 					if( numOfCalls > 1 ) {
 						// Current procedure contains a kernel region and is called more than once.
-						cloneProcMap.put(new Integer(ind), c_proc);
+						cloneProcMap.put(ind, c_proc);
 					}
 					else {
 						// Current procedure contains a kernel region but is called only once.
-						MayCloneProcMap.put(new Integer(ind), c_proc);
+						MayCloneProcMap.put(ind, c_proc);
 					}
 				}
 			}

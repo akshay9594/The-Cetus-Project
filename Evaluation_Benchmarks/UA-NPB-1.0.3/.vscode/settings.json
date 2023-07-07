@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "header.h": "c",
+        "stdio.h": "c",
+        "timers.h": "c",
+        "omp.h": "c",
+        "npbparams.h": "c"
+    }
+}

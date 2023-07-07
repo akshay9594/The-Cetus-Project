@@ -68,7 +68,7 @@ public NewCLexer getLexer()
 public List getPragma(int a)
 {
   return
-      preprocessorInfoChannel.extractLinesPrecedingTokenNumber(new Integer(a));
+      preprocessorInfoChannel.extractLinesPrecedingTokenNumber(a);
 }
 
 /*
@@ -441,19 +441,17 @@ public NewCParser(ParserSharedInputState state) {
 					catch (RecognitionException pe) {
 						
 						synPredMatched8 = false;
-
 					}
 
 					rewind(_m8);
 inputState.guessing--;
 				}
 
-				
 				if ( synPredMatched8 ) {
 					
 					extern_decl = true;
 					decl=declaration();
-					
+				
 					if ( inputState.guessing==0 ) {
 						
 						if (decl != null) {
@@ -469,9 +467,8 @@ inputState.guessing--;
 				}
 				else {
 					boolean synPredMatched10 = false;
-				
+
 					if (((_tokenSet_4.member(LA(1))) && (_tokenSet_5.member(LA(2))))) {
-					
 					
 						int _m10 = mark();
 						synPredMatched10 = true;
@@ -485,6 +482,7 @@ inputState.guessing--;
 						catch (RecognitionException pe) {
 						
 							synPredMatched10 = false;
+			
 						}
 						rewind(_m10);
 inputState.guessing--;
@@ -493,7 +491,6 @@ inputState.guessing--;
 					
 					if ( synPredMatched10 ) {
 						decl=functionDef();
-
 						if ( inputState.guessing==0 ) {
 							
 							//PrintTools.printStatus("Adding Declaration: ",3);
@@ -502,6 +499,7 @@ inputState.guessing--;
 							
 						}
 					}
+				
 					else if ((_tokenSet_6.member(LA(1))) && (_tokenSet_7.member(LA(2)))) {
 						decl=typelessDeclaration();
 						if ( inputState.guessing==0 ) {
@@ -511,6 +509,18 @@ inputState.guessing--;
 							tunit.addDeclaration(decl);
 							
 						}
+					}
+
+					else if(LA(1) == 24 && LA(2) == 34){
+						decl=functionDef();
+						if ( inputState.guessing==0 ) {
+							
+							//PrintTools.printStatus("Adding Declaration: ",3);
+							//PrintTools.printlnStatus(decl,3);
+							tunit.addDeclaration(decl);
+							
+						}
+						
 					}
 				
 
@@ -631,8 +641,7 @@ inputState.guessing--;
 		
 		Token  flcurly = null;
 		Declarator decl = null;
-		
-		
+	
 		try {      // for error handling
 			{
 			boolean synPredMatched14 = false;
@@ -733,7 +742,6 @@ inputState.guessing--;
 	public final Procedure  functionDef() throws RecognitionException, TokenStreamException {
 		Procedure curFunc;
 		
-		
 		CompoundStatement stmt=null;
 		Declaration decl=null;
 		Declarator bdecl=null;
@@ -746,7 +754,6 @@ inputState.guessing--;
 
 		loop_decl = null;
 		decl_for_global = null;
-		loop_idex_list = new ArrayList<IDExpression>();
 		loop_decl_list = new ArrayList<Declaration>();
 		
 		
@@ -941,23 +948,15 @@ inputState.guessing--;
 			
 		}
 
-		if(!loop_decl_list.isEmpty() && !declared_vars.isEmpty()){
+		if(!loop_decl_list.isEmpty()){
 			for(int i=0 ;i < loop_decl_list.size() ; i++){
-				Declaration d = loop_decl_list.get(i);
-				
-				List<IDExpression> decl_IDS = d.getDeclaredIDs();
-
-				for(int j=0 ; j < decl_IDS.size(); j++){
-
-					if(!declared_vars.contains(decl_IDS.get(j)))
-						stmt.addDeclaration(d);				
-	
-				}
-
+					stmt.addDeclaration(loop_decl_list.get(i));				
 				
 			}
 		}
 	
+		loop_decl_list.removeAll(loop_decl_list);
+		loop_idex_list.removeAll(loop_idex_list);
 		return curFunc;
 	}
 	
@@ -1737,7 +1736,7 @@ inputState.guessing--;
 		Expression expr1 = null;
 		List tyname = null;
 		boolean typedefold = false;
-		
+	
 		
 		try {      // for error handling
 			if ( inputState.guessing==0 ) {
@@ -1891,6 +1890,7 @@ inputState.guessing--;
 			if ( inputState.guessing==0 ) {
 				hastypedef = typedefold;
 			}
+
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
@@ -1900,9 +1900,6 @@ inputState.guessing--;
 			  throw ex;
 			}
 		}
-
-		
-		
 		
 		return types;
 	}
@@ -3358,20 +3355,12 @@ inputState.guessing--;
 	
 		  dspec = (Specifier)dspec_for_list.get(0);
 
-		  decl_for_global = new VariableDeclarator(idex_for);
-
-		  loop_decl =  new VariableDeclaration(dspec, decl_for_global);
-
-         if(loop_idex_list.contains(idex_for)){
-
-			loop_decl = null;
-		}
-
-	    else{
-
+		  if(!loop_idex_list.contains(idex_for)){
+			decl_for_global = new VariableDeclarator(idex_for);
+			loop_decl =  new VariableDeclaration(dspec, decl_for_global);
+			loop_decl_list.add(loop_decl);
 			loop_idex_list.add(idex_for);
-			
-		}
+		  }
 
 		return init_for_expr;
 	}
@@ -5357,11 +5346,11 @@ inputState.guessing--;
 
 				match(RPAREN);
 				
-				if(loop_decl != null && !loop_decl_list.contains(loop_decl)){
+				// if(loop_decl != null && !loop_decl_list.contains(loop_decl)){
 
-					loop_decl_list.add(loop_decl);
+				// 	loop_decl_list.add(loop_decl);
 
-				}
+				// }
 				stmt1=statement();
 		
 				
@@ -5371,7 +5360,7 @@ inputState.guessing--;
 						statb = new ForLoop(new ExpressionStatement(expr1), expr2, expr3, stmt1);
 		  
 					} 
-					                                                                                           
+				                                                                                       
 					statb.setLineNumber(sline);                                                                    
 					                                                                                                                                                                                                                                                                        
 				}                                                                                                 

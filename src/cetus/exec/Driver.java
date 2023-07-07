@@ -338,6 +338,10 @@ public class Driver {
         options.add(options.TRANSFORM,
                     "loop_interchange", 
                      "Exchanges the order of two iteration variables used by a nested loop");
+        
+        options.add(options.ANALYSIS,
+                     "subsub_analysis", 
+                      "Performs subscripted subscript analysis on the program");
     }
 
     /**
@@ -791,7 +795,9 @@ public class Driver {
         if (getOptionValue("privatize") != null && !getOptionValue("privatize").equals("0")) {
             AnalysisPass.run(new ArrayPrivatization(program));
         }
-
+        if (getOptionValue("subsub_analysis") != null) {
+            AnalysisPass.run(new SubscriptedSubscriptAnalysis(program));
+        }
       
         if (getOptionValue("ddt") != null && !getOptionValue("ddt").equals("0")) {
             AnalysisPass.run(new DDTDriver(program));
@@ -825,6 +831,8 @@ public class Driver {
         if (getOptionValue("profile-loops") != null) {
             TransformPass.run(new LoopProfiler(program));
         }
+
+        
     }
 
     /**
@@ -902,7 +910,7 @@ public class Driver {
 					"e.g. \"./cetus -gui\" or \"java -jar cetus.jar -gui\".");
 			System.out.println();
 			(new Driver()).run(args);
-			checkUpdate();
+			//checkUpdate();
 			//t2.interrupt(); //if thread 2 for checking new version has not finished after Cetus finished, interrupt it.
 		}
     }

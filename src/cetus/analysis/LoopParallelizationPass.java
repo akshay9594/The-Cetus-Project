@@ -75,7 +75,8 @@ public class LoopParallelizationPass extends AnalysisPass {
         }
         reportParallelization();
         // Invokes reduction transformation.
-        if (!nested_parallelism) {
+    
+        if(!nested_parallelism) {
             TransformPass.run(new ReductionTransform(program));
         }
     }
@@ -85,7 +86,7 @@ public class LoopParallelizationPass extends AnalysisPass {
     */
     public void parallelizeAllNests() {    
         DFIterator<Loop> iter = new DFIterator<Loop>(program, Loop.class);
-        
+
         if (program.getDDGraph() == null){
             PrintTools.println("[AUTOPAR] Program DDG not available Parallelization STOPS", 0);
             return;
@@ -191,10 +192,8 @@ public class LoopParallelizationPass extends AnalysisPass {
     
         DDGraph dependence_graph = program.getDDGraph();
 
-        
         List<Loop> eligible_loops = LoopTools.
                 extractOutermostDependenceTestEligibleLoops(enclosing_loop);
-
 
         for (int i = 0; i < eligible_loops.size(); i++) {
             Loop outer_loop = eligible_loops.get(i);
@@ -206,6 +205,7 @@ public class LoopParallelizationPass extends AnalysisPass {
 
             // Records loops that are already scheduled for parallelization.
             List<Loop> scheduled = new ArrayList<Loop>(contained_nest.size());
+
             for (int j = 0; j < contained_nest.size(); j++) {
                 boolean has_scheduled_outer_loop = false;
                 Loop l = contained_nest.get(j);
@@ -311,8 +311,6 @@ public class LoopParallelizationPass extends AnalysisPass {
                 }
             }
         }
-
-      
 
     }
 

@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "header.h": "c",
+        "timers.h": "c"
+    }
+}

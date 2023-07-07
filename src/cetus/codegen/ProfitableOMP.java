@@ -3,9 +3,6 @@ package cetus.codegen;
 import cetus.exec.Driver;
 import cetus.hir.*;
 import cetus.analysis.LoopTools;
-import cetus.analysis.RangeAnalysis;
-import cetus.analysis.RangeDomain;
-
 import java.util.List;
 import java.util.Set;
 
@@ -239,13 +236,12 @@ public class ProfitableOMP extends CodeGenPass {
     * Starts the code generation for profitable loop parallelization.
     */
     public void start() {
+      
         DFIterator<Statement> iter =
                 new DFIterator<Statement>(program, Statement.class);
-
         iter.pruneOn(VariableDeclaration.class);
         iter.pruneOn(ExpressionStatement.class);
         int[] parcount = new int[] {0};
-        
         while (iter.hasNext()) {
             Statement stmt = iter.next();
             if (stmt.containsAnnotation(OmpAnnotation.class, "parallel")) {
@@ -274,11 +270,10 @@ public class ProfitableOMP extends CodeGenPass {
         if (stmt instanceof ForLoop) {
             // TODO: handling of negative stride
             ForLoop floop = (ForLoop)stmt;
-            Statement init = floop.getInitialStatement();
-            Expression inc = LoopTools.getIncrementExpression(floop);          
+            Expression inc = LoopTools.getIncrementExpression(floop);
             Expression lb = LoopTools.getLowerBoundExpression(floop);
-            //BinaryExpression loop_cond = (BinaryExpression)floop.getCondition();
             Expression ub = LoopTools.getUpperBoundExpression(floop);
+            Statement init = floop.getInitialStatement();
             Expression condition = floop.getCondition();
             Expression step = floop.getStep();
             Expression body_load = countWorkLoad(floop.getBody());
@@ -471,13 +466,13 @@ public class ProfitableOMP extends CodeGenPass {
         "    struct timeval since;",
         "} cetusrt_event;",
         "",
-        "inline void cetusrt_tic(cetusrt_event *evt) {",
+        "static inline void cetusrt_tic(cetusrt_event *evt) {",
         "    if (evt->profile) {",
         "        gettimeofday(&evt->since, 0);",
         "    }",
         "}",
         "",
-        "inline void cetusrt_toc(cetusrt_event *evt) {",
+        "static inline void cetusrt_toc(cetusrt_event *evt) {",
         "    evt->count++;",
         "    if (evt->profile) {",
         "        struct timeval now;",

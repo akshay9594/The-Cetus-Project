@@ -455,7 +455,7 @@ public class IPPointsToAnalysis extends IPAnalysis {
                     //PointsToAnalysis.annotatePointsTo(
                     //        node.getProcedure(), result);
                     PrintTools.printlnStatus(3, pass_name, toPrettyDomain(
-                            node.getProcedure(), result, new Integer(0)));
+                            node.getProcedure(), result, 0));
                 }
             }
         }
@@ -485,12 +485,13 @@ public class IPPointsToAnalysis extends IPAnalysis {
     */
     @SuppressWarnings("unchecked")
     public void analyzeProcedure(IPANode node) {
+
         Map<Statement, Domain> result =
                 PointsToAnalysis.getPointsToRelations(node);
         putPTDMap(result, node);
         if (verbosity >= 5) {
             PrintTools.printlnStatus(5, pass_name, 
-                toPrettyDomain(node.getProcedure(), result, new Integer(0)));
+                toPrettyDomain(node.getProcedure(), result, 0));
         }
     }
 
@@ -816,6 +817,7 @@ public class IPPointsToAnalysis extends IPAnalysis {
     public static Set<PointsToRel> getReturnRelations(CallSite callsite) {
         Set<PointsToRel> ret = null;
         IPANode callee = callsite.getCallee();
+       
         if (callee == null) {
             PointsToRel lib_rel = getStandardLibraryReturnRelation(callsite);
             if (lib_rel != null) {
@@ -915,6 +917,7 @@ public class IPPointsToAnalysis extends IPAnalysis {
             PrintTools.printlnStatus(3, name, call_site);
             PrintTools.printlnStatus(3, name, "prev-call-in =", call_site.in());
             PrintTools.printlnStatus(3, name, "curr-call-in =", curr_data);
+            
             if (!call_site.in().equals(curr_data)) {
                 ret.add(call_site);
                 call_site.in(curr_data);

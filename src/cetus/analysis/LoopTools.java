@@ -12,8 +12,6 @@ public class LoopTools {
     // Flag for checking if all loops are named.
     private static boolean is_loop_named = false;
 
-    public static List bounds = new ArrayList<>();
-
     /**
      * Constructor - not used at all.
      */
@@ -439,10 +437,12 @@ public class LoopTools {
                     pnest = (isPerfectNest((Loop)s));
                 else
                     pnest = false;
-            } else if (containsLoop(loop)) {
+            } 
+            else if (containsLoop(loop)) {
                 PrintTools.println("Loop is not perfectly nested", 8);
                 pnest = false;
-            } else {
+            }
+             else {
                 PrintTools.println("Loop is perfectly nested", 8);
                 pnest = true;
             }
@@ -856,7 +856,7 @@ public class LoopTools {
                 ;
             } else if (t instanceof Procedure) {
                 LinkedList<Integer> init_nums =
-                        new LinkedList<Integer>(Arrays.asList(new Integer(0)));
+                        new LinkedList<Integer>(Arrays.asList(0));
                 addLoopName(t, header + ((Procedure)t).getName(), init_nums);
             } else if (t instanceof ForLoop) {
                 Statement loop = (Statement)t;
@@ -865,7 +865,7 @@ public class LoopTools {
                 PragmaAnnotation note = new PragmaAnnotation("loop");
                 note.put("name", my_name);
                 loop.annotate(note);
-                nums.add(new Integer(0));
+                nums.add(0);
                 addLoopName(t, header, nums);
                 nums.removeLast();
                 nums.set(nums.size() - 1, nums.getLast() + 1);
@@ -921,7 +921,7 @@ public class LoopTools {
     */
     public static boolean isReduction(Symbol s, Loop l) {
         CetusAnnotation note = ((Annotatable)l).getAnnotation(
-                CetusAnnotation.class, "reduction"); 
+                CetusAnnotation.class, "reduction");
         if (note != null) {
             Map<String, Set<Expression>> m = note.get("reduction");
             for (String op : m.keySet()) {
@@ -1349,5 +1349,4 @@ public class LoopTools {
         }
         return str.toString();
     }
-
 }

@@ -295,7 +295,7 @@ public class CetusGUI extends JFrame implements KeyListener, ActionListener{
 //	}
 	
 	public CetusGUI() {
-		this("Cetus - PAROT Research Group, University of Delaware - Dept. of Electrical & Computer Engineering", 800, 600);
+		this("Cetus - ParaMount Research Group, Purdue University - School of Electrical & Computer Engineering", 800, 600);
 		initUI();
 		optionsPanel.autoCheckUpdateSaveLoadOptions(); //The reason that put autoLoadOptions() 
 		//here is to make sure the print out message for loading options appears after Cetus main messages

@@ -558,7 +558,7 @@ public class ControlFlowGraph {
                 if (l_ar == null) {
                     System.err.println("Null array for proc " + l_pr);
                 } else {
-                    l_ar.add(new Integer(i));
+                    l_ar.add(i);
                 }
             }
         }

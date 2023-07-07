@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
+import java.util.*;
 
 /**
 * Base class for all expressions. Expressions are compared lexically against
@@ -404,7 +405,6 @@ public abstract class Expression
     */
     protected void addChild(Traversable t) {
         if (t.getParent() != null) {
-            System.out.println("t : "+ t +", parent: "+t.getParent()+"\n");
             throw new NotAnOrphanException(this.getClass().getName());
         }
         children.add(t);
@@ -442,4 +442,5 @@ public abstract class Expression
         return h;
     }
 
+   
 }

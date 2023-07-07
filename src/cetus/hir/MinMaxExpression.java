@@ -254,9 +254,9 @@ public class MinMaxExpression extends Expression {
             Traversable o = children.get(i);
             if (o instanceof IntegerLiteral) {
                 if (ismin && ((IntegerLiteral)o).getValue() < num) {
-                    return new Integer(-1);
+                    return -1;
                 } else if (!ismin && ((IntegerLiteral) o).getValue() > num) {
-                    return new Integer(1);
+                    return 1;
                 }
             }
         }
