@@ -1,0 +1,148 @@
+Release Notes 2022
+——————————————————————————-
+
+RELEASE
+
+——————————————————————————-
+
+Cetus 2.0 version (2022) introduces major bug fixes and added features such as the Loop Interchange pass.
+
+Cetus 1.4.4 version (Jan 2017) introduces new methods for setting the stride information of an array access, allowing more precise analysis of array accesses.
+
+Cetus 1.4.3 version (May 2016) contains minor changes that fixed some Java 8 specific bugs which disallowed Cetus from building.
+
+——————————————————————————-
+
+Bug fixes and Added features
+
+——————————————————————————-
+
+1. Handling of loop index initializations within FOR loop declaration-
+When ‘for’ loops are declared as- for(int i = 0; i < n; i++), cetus would remove the initialization of ‘i’ from it’s place and hoist it at the top of the code block. The reason for doing so would be the use of underlying cetus design principle -“All variable declarations should appear at the top of the code block”. A loop cannot be parallelized without knowing the initial value of the loop index. So now instead of a loop header of the form – for( ;i < n; i++), We now have – for(i = 0 ; i < n; i++) and ‘int i’ would appear at the top of the block.
+
+2. Added support for logical and bitwise scalar reductions
+Scalar reductions of the form x = x op expr, where op is any of: {logical AND – && , logical OR- || , Bitwise OR – | , Bitwise AND- & , Bitwise XOR – ^}. Also added support for Bitwise assignment operators of the form: {Bitwise AND – &= , Bitwise OR – |= , Bitwise XOR – ^=}
+
+3. Support for Multiple reductions using different operators
+Cetus had no issue recognizing multiple unique reduction statements within the same loop. But Cetus could not create a separate reduction clause for each reduction-identifier within the same directive as per the latest OpenMP specification. The support for the same has now been added. The directive would look something like: Eg. #pragma omp parallel for private(i) reduction(max: maxl)reduction(&: b)
+Earlier Cetus would try to include all the identifiers and operators within one reduction clause.
+
+4. Loop Interchange Pass Added to Cetus
+a. Loop Interchange legality algorithm had some minor bugs which have been fixed.
+b. Reusability analysis added to the Loop Interchange pass which determines the best order of loops in the nest for maximizing reusability of cache lines.
+c. Model taken from K.S McKinley’s paper- “Optimizing for Parallelism and Data locality”.
+d. Pass can also handle symbolic loop bounds.
+
+——————————————————————————-
+
+CONTENTS
+
+——————————————————————————-
+
+This Cetus release has the following contents.
+
+lib – Archived classes (jar)
+
+src – Cetus source code
+
+antlr_license.txt – ANTLR license
+
+RSyntaxTextArea.License.txt – RSyntaxTextArea license
+
+cetus_license.txt – Cetus license
+
+build.sh – Command line build script
+
+build.xml – Build configuration for Apache Ant
+
+readme.txt – This file
+
+readme_log.txt – Archived release notes
+
+readme_omp2gpu.txt – readme file for OpenMP-to-CUDA translator
+
+——————————————————————————-
+
+RUNNING CETUS
+
+——————————————————————————-
+
+1. Download Cetus from the “Downloads” page above.
+2. Unpack the Zip/Tar file and navigate to the main directory.
+3. Run the build script through the command – ./build.sh bin
+4. The Cetus executable is created in the bin directory
+5. Copy and paste the Cetus executable in your working directory.
+6. Run the Cetus executable to see the list of available options and how to enable them.
+7. To compile a source code using Cetus through the command line type-
+./cetus [options] [C FILE]
+E.g. ./cetus -parallelize-loops=2 foo.c
+8. The output file after running Cetus is made available in the cetus_output folder in your working directory.
+9. Inside the resource directory, you can find example programs
+
+——————————————————————————-
+
+REQUIREMENTS
+
+——————————————————————————-
+
+* JAVA SE 6 and above
+
+* ANTLRv2
+
+* GCC (Cygwin GCC-4 for Windows OS) and above
+
+——————————————————————————-
+
+INSTALLATION
+
+——————————————————————————-
+
+* Obtain Cetus distribution
+
+The latest version of Cetus can be obtained at the downloads section above.
+
+* Binary Version
+
+For binary version (.jar) of Cetus, installation is not needed.
+
+* Unpack
+
+Users need to unpack the distribution before installing Cetus.
+
+$ cd <directory_where_cetus.tar.gz_exists>
+
+$ gzip -d cetus.tar.gz | tar xvf –
+
+* Build
+
+There are several options for building Cetus:
+
+– For Apache Ant users
+
+The provided build.xml defines the build targets for Cetus. The available targets are “compile”, “jar”, “gui”, “clean” and “javadoc”. Users need to edit the location of the Antlr tool.
+
+– For Linux/Unix command line users Run the script build.sh after defining system-dependent variables in the script.
+
+– For SDK (Eclipse, Netbeans, etc) users First, build the parser with the Antlr tool. Then, follow the instructions of each SDK to set up a project.
+
+——————————————————————————-
+
+TESTING
+
+——————————————————————————-
+
+We have tested Cetus successfully using the following benchmark suites:
+
+* NAS Parallel Benchmarks v3.3
+
+More information about this suite is available at http://aces.snu.ac.kr/software/snu-npb/
+
+* Polybench Benchmarks v4.2
+
+More information about this suite available at https://sourceforge.net/projects/polybench/files/
+
+March 11, 2022
+
+The Cetus Team
+
+URL: https://sites.udel.edu/cetus-cid/
