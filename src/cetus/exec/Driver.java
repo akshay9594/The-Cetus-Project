@@ -338,6 +338,10 @@ public class Driver {
         options.add(options.TRANSFORM,
                     "loop_interchange", 
                      "Exchanges the order of two iteration variables used by a nested loop");
+
+         options.add(options.TRANSFORM,
+                    "TransformConsecParallelLoopNests", 
+                     "Combines consecutive parallel loop nests into a parallel region");
         
         options.add(options.ANALYSIS,
                      "subsub_analysis", 
@@ -817,6 +821,9 @@ public class Driver {
 
         if (getOptionValue("parallelize-loops") != null && !getOptionValue("parallelize-loops").equals("0")) {
             AnalysisPass.run(new LoopParallelizationPass(program));
+        }
+          if (getOptionValue("TransformConsecParallelLoopNests") != null) {
+            TransformPass.run(new TransformConsecParallelLoopNests(program));
         }
         if (getOptionValue("ompGen") != null && !getOptionValue("ompGen").equals("0")) {
             CodeGenPass.run(new ompGen(program));
