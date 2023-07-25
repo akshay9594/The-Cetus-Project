@@ -7,7 +7,7 @@ import subprocess
 
 print("Cetus Translation for AMGmk v1.0...")
 
-Cetus_path = '/home/akshay/Cetus-SubSub/bin/cetus'
+Cetus_path = '/home/akshay/The-Cetus-Project/bin/cetus'
 
 test_files = 'csr_matrix.c csr_matvec.c hypre_error.c hypre_memory.c laplace.c main.c relax.c vector.c'
 

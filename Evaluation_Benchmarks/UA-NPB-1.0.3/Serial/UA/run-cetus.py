@@ -20,8 +20,8 @@ if(exists('npbparams.h') is False):
 test_files = 'ua.c convect.c diffuse.c adapt.c move.c mason.c precond.c utils.c transfer.c verify.c setup.c ../common/print_results.c ../common/c_timers.c ../common/wtime.c'
 
  
-test_result = subprocess.call([Cetus_path, " -alias=3 " + test_files],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
- 
+test_result = subprocess.call([Cetus_path, " -subsub_analysis -normalize-loops -alias=3 " + test_files],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
+#
 if(test_result != 0):
     print("Cetus Run Failed!! Check Error logs")
 

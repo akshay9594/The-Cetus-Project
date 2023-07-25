@@ -454,6 +454,9 @@ private void wrapper(CFGraph SubroutineGraph){
             input_CFG.removeNodes(Nodes_to_Remove);
 
             DFANode collap_node = new DFANode("tag", innerloopannotation);
+            if(innerloopannotation == null)
+                return OutermostLoopNode;
+
             RangeDomain innerloop_aggRanges = Loop_agg_ranges.get(innerloopannotation.toString());
             collap_node.putData("ranges", innerloop_aggRanges);
             input_CFG.addNode(collap_node);
@@ -785,8 +788,6 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
         List<Symbol> SSR_variables = new ArrayList<Symbol>();
         Expression LoopIdx = LoopTools.getIndexVariable(input_for_loop);
 
-        //System.out.println("LVVs: " + LoopVariantVars +":"+ LoopRangeExpressions +"\n");
-
         RangeExpression LoopIdxRange = getLoopIndexRange(input_for_loop, RangeValsBeforeLoop);
 
         Expression LoopIterationCount = Symbolic.add(Symbolic.subtract(LoopIdxRange.getUB() , LoopIdxRange.getLB()), new IntegerLiteral(1));
@@ -847,7 +848,8 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
 
                      
                         //Identifying the recurrence class of the LVV
-                    
+                        // if(DefSymbolExprs.get(sym) == null)
+                        //     continue;
 
                         String recurrence_class = identify_recurrence_class(sym, LVV_Value_expr ,
                                                                             LoopIdx, LoopVariantVars , DefSymbolExprs.get(sym),
@@ -966,28 +968,15 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
                         //For an array, aggregate the subscript expression if it's a simple subscript
                         if(arr_specs!=null || SymbolTools.isPointer(sym)){
                            
-                            Expression array_subscript = ArraySubscripts.get(sym);
-                            
-                            RangeExpression agg_subscript = null;
+                            Expression array_subscript = ArraySubscripts.get(sym); 
 
-                            if(SymbolTools.isPointer(sym) ||
-                                SymbolTools.isArray(sym) && arr_specs.getNumDimensions()<=1){
+                            if((SymbolTools.isArray(sym)) && arr_specs.getNumDimensions()<=1 && array_subscript !=null){
+                                Aggregate_OneDimArray_Pointer_Subscript(sym, array_subscript, LoopIdxRange, LVV_Value_expr, LoopRangeExpressions);
+                                System.out.println();
+                            }
+                            else if(SymbolTools.isPointer(sym)&& array_subscript !=null){
+                                Aggregate_OneDimArray_Pointer_Subscript(sym, array_subscript, LoopIdx, LVV_Value_expr, LoopRangeExpressions);
 
-                                if(is_simple_subscript(array_subscript,LoopIdx)){
-                                  
-                                     array_subscript = LoopRangeExpressions.substituteForwardRange(array_subscript);
-                                     Loop_agg_subscripts.put(sym, array_subscript);        
-                               
-                                }
-                                //Aggregation of subscript expression of an intermittent sequence
-                                else if(IRTools.IsTagged(LVV_Value_expr)){
-                                    agg_subscript = new RangeExpression(new IntegerLiteral(0), array_subscript.clone());
-                                    Loop_agg_subscripts.put(sym, agg_subscript);
-
-                                }
-                                else if(!Loop_agg_subscripts.keySet().contains(sym)){
-                                        Loop_agg_subscripts.put(sym, new StringLiteral("bot"));
-                                }
                             }
                             else{
 
@@ -1019,6 +1008,28 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
           
         }
 
+        private static void Aggregate_OneDimArray_Pointer_Subscript(Symbol sym, Expression array_subscript, Expression LoopIdx,
+                                                                            Expression LVV_Value_Expr, RangeDomain LoopRangeExpressions){
+
+            
+            RangeExpression agg_subscript = null;
+
+               if(is_simple_subscript(array_subscript,LoopIdx)){
+                                  
+                    array_subscript = LoopRangeExpressions.substituteForwardRange(array_subscript);
+                    Loop_agg_subscripts.put(sym, array_subscript);        
+                               
+                    }
+                    //Aggregation of subscript expression of an intermittent sequence
+                    else if(IRTools.IsTagged(LVV_Value_Expr)){
+                        agg_subscript = new RangeExpression(new IntegerLiteral(0), array_subscript.clone());
+                        Loop_agg_subscripts.put(sym, agg_subscript);
+
+                    }
+                    else if(!Loop_agg_subscripts.keySet().contains(sym)){
+                        Loop_agg_subscripts.put(sym, new StringLiteral("bot"));
+                    }
+        }
        
 
         /**
@@ -1107,6 +1118,8 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
 
             if(SymbolTools.isPointer(LVV)){
                 ArrayAccess Pointer_Array = (ArrayAccess)DefExpr;
+                if(Pointer_Array == null)
+                    return "Unknown Class";
                 NumArrayIndices = Pointer_Array.getNumIndices();
                 if(NumArrayIndices == 1){
                     SubscriptExp = Pointer_Array.getIndex(0);
@@ -1303,11 +1316,11 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
 
         if(ValuesBeforeLoopHeader!= null){
             Expression ForSubUB = ValuesBeforeLoopHeader.substituteForwardRange(LoopUpperbound);
-            if(!IRTools.containsClass(ForSubUB, InfExpression.class))
+            if( ForSubUB != null && !IRTools.containsClass(ForSubUB, InfExpression.class))
                     LoopUpperbound = ForSubUB;
 
             Expression ForSubLB = ValuesBeforeLoopHeader.substituteForwardRange(LoopLowerbound);
-            if(!IRTools.containsClass(ForSubLB, InfExpression.class))
+            if(ForSubLB != null && !IRTools.containsClass(ForSubLB, InfExpression.class))
                     LoopLowerbound = ForSubLB;
             
         }
@@ -1393,7 +1406,7 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
                 return "Unknown Class";
                 
             }
-            else if(Symbolic.eq(coeff, new IntegerLiteral(1)).equals(new IntegerLiteral(1))){
+            else if( coeff !=null && Symbolic.eq(coeff, new IntegerLiteral(1)).equals(new IntegerLiteral(1))){
                 return "Class 2";
             }
             else

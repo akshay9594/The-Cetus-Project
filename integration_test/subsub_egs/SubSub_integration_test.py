@@ -35,7 +35,7 @@ if(val == 'Y'):
 
 elif(val == 'N'):
     test_file = input("Specify the test file: ")
-    test_result = subprocess.call(['../../bin/cetus', " -subsub_analysis -normalize-loops " + test_file])
+    test_result = subprocess.call(['../../bin/cetus', " -subsub_analysis -normalize-loops -parallelize-loops=3 " + test_file])
     if(test_result != 0):
         print("Test for: ", test_file , " failed!")
     else:

@@ -166,6 +166,7 @@ public class ReductionTransform extends TransformPass {
             if (loop.containsAnnotation(CetusAnnotation.class, "reduction")) {
                 if (loop.containsAnnotation(CetusAnnotation.class,"parallel") && 
                        !(RangeTest.getSubSubParallelLoops().contains(loop)) ) {
+                   
                     work_list.add(loop);
                 } else {
                 // It looks more reasonable to remove reduction pragma

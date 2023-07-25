@@ -886,7 +886,10 @@ public class RangeTest implements DDTest {
                             Expression array_lb_sub = id_array_lb.getIndex(0);
                             Expression array_ub_sub = id_array_ub.getIndex(0);
                         
-                            if(Symbolic.subtract(array_ub_sub, array_lb_sub).equals(new IntegerLiteral(1))){
+                            if(Symbolic.subtract(array_ub_sub, array_lb_sub).equals(new IntegerLiteral(1)) &&
+                                    AggSubs_Map.get(SymbolTools.getSymbolOf(index_array)) != null &&
+                                     !(AggSubs_Map.get(SymbolTools.getSymbolOf(index_array)) instanceof StringLiteral)){
+                                
                                 Expression AggSubUB = ((RangeExpression)AggSubs_Map.get(SymbolTools.getSymbolOf(index_array))).getUB();
                                 
                                 return CheckPropertyAndLoopBounds(AggSubUB, LoopUB, Outerloop);
@@ -1088,11 +1091,12 @@ public class RangeTest implements DDTest {
            !LoopTools.isOutermostLoop(loop)) 
             return false;
 
+        if(!(e1 instanceof ArrayAccess && e2 instanceof ArrayAccess))
+            return false;
         
         List<ArrayAccess> SubscriptArrays_e1 = IRTools.getExpressionsOfType(e1, ArrayAccess.class);
         List<ArrayAccess> SubscriptArrays_e2 = IRTools.getExpressionsOfType(e2, ArrayAccess.class);
 
-        // System.out.println("f: " + f + ",g: " + g + "result = " + SubscriptArrays_e1.size() +"\n");
         // if(SubscriptArrays_e1.size()>1 || SubscriptArrays_e2.size()>1)
         //     return false;
         

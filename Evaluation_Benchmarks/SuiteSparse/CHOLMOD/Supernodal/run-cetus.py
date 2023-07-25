@@ -7,7 +7,7 @@ import subprocess
 
 print("Cetus Translation for CHOLMOD Supernodal...")
 
-Cetus_path = '/home/akshay/Cetus-SubSub/bin/cetus'
+Cetus_path = '/home/akshay/The-Cetus-Project/bin/cetus'
 
 test_files = 'cholmod_super_numeric.c'
 
