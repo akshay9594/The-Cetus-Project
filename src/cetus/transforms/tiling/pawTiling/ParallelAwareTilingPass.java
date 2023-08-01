@@ -84,6 +84,7 @@ public class ParallelAwareTilingPass extends TransformPass {
     public final static String BALANCED_TILE_SIZE_NAME = "balancedTileSize";
 
     public static final String NTH_ORDER_PARAM = "tiling-level";
+    public static final String NO_PERFECT_NEST_FLAG = "paw-tiling-no-perfect-nest";
     public static final int DEFAULT_NTH_ORDER = -1;
 
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
@@ -190,6 +191,8 @@ public class ParallelAwareTilingPass extends TransformPass {
     public void start() {
 
         List<Loop> outermostLoops = LoopTools.getOutermostLoops(program);
+
+        boolean shouldCheckPerfectNests = this
         List<Loop> perfectLoops = pawAnalysisUtils.filterValidLoops(outermostLoops);
         this.selectedOutermostLoops = perfectLoops;
 
