@@ -4,17 +4,10 @@ We have developed a new analysis technique for the automatic parallelization of 
 subscript loops. The technique analyzes loops that define and/or modify the subscript array
 and determines array properties, which is sufficient to parallelize a class of subscripted
 subscripts. This repository contains the source codes of not just the actual technique but 
-also of the benchmark codes used to to evaluate the capabilites of the technique. The
-technique has been described in detail in the listed publications.
+also of the benchmarks used to to evaluate the capabilites of the technique. The
+technique has been described in detail in the listed publications below.
 
-# Related publications:
-1. Akshay Bhosale and Rudolf Eigenmann. 2021. On the automatic parallelization of subscripted 
-   subscript patterns using array property analysis. In Proceedings of the ACM International 
-   Conference on Supercomputing (ICS '21). Association for Computing Machinery, New York, NY, 
-   USA, 392–403. (https://doi.org/10.1145/3447818.3460424)
-
-
-# Downloading and Running Cetus:
+# Downloading and Running Cetus (On this branch):
 ```
         1. Download Cetus through the "Download Code" (green button) above or through wget.
         2. Unpack the Zip/Tar file and navigate to the main directory.
@@ -32,6 +25,12 @@ technique has been described in detail in the listed publications.
 
        
 # Subscripted subscript Analysis Pass
+1. Source Code:
+    The source code of the pass can be found in-
+    ```
+      /src/cetus/analysis/SubscriptedSubscriptAnalysis.java
+    ```
+2. Enabling and testing the pass:
     To enable subscripted subscript analysis on an input code simply type:
     ```
          ./cetus -subsub_analysis -normalize-loops foo.c
@@ -50,9 +49,15 @@ technique has been described in detail in the listed publications.
 
 # Benchmarks for evaluating the technique
   The benchmarks for evaluation have been placed in the "Evaluation_Benchmarks" directory.
+  More bennchmarks are being added.
+
+# Related publications:
+1. Akshay Bhosale and Rudolf Eigenmann. 2021. On the automatic parallelization of subscripted 
+   subscript patterns using array property analysis. In Proceedings of the ACM International 
+   Conference on Supercomputing (ICS '21). Association for Computing Machinery, New York, NY, 
+   USA, 392–403. (https://doi.org/10.1145/3447818.3460424)
 
 
-    
     
   
             
