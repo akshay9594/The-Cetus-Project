@@ -1,0 +1,16 @@
+@startuml
+Actor -> Cetus: Pass program + compiler parameters
+Cetus -> Cetus: Create clone IR //One for Cetus and for ChatGPT
+group LLMAugmenter [(legality=true and profitability>=CetusProfitability) or threshold>10000 ] 
+    Cetus -> Cetus: Create well-form technical prompt(params)
+    Cetus -> ChatGPT: Optimize loop(prompt, original loop)
+    ChatGPT --> Cetus: Optimized-loop + chatGPT-data (static features, dynamic features)
+    Cetus -> Cetus: Verify/compare profitability(Optimized-loop, chatGPT-data, IRs)
+    Cetus -> Cetus: Verify/compare legality(Optimized-loop, chatGPT-data, IRs)
+    Cetus -> Cetus: Create well-defined feedback prompt(verifications)
+    Cetus -> ChatGPT: feedback(well-defined feedback promt)
+    ChatGPT --> Cetus: Optimized loop w/ feedback
+    Cetus -> MLDatabase: Write loop + data (static features, IRs, etc...)
+end
+Cetus -> Actor: Optimized program by ChatGPT
+@enduml
