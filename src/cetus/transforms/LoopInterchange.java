@@ -303,6 +303,8 @@ public class LoopInterchange extends TransformPass {
 
         }
 
+        // TODO: Be careful: equals method compares instances (object) not elements. THis
+        // comparisson can be wrong
         if (PermutedLoopOrder.equals(OriginalLoopOrder) ||
                 PermutedLoopOrder.isEmpty())
             loopMap.put((ForLoop) loops.get(0), "Non-Permuted");
@@ -469,10 +471,11 @@ public class LoopInterchange extends TransformPass {
             List<List<ArrayAccess>> ReferenceGroups = RefGroup(loop, LoopArrays, LoopNestOrder);
 
             if (!SymbolicIter)
-                trip_currentLoop = (long) LoopNestIterationMap.get(LoopIdx);
+                if (LoopNestIterationMap.containsKey(LoopIdx))
+                    trip_currentLoop = (long) LoopNestIterationMap.get(LoopIdx);
 
-            else
-                Symbolic_LoopTripCount = (Expression) LoopNestIterationMap.get(LoopIdx);
+                else
+                    Symbolic_LoopTripCount = (Expression) LoopNestIterationMap.get(LoopIdx);
 
             RefGroupCost = new ArrayList<>();
 
