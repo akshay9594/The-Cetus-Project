@@ -12,7 +12,6 @@ import cetus.hir.SymbolTools;
 import cetus.hir.Tools;
 import cetus.transforms.*;
 import cetus.transforms.tiling.pawTiling.ParallelAwareTilingPass;
-import cetus.transforms.tiling.pawTiling.optimizer.providers.NthGuidedChooserProvider;
 import cetus.utils.LoggingUtils;
 
 import java.io.*;
@@ -125,7 +124,9 @@ public class Driver {
             return libs;
         }
         for (String lib : envListStr.split(";")) {
-            libs.add(lib);
+            if (!lib.isEmpty()) {
+                libs.add(lib);
+            }
         }
 
         return libs;
@@ -192,13 +193,13 @@ public class Driver {
         String parserLibsCommand = "";
 
         for (String lib : getLibs()) {
-            parserLibsCommand += "-L " + lib + " ";
+            parserLibsCommand += "-L" + lib + " ";
         }
         System.out.println("PARSER LIBS: " + parserLibsCommand);
 
         String parserIncludesCommand = "";
         for (String include : getIncludes()) {
-            parserIncludesCommand += "-I " + include + " ";
+            parserIncludesCommand += "-I" + include + " ";
 
         }
         System.out.println("PARSER INC: " + parserIncludesCommand);
