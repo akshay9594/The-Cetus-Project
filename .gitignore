@@ -4,3 +4,6 @@ cetus_output
 /cbin
 
 **cppinput**
+bin/**
+class/**
+lib/cetus.jar
