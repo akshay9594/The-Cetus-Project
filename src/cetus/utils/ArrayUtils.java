@@ -96,7 +96,11 @@ public class ArrayUtils {
             for (ArraySpecifier arraySpecifier : specs) {
                 int dimensions = arraySpecifier.getNumDimensions();
                 for (int j = 0; j < dimensions; j++) {
-                    size = Symbolic.multiply(size, arraySpecifier.getDimension(j));
+                    Expression dimension = arraySpecifier.getDimension(j);
+                    if(dimension == null) {
+                        dimension = new IntegerLiteral("1");
+                    }
+                    size = Symbolic.multiply(size, dimension);
                 }
             }
         }

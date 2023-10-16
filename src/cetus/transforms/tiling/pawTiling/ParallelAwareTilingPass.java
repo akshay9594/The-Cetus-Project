@@ -192,7 +192,6 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         List<Loop> outermostLoops = LoopTools.getOutermostLoops(program);
 
-        boolean shouldCheckPerfectNests = this
         List<Loop> perfectLoops = pawAnalysisUtils.filterValidLoops(outermostLoops);
         this.selectedOutermostLoops = perfectLoops;
 

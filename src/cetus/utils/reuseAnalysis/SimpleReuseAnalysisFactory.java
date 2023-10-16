@@ -205,7 +205,8 @@ public class SimpleReuseAnalysisFactory implements ReuseAnalysisFactory {
             List<List<ArrayAccess>> ReferenceGroups = RefGroupAnalysisUtils.refGroup(loop, loopArrays, LoopNestOrder);
             RefGroupAnalysisUtils.printRefGroup(ReferenceGroups);
             if (!hasSymbolicIter)
-                trip_currentLoop = (long) LoopNestIterationMap.get(LoopIdx);
+                if(LoopNestIterationMap.containsKey(LoopIdx))
+                    trip_currentLoop = (long) LoopNestIterationMap.get(LoopIdx);
             else
                 Symbolic_LoopTripCount = (Expression) LoopNestIterationMap.get(LoopIdx);
 

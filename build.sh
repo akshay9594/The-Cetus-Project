@@ -5,6 +5,9 @@
 
 # Specify the location of the antlr.jar file for your system.
 ANTLR="$PWD/lib/antlr.jar"            #antlr location
+
+echo "ANTLR" 
+echo "$ANTLR"
 #please put antlr.jar under lib/
 #otherwise you must change the path here 
 #and modify MANIFEST-ADD.MF to make sure the path of antlr.jar
@@ -26,7 +29,9 @@ done
 
 # No change is required for these variables.
 CETUSROOT=$PWD
-SRC="$CETUSROOT/src/*/*/*.java $CETUSROOT/src/*/*/*/*.java"
+# SRC="$CETUSROOT/src/*/*/*.java $CETUSROOT/src/*/*/*/*.java"
+SRC=$(find "$CETUSROOT/src" -name "*.java" | tr '\n' ' ')
+
 PARSER="$CETUSROOT/src/cetus/base/grammars"
 # Source files for parser construction.
 parser_src="
@@ -52,7 +57,7 @@ case "$1" in
   echo "Compiling the source files..."
   [ -f $PARSER/NewCParser.java ] || $0 parser
   [ -d class ] || mkdir class
-  javac -g -cp $PWD/lib/junit.jar:$PWD/lib/rsyntaxtextarea.jar:$ANTLR:class -d class $SRC
+  javac -source 1.8 -target 1.8 -g -cp $PWD/lib/junit.jar:$PWD/lib/rsyntaxtextarea.jar:$ANTLR:class -d class $SRC
   ;;
   jar)
   $0 compile
