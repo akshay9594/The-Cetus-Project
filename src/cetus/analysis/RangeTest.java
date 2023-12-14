@@ -143,6 +143,7 @@ public class RangeTest implements DDTest {
         f_stmt = pair.getStatement1();
         g_stmt = pair.getStatement2();
         
+        //System.out.println("f="+f+",g="+g+"\n");
         // Collects necessary range information
         f_range = RangeAnalysis.query(f_stmt);
         g_range = RangeAnalysis.query(g_stmt);

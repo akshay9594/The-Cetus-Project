@@ -182,9 +182,9 @@ void test_Relax()
   double *x_data;
   double diff, error;
 
-  nx = 50;  /* size per proc nx*ny*nz */
-  ny = 50;
-  nz = 50;
+  nx = 75;  /* size per proc nx*ny*nz */
+  ny = 75;
+  nz = 75;
 
   values = hypre_CTAlloc(double, 4);
   values[0] = 6; 

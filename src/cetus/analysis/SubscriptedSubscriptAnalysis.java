@@ -815,7 +815,7 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
         //Collect information about multi-dimensional subscript arrays
         CollectMultiDimArrayInfo(LoopRangeExpressions, input_for_loop);
     
-       System.out.println("\nResults of Phase 2 Analysis for "+ LoopTools.getLoopName(input_for_loop) +"-loop: " +"\n");
+       //System.out.println("\nResults of Phase 2 Analysis for "+ LoopTools.getLoopName(input_for_loop) +"-loop: " +"\n");
 
         //Collect info about the loop index symbol - aggregate range and property
         Expression SubstitutedRange = (RangeExpression)LoopRangeExpressions.substituteForwardRange(LoopIdxRange);
@@ -980,7 +980,6 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
 
                             if((SymbolTools.isArray(sym)) && arr_specs.getNumDimensions()<=1 && array_subscript !=null){
                                 Aggregate_OneDimArray_Pointer_Subscript(sym, array_subscript, LoopIdxRange, LVV_Value_expr, LoopRangeExpressions);
-                                System.out.println();
                             }
                             else if(SymbolTools.isPointer(sym)&& array_subscript !=null){
                                 Aggregate_OneDimArray_Pointer_Subscript(sym, array_subscript, LoopIdx, LVV_Value_expr, LoopRangeExpressions);
@@ -999,13 +998,13 @@ private static void SubSubAnalysis(ForLoop input_for_loop, CFGraph Loop_CFG,
                                 
                             }
                         
-                        if(SymbolTools.getAssignedValues(sym)!=null)
-                           System.out.println("LVV: " + sym + "\nValues:" + SymbolTools.getAssignedValues(sym) + "\nproperty: " +
-                                         variable_property.get(sym) + "\nsub: " + Loop_agg_subscripts.get(sym) +"\n");
+                        // if(SymbolTools.getAssignedValues(sym)!=null)
+                        //    System.out.println("LVV: " + sym + "\nValues:" + SymbolTools.getAssignedValues(sym) + "\nproperty: " +
+                        //                  variable_property.get(sym) + "\nsub: " + Loop_agg_subscripts.get(sym) +"\n");
 
-                        else
-                        System.out.println("LVV: " + sym + "\nValues:" + LoopRangeExpressions.getRange(sym) + "\nproperty: " +
-                                            variable_property.get(sym) + "\nsub: " + Loop_agg_subscripts.get(sym) +"\n");
+                        // else
+                        // System.out.println("LVV: " + sym + "\nValues:" + LoopRangeExpressions.getRange(sym) + "\nproperty: " +
+                        //                     variable_property.get(sym) + "\nsub: " + Loop_agg_subscripts.get(sym) +"\n");
 
                         }
 
