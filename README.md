@@ -28,18 +28,18 @@ technique has been described in detail in the listed publications below.
 
 # Downloading and Running Cetus (On this branch):
 ```
-        1. Download Cetus through the "Download Code" (green button) above or through wget.
-        2. Unpack the Zip/Tar file and navigate to the main directory.
-        3. Run the build script through the command - ./build.sh bin
-        4. The Cetus executable is created in the bin directory
-        5. Copy and paste the Cetus executable in your working directory.
-        6. Run the Cetus executable to see the list of available options and how to enable them.
-        7. To compile a source code using Cetus through the command line type-
-                ./cetus [options] [C FILE]
-                E.g. ./cetus -parallelize-loops=2 foo.c
-        8. The output file after running Cetus is made available in the cetus_output folder
+    1. Download Cetus through the "Download Code" (green button) above or through wget.
+    2. Unpack the Zip/Tar file and navigate to the main directory.
+    3. Run the build script through the command - ./build.sh bin
+    4. The Cetus executable is created in the bin directory
+    5. Copy and paste the Cetus executable in your working directory.
+    6. Run the Cetus executable to see the list of available options and how to enable them.
+    7. To compile a source code using Cetus through the command line type-
+          ./cetus [options] [C FILE]
+          E.g. ./cetus -parallelize-loops=2 foo.c
+    8. The output file after running Cetus is made available in the cetus_output folder
             in your working directory.
-        9. Inside the resource directory, you can find example programs
+    9. Inside the resource directory, you can find example programs
 ```
 
        
@@ -59,7 +59,7 @@ technique has been described in detail in the listed publications below.
 Examples for testing the subscripted subscript analysis pass have been placed in the
 directory "subsub_egs" within "integration_test".
 
-## Running the integration tests
+### Running the integration tests
    Run the python script - SubSub_integration_test.py using the command:
    ```
    python3 SubSub_integration_test.py
@@ -77,7 +77,7 @@ directory "subsub_egs" within "integration_test".
 | CHOLMOD | SuiteSparse | (https://github.com/DrTimothyAldenDavis/SuiteSparse)
 | SDDMM (C version) | Published Paper | (https://github.com/isratnisa/SDDMM_GPU)
 
-## Running Subscripted Subscript Analysis on the benchmarks
+### Running Subscripted Subscript Analysis on the benchmarks
 
 A python script by the name *run-cetus.py* has been provided within each benchmark source
 code. Build Cetus first and then execute the script *run-cetus.py* to get the Cetus
