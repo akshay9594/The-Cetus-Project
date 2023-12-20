@@ -84,6 +84,7 @@ public class ParallelAwareTilingPass extends TransformPass {
     public final static String BALANCED_TILE_SIZE_NAME = "balancedTileSize";
 
     public static final String NTH_ORDER_PARAM = "tiling-level";
+    public static final String NO_PERFECT_NEST_FLAG = "paw-tiling-no-perfect-nest";
     public static final int DEFAULT_NTH_ORDER = -1;
 
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
@@ -190,6 +191,8 @@ public class ParallelAwareTilingPass extends TransformPass {
     public void start() {
 
         List<Loop> outermostLoops = LoopTools.getOutermostLoops(program);
+
+        boolean shouldCheckPerfectNests = this
         List<Loop> perfectLoops = pawAnalysisUtils.filterValidLoops(outermostLoops);
         this.selectedOutermostLoops = perfectLoops;
 
@@ -282,22 +285,11 @@ public class ParallelAwareTilingPass extends TransformPass {
             return;
         }
 
-        try {
-            // TODO: Need a rollback if we want to conserve the original loopNest
-            // runLoopInterchage(loopNest);
-        } catch (Exception e) {
-            logger.severe(
-                    "It was not possible to perform loop interchange. However, paw tiling will continue. Error:");
-            e.printStackTrace();
-        }
-
         LinkedList<Loop> nestedLoops = new LinkedList<>();
         new DFIterator<Loop>(loopNest, Loop.class).forEachRemaining(nestedLoops::add);
 
         CompoundStatement variableDeclarations = new CompoundStatement();
 
-        // DDGraph graph = program.getDDGraph();
-        // DataDependenceUtils.printDependenceArcs(program);
         List<DependenceVector> dependenceVectors = program.getDDGraph().getDirectionMatrix(nestedLoops);
 
         logger.info("### ORIGINAL VERSION ###");
@@ -323,11 +315,6 @@ public class ParallelAwareTilingPass extends TransformPass {
         Expression typesValuesInCache = getTypesValuesInCacheSize(loopNest, cache);
 
         Expression balancedTileSize = computeBalancedCrossStripSize(typesValuesInCache, cores);
-        // if (leastCostTiledVersion.isCrossStripParallel()) {
-        // balancedTileSize = computeBalancedCrossStripSize(dataMatrixSize, cores);
-        // } else {
-        // balancedTileSize = computeBalanceInStripSize(dataMatrixSize, cores);
-        // }
 
         replaceTileSize(variableDeclarations, balancedTileSize);
 
@@ -350,6 +337,8 @@ public class ParallelAwareTilingPass extends TransformPass {
         replaceLoop(loopNest, twoVersionsStm);
 
         updateAttributes(leastCostTiledVersion);
+
+        logger.info("### Updated attributes ###");
 
     }
 
@@ -398,6 +387,35 @@ public class ParallelAwareTilingPass extends TransformPass {
     private void updateAttributes(TiledLoop loop) {
 
         updateDDGraph(loop);
+
+        Loop parallelLoop = loop.getOutermostParallelizableLoop();
+
+        // TODO: need to change the way of doing things. First I need to
+        // run everything when I just have the tiled version in the program
+        // once the tiled version is parallelized I can add the if statement
+        // with the default version.!!!!!!!!!
+        // #WARNING:
+
+        LoopTools.addLoopName(program, true);
+
+        AnalysisPass.run(new ArrayPrivatization(program));
+
+        try {
+            AnalysisPass.run(new Reduction(program));
+
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+            // e.printStackTrace(logger);
+        }
+
+        AnalysisPass.run(new LoopParallelizationPass(program));
+
+        String profitableOmpCopy = Driver.getOptionValue("profitable-omp");
+        Driver.setOptionValue("profitable-omp", "0");
+        CodeGenPass.run(new ompGen(program));
+
+        Driver.setOptionValue("profitable-omp", profitableOmpCopy);
+        // new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
 
     }
 

@@ -113,6 +113,31 @@ public class Driver {
         return updateNeeded;
     }
 
+    public static List<String> getLibs() {
+
+        return parseEnvList("CETUS_LIBS");
+
+    }
+
+    public static List<String> parseEnvList(String env) {
+        List<String> libs = new ArrayList<>();
+        String envListStr = System.getenv(env);
+        if (envListStr == null) {
+            return libs;
+        }
+        for (String lib : envListStr.split(";")) {
+            libs.add(lib);
+        }
+
+        return libs;
+    }
+
+    public static List<String> getIncludes() {
+
+        return parseEnvList("CETUS_PATH");
+
+    }
+
     /**
      * Register default legal set of options and default values for Driver.
      * Only registers options can have values set.
@@ -165,18 +190,42 @@ public class Driver {
                 "normalize-loops",
                 "Normalize for loops so they begin at 0 and have a step of 1");
 
-        String libs = getLibsArgs();
-        String includes = getIncludesArgs();
+        String parserLibsCommand = "";
+
+        for (String lib : getLibs()) {
+            parserLibsCommand += "-L " + lib + " ";
+        }
+        System.out.println("PARSER LIBS: " + parserLibsCommand);
+
+        String parserIncludesCommand = "";
+        for (String include : getIncludes()) {
+            parserIncludesCommand += "-I " + include + " ";
+
+        }
+        System.out.println("PARSER INC: " + parserIncludesCommand);
+
         if ((System.getProperty("os.name").toLowerCase()).indexOf("win") >= 0)
             options.add(options.UTILITY,
                     "preprocessor",
-                    "cpp.exe -E " + libs + " " + includes,
+                    "cpp.exe " + parserLibsCommand + " " + parserIncludesCommand,
                     "command",
                     "Set the preprocessor command to use");
         else
             options.add(options.UTILITY,
                     "preprocessor",
-                    "cpp -C -I. " + libs + " " + includes,
+                    "cpp -C -I. " + parserLibsCommand + " " + parserIncludesCommand,
+                    "command",
+                    "Set the preprocessor command to use");
+        if ((System.getProperty("os.name").toLowerCase()).indexOf("win") >= 0)
+            options.add(options.UTILITY,
+                    "preprocessor",
+                    "cpp.exe -E " + parserLibsCommand + " " + parserIncludesCommand,
+                    "command",
+                    "Set the preprocessor command to use");
+        else
+            options.add(options.UTILITY,
+                    "preprocessor",
+                    "cpp -C -I. " + parserLibsCommand + " " + parserIncludesCommand,
                     "command",
                     "Set the preprocessor command to use");
         options.add(options.ANALYSIS,
@@ -963,6 +1012,7 @@ public class Driver {
     public static void main(String[] args) {
 
         // checkUpdate();
+
         LoggingUtils.redirectOutput(args);
         if (args.length > 0 && args[0].toLowerCase().equals("-gui")) {
             // if (args.length == 0 || args[0].toLowerCase().equals("-gui")) {

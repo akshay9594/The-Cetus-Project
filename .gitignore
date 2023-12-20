@@ -2,3 +2,5 @@ cetus_output
 /resources/examples/**.exe
 /out
 /cbin
+
+**cppinput**

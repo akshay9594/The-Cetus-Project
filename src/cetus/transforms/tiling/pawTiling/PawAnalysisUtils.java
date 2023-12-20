@@ -19,10 +19,14 @@ public class PawAnalysisUtils {
     protected List<Loop> nonIncreasingOrderLoops = new ArrayList<>();
 
     public List<Loop> filterValidLoops(List<Loop> loops) {
+        return filterValidLoops(loops, false);
+    }
+
+    public List<Loop> filterValidLoops(List<Loop> loops, boolean shouldCheckPerfectNests) {
         List<Loop> validLoops = new ArrayList<>();
         for (Loop loop : loops) {
             if (isCanonical(loop)
-                    && isPerfectNest(loop)
+                    && (isPerfectNest(loop) || !shouldCheckPerfectNests)
                     && !containsFunctionCalls(loop)
                     && isIncreasingOrder(loop)) {
                 validLoops.add(loop);
