@@ -2,14 +2,11 @@ package cetus.utils;
 
 import java.util.List;
 
-import cetus.hir.CompoundStatement;
-import cetus.hir.DFIterator;
 import cetus.hir.Declaration;
 import cetus.hir.Expression;
 import cetus.hir.Identifier;
 import cetus.hir.Initializer;
 import cetus.hir.NameID;
-import cetus.hir.Program;
 import cetus.hir.Specifier;
 import cetus.hir.SymbolTable;
 import cetus.hir.Traversable;
@@ -28,6 +25,7 @@ public class VariableDeclarationUtils {
         while (auxTraversable != null && auxTraversable.getParent() != null
                 && !(auxTraversable instanceof SymbolTable)) {
             auxTraversable = auxTraversable.getParent();
+
         }
 
         return (SymbolTable) auxTraversable;

@@ -237,14 +237,263 @@
       "miDebuggerPath": "C:\\opt\\msys64\\mingw64\\bin\\gdb.exe",
       "setupCommands": [
         {
-          "description": "Habilitar la impresión con sangría para gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
+            "type": "java",
+            "name": "Launch Driver",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-paw-tiling=0 -tiling-level=2 -alias=2 /home/mgltorsa/workspace/Polybench-4.2/linear-algebra/kernels/3mm/3mm.c",
+            "env": {
+                "CETUS_LIBS": "",
+                "CETUS_INCLUDES": "/home/mgltorsa/workspace/Polybench-4.2/linear-algebra/kernels/3mm;/home/mgltorsa/workspace/Polybench-4.2/utilities;/home/mgltorsa/workspace/Polybench-4.2/utilities/polybench.h;/home/mgltorsa/workspace/Polybench-4.2/utilities/polybench.c",
+            }
         },
         {
-          "description": "Establecer tipo de desensamblado en Intel",
-          "text": "-gdb-set disassembly-flavor intel",
-          "ignoreFailures": true
+            "type": "java",
+            "name": "Launch Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Matrix Mult example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "./resources/examples/MatrixMult.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Paw tiling No reuse example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-paw-tiling ./resources/examples/tiling/noReuseLoop.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInterchange Matrix Mult example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-loop_interchange ./resources/examples/MatrixMult.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Tiling Tiling test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-loop-tiling ./resources/examples/tiling/SimpleTilingExample.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Dependencies Test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -paw-tiling ./resources/examples/DDTLoops.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Reduction Array red example",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -reduction ./resources/examples/ScalarRed.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter Jacobi example test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange ./resources/examples/JacobiExample.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver PawTiling Lv1 Jacobi example test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=1 ./resources/examples/JacobiExample.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver PawTiling Lv2 Jacobi example test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=2 ./resources/examples/JacobiExample.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter + PawTiling Lv1 Jacobi example test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange -paw-tiling=0 -tiling-level=1 ./resources/examples/JacobiExample.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter + PawTiling Lv2 Jacobi example test",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange -paw-tiling=0 -tiling-level=2 ./resources/examples/JacobiExample.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter Matrix Mult",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver PawTiling Lv1 Matrix Mult",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=1 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver PawTiling Lv2 Matrix Mult",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=2 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter + PawTiling Lv1 Matrix Mult",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange -paw-tiling=0 -tiling-level=1 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter + PawTiling Lv2 Matrix Mult",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange -paw-tiling=0 -tiling-level=2 ./resources/examples/tiling/MatrixMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter vector multiplication",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver PawTiling Lv1 vector multiplication",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=1 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver PawTiling Lv2 vector multiplication",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=2 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter + PawTiling Lv1 vector multiplication",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange -paw-tiling=0 -tiling-level=1 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver LoopInter + PawTiling Lv2 vector multiplication",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange -paw-tiling=0 -tiling-level=2 -profitable-omp=0 ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch Driver Loop Inter",
+            "request": "launch",
+            "mainClass": "cetus.exec.Driver",
+            "args": "-loop_interchange ./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+        },
+        {
+            "type": "java",
+            "name": "Launch MergeTwoSortedLists",
+            "request": "launch",
+            "mainClass": "cetus.gui.MergeTwoSortedLists",
+        },
+        {
+            "type": "java",
+            "name": "Launch ValidParentheses",
+            "request": "launch",
+            "mainClass": "cetus.gui.ValidParentheses",
+        },
+        {
+            "type": "java",
+            "name": "Launch TCPServer",
+            "request": "launch",
+            "mainClass": "cetus.server.TCPServer",
+        },
+        {
+            "type": "java",
+            "name": "Launch CetusGUI",
+            "request": "launch",
+            "mainClass": "cetus.server.speed_up.CetusGUI",
+        },
+        {
+            "type": "java",
+            "name": "Launch TestTripletRunner",
+            "request": "launch",
+            "mainClass": "cetus.unittest.TestTripletRunner",
+        },
+        {
+            "type": "java",
+            "name": "Launch OMP2GPUDriver",
+            "request": "launch",
+            "mainClass": "omp2gpu.exec.OMP2GPUDriver",
+        },
+        {
+            "name": "C/C++: gcc.exe Compilar y depurar el archivo activo",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "C:/opt/msys64/mingw64/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\opt\\msys64\\mingw64\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Habilitar la impresión con sangría para gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Establecer tipo de desensamblado en Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: gcc.exe compilar archivo activo"
+        },
+        {
+            "name": "C/C++: gcc-11 build and debug active file",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "C/C++: gcc-11 build active file",
+            "miDebuggerPath": "gdb"
         }
       ],
       "preLaunchTask": "C/C++: gcc.exe compilar archivo activo"

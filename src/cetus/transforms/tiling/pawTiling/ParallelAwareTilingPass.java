@@ -213,14 +213,17 @@ public class ParallelAwareTilingPass extends TransformPass {
             return;
         }
 
-        Expression cores = createCoresVariable(
-                VariableDeclarationUtils.getVariableDeclarationSpace(selectedOutermostLoops.get(0).getParent()));
-
-        Expression cache = createCacheVariable(
-                VariableDeclarationUtils.getVariableDeclarationSpace(selectedOutermostLoops.get(0).getParent()));
-
         for (Loop outermostLoop : selectedOutermostLoops) {
             try {
+
+                Expression cores = createCoresVariable(
+                        VariableDeclarationUtils
+                                .getVariableDeclarationSpace(outermostLoop.getParent()));
+
+                Expression cache = createCacheVariable(
+                        VariableDeclarationUtils
+                                .getVariableDeclarationSpace(outermostLoop.getParent()));
+
                 runPawTiling((ForLoop) outermostLoop, cores, cache);
             } catch (Exception e) {
                 logger.info(" ----");
@@ -232,6 +235,42 @@ public class ParallelAwareTilingPass extends TransformPass {
                 logger.info(" ---- ");
             }
         }
+
+        reRunPasses();
+
+    }
+
+    public void reRunPasses() {
+
+        // TODO: need to change the way of doing things. First I need to
+        // run everything when I just have the tiled version in the program
+        // once the tiled version is parallelized I can add the if statement
+        // with the default version.!!!!!!!!!
+        // #WARNING:
+
+        LoopTools.addLoopName(program, true);
+
+        AnalysisPass.run(new ArrayPrivatization(program));
+
+        // TODO: ERROR ON RED
+
+        try {
+            AnalysisPass.run(new Reduction(program));
+
+        } catch (Exception e) {
+            logger.severe(e.getMessage());
+            // e.printStackTrace(logger);
+        }
+        // addCetusAnnotation(parallelLoop, true);
+
+        AnalysisPass.run(new LoopParallelizationPass(program));
+
+        String profitableOmpCopy = Driver.getOptionValue("profitable-omp");
+        Driver.setOptionValue("profitable-omp", "0");
+        CodeGenPass.run(new ompGen(program));
+
+        Driver.setOptionValue("profitable-omp", profitableOmpCopy);
+        // new ompGen(program).genOmpParallelLoops((ForLoop) parallelLoop);
 
     }
 
@@ -332,8 +371,9 @@ public class ParallelAwareTilingPass extends TransformPass {
         Expression instructionsCondition = new BinaryExpression(maxOfInstructions, BinaryOperator.COMPARE_LE,
                 new IntegerLiteral(MAX_ITERATIONS_TO_PARALLELIZE));
 
-        Expression cacheCond = new BinaryExpression(cache, BinaryOperator.COMPARE_GT, dataFullSize);
-        Expression condition = new BinaryExpression(instructionsCondition, BinaryOperator.LOGICAL_AND, cacheCond);
+        Expression cacheCond = new BinaryExpression(cache.clone(), BinaryOperator.COMPARE_GT, dataFullSize.clone());
+        Expression condition = new BinaryExpression(instructionsCondition.clone(), BinaryOperator.LOGICAL_AND,
+                cacheCond.clone());
 
         IfStatement ifStm = new IfStatement(condition, trueClause, falseClause);
 
