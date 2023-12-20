@@ -413,9 +413,6 @@ Users can run the O2G translator in the following ways:
 
 The "user_class_path" should include the class paths of Antlr and Cetus.
 
-Alternatively you can also run the OMP2GPU.sh script to create the cetus wrapper script
-inside the "bin" folder.
-
 LIMITATIONS
 -----------
 - Current O2G translator generates CUDA code compatible with NVCC version 1.0.

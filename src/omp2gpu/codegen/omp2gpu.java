@@ -1059,12 +1059,12 @@ public class omp2gpu extends CodeGenPass
 			HashSet<String> gOptionSet = gOptionMap.get(gKey);
 			for( String option : gOptionSet ) {
 				if( excludedGOption.contains(option) ) {
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(false))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(false)));
 				} else if( defaultGOption.contains(option) ) {
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(true))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(true)));
 				} else {
 					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(
-							new Boolean(false), new Boolean(true))));
+							false, true)));
 				}
 			}
 		}
@@ -1073,9 +1073,9 @@ public class omp2gpu extends CodeGenPass
 			if( !gKeySet.contains(option) ) {
 				if( defaultGOption.contains(option) ) {
 					//An option in gOptions6 set is included in the defaultGOption set.
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(true))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(true)));
 				} else {
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(false))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(false)));
 				}
 			}
 		}
@@ -1421,18 +1421,18 @@ public class omp2gpu extends CodeGenPass
 			HashSet<String> gOptionSet = gOptionMap.get(gKey);
 			for( String option : gOptionSet ) {
 				if( excludedGOption.contains(option) ) {
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(false))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(false)));
 				} else if( defaultGOption.contains(option) ) {
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(true))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(true)));
 				} else if( defaultGOptSet3.contains(option) ) {
 					////////////////////////////////////////////////////////////////////////
 					// Options in defaultGOptions3 are always applied if existing and     //
 					// unless a user explicitly excludes using excludedGOptionSet option. //
 					////////////////////////////////////////////////////////////////////////
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(true))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(true)));
 				} else {
 					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(
-							new Boolean(false), new Boolean(true))));
+							false, true)));
 				}
 			}
 		}
@@ -1441,9 +1441,9 @@ public class omp2gpu extends CodeGenPass
 			if( !gKeySet.contains(option) ) {
 				if( defaultGOption.contains(option) ) {
 					//An option in gOptions6 set is included in the defaultGOption set.
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(true))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(true)));
 				} else {
-					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(new Boolean(false))));
+					gOptMap.put(option, new ArrayList<Boolean>(Arrays.asList(false)));
 				}
 			}
 		}

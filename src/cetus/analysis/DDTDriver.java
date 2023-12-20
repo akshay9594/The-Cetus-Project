@@ -1,5 +1,6 @@
 package cetus.analysis;
 
+import cetus.analysis.Section.MAP;
 import cetus.hir.*;
 import java.util.*;
 
@@ -66,9 +67,10 @@ public class DDTDriver extends AnalysisPass {
 
         alias_analysis = new AliasAnalysis(program);
         AnalysisPass.run(alias_analysis);
-
+ 
         // Obtain a list of loops that enclose eligible nests for dependence
         // testing
+
         List<Loop> eligible_loops =
                 LoopTools.extractOutermostDependenceTestEligibleLoops(program);
         PrintTools.printlnStatus(1, pass_name,
@@ -102,6 +104,7 @@ public class DDTDriver extends AnalysisPass {
         // (DDArrayAccessInfo)
         HashMap<Symbol, ArrayList<DDArrayAccessInfo>> loopArrayAccessMap =
             new HashMap<Symbol, ArrayList<DDArrayAccessInfo>>();
+        
         // Collect loop information and array access information
         LinkedList<Loop> nest = LoopTools.calculateInnerLoopNest(loop);
         for (Loop l : nest) {
@@ -109,6 +112,7 @@ public class DDTDriver extends AnalysisPass {
         }
         // Run Data-Dependence Tests for entire nest and return the DDG if
         // everything went OK
+
         loopDDGraph = runDDTest(loop, loopArrayAccessMap, loopInfoMap);
         return loopDDGraph;
     }
@@ -156,9 +160,11 @@ public class DDTDriver extends AnalysisPass {
         // key
 
         LoopInfo loop_info = new LoopInfo(currentLoop);
+
         // Use range analysis information to remove symbolic values from loop
         // information
         RangeDomain loop_range = RangeAnalysis.query((Statement)currentLoop);
+       
         // Lower bound for loop is not constant, use range information
         if (!(LoopTools.isLowerBoundConstant(currentLoop))) {
             Expression new_lb = LoopTools.replaceSymbolicLowerBound(
@@ -173,6 +179,7 @@ public class DDTDriver extends AnalysisPass {
             // Assign new upper bound to loop in Loop Info
             loop_info.setLoopUB(new_ub);
         }
+
         // Increment for loop is not constant, use range information
         // Range information will return constant integer increment value as
         // the loop has already been considered eligible for dependence testing
@@ -197,6 +204,8 @@ public class DDTDriver extends AnalysisPass {
             Loop loop,
             HashMap<Symbol, ArrayList<DDArrayAccessInfo>> loopArrayAccessMap,
             Traversable root) {
+            
+        Set<Expression> Defined_exprs = DataFlowTools.getDefSet(loop);
         if (root instanceof Expression) {
             DFIterator<Expression> iter =
                     new DFIterator<Expression>(root, Expression.class);
@@ -206,6 +215,7 @@ public class DDTDriver extends AnalysisPass {
             while (iter.hasNext()) {
                 Expression o = iter.next();
                 if (o instanceof AssignmentExpression) {
+               
                     AssignmentExpression expr = (AssignmentExpression)o;
                     //
                     // Only the left-hand side of an AssignmentExpression
@@ -252,12 +262,27 @@ public class DDTDriver extends AnalysisPass {
                                     ((UnaryExpression)e).getExpression());
                         }
                     }
-                } else if (o instanceof ArrayAccess) {
+                } 
+                else if (o instanceof ArrayAccess) {
+                    //Handling subscripted subscripts
                     ArrayAccess acc = (ArrayAccess)o;
                     Statement stmt = acc.getStatement();
-                    DDArrayAccessInfo arrayInfo = new DDArrayAccessInfo(
+
+                    if(Defined_exprs.contains(acc)){
+                        DDArrayAccessInfo arrayInfo = new DDArrayAccessInfo(
                             acc, DDArrayAccessInfo.write_type, loop, stmt);
-                    addArrayAccess(arrayInfo, loopArrayAccessMap);
+                            addArrayAccess(arrayInfo, loopArrayAccessMap);
+                    }
+                    else{
+                        DDArrayAccessInfo arrayInfo = new DDArrayAccessInfo(
+                            acc, DDArrayAccessInfo.read_type, loop, stmt);
+                            addArrayAccess(arrayInfo, loopArrayAccessMap);
+                        }
+
+                }
+                
+                else{
+                   // System.out.println("DDTdriver pointer: " + o +"\n");
                 }
             }
         } else if (root instanceof IfStatement) {
@@ -421,6 +446,8 @@ public class DDTDriver extends AnalysisPass {
                     }
                 }
             }
+
+    
             int list1_size = arrayList.size(), list2_size = arrayList2.size();
             for (int i = 0; i < list1_size; i++) {
                 DDArrayAccessInfo expr1_info = arrayList.get(i);
@@ -486,6 +513,7 @@ public class DDTDriver extends AnalysisPass {
                             expr2_symbols.remove(index_sym);
                         }
                       
+
                         if (!(expr1_symbols.isEmpty()) ||
                             !(expr2_symbols.isEmpty())) {
                             
@@ -522,6 +550,7 @@ public class DDTDriver extends AnalysisPass {
                         // store resulting direction vector set in DVset
 
                         depExists = ddt.testAccessPair(DVset);
+
                        
                     }
                     // The expressions are conservatively aliased, we cannot
@@ -558,6 +587,8 @@ public class DDTDriver extends AnalysisPass {
                     }
                 }
             }
+
+           
         }
         PrintTools.printlnStatus(2, loopDDGraph);
         return loopDDGraph;

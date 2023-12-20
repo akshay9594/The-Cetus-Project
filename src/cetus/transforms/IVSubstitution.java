@@ -374,9 +374,9 @@ public class IVSubstitution extends TransformPass {
                 if (is_divisible == null || is_divisible == true) {
                     if (IRTools.containsBinary(stmt, BinaryOperator.DIVIDE) ||
                         IRTools.containsBinary(stmt, BinaryOperator.MODULUS)) {
-                        iv_to_divisible.put(iv, new Boolean(false));
+                        iv_to_divisible.put(iv, false);
                     } else {
-                        iv_to_divisible.put(iv, new Boolean(true));
+                        iv_to_divisible.put(iv, true);
                     }
                 }
                 // Fill iv_to_loop map.

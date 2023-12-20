@@ -485,6 +485,9 @@ public class StandardLibrary {
         add("system", Property.SIDE_EFFECT_GLOBAL);
         add("wcstombs", Property.SIDE_EFFECT_PARAMETER);
         add("wctomb", Property.SIDE_EFFECT_PARAMETER);
+        add("__builtin_bswap16");
+        add("__builtin_bswap32");
+        add("__builtin_bswap64");
         // string.h
         add("memchr");
         add("memcmp");

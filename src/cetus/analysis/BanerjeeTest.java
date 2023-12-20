@@ -136,28 +136,28 @@ public class BanerjeeTest implements DDTest {
             }
 
             if (N >= 0) {
-                bounds.add(BanerjeeTest.LB_any, new Long(
+                bounds.add(BanerjeeTest.LB_any,
                         (getNegativePart(A)-getPositivePart(B))*(U-L) +
-                        (A-B)*L));
-                bounds.add(BanerjeeTest.LB_less, new Long(
+                        (A-B)*L);
+                bounds.add(BanerjeeTest.LB_less,
                         getNegativePart(getNegativePart(A)-B)*(U-L-N) +
-                        (A-B)*L - B*N));
-                bounds.add(BanerjeeTest.LB_equal, new Long(
-                        getNegativePart(A-B)*(U-L) + (A-B)*L));
-                bounds.add(BanerjeeTest.LB_greater, new Long(
+                        (A-B)*L - B*N);
+                bounds.add(BanerjeeTest.LB_equal,
+                        getNegativePart(A-B)*(U-L) + (A-B)*L);
+                bounds.add(BanerjeeTest.LB_greater, 
                         getNegativePart(A-getPositivePart(B))*(U-L-N) +
-                        (A-B)*L + A*N));
-                bounds.add(BanerjeeTest.UB_any, new Long(
+                        (A-B)*L + A*N);
+                bounds.add(BanerjeeTest.UB_any,
                         (getPositivePart(A)-getNegativePart(B))*(U-L) +
-                        (A-B)*L));
-                bounds.add(BanerjeeTest.UB_less, new Long(
+                        (A-B)*L);
+                bounds.add(BanerjeeTest.UB_less,
                         getPositivePart(getPositivePart(A)-B)*(U-L-N) +
-                        (A-B)*L - B*N));
-                bounds.add(BanerjeeTest.UB_equal, new Long(
-                        getPositivePart(A-B)*(U-L) + (A-B)*L));
-                bounds.add(BanerjeeTest.UB_greater, new Long(
+                        (A-B)*L - B*N);
+                bounds.add(BanerjeeTest.UB_equal,
+                        getPositivePart(A-B)*(U-L) + (A-B)*L);
+                bounds.add(BanerjeeTest.UB_greater,
                         getPositivePart(A-getNegativePart(B))*(U-L-N) +
-                        (A-B)*L + A*N));
+                        (A-B)*L + A*N);
             } else { // Negative stride
                 // Switch loop bounds
                 long temp_bound = U;
@@ -165,28 +165,28 @@ public class BanerjeeTest implements DDTest {
                 L = temp_bound;
                 // Use the absolute value of the stride
                 N = ((-1)*N);
-                bounds.add(BanerjeeTest.LB_any, new Long(
+                bounds.add(BanerjeeTest.LB_any,
                         (getNegativePart(A)-getPositivePart(B))*(U-L) +
-                        (A-B)*L));
-                bounds.add(BanerjeeTest.LB_less, new Long(
+                        (A-B)*L);
+                bounds.add(BanerjeeTest.LB_less,
                         getNegativePart(A-getPositivePart(B))*(U-L-N) +
-                        (A-B)*L + A*N));
-                bounds.add(BanerjeeTest.LB_equal, new Long(
-                        getNegativePart(A-B)*(U-L) + (A-B)*L));
-                bounds.add(BanerjeeTest.LB_greater, new Long(
+                        (A-B)*L + A*N);
+                bounds.add(BanerjeeTest.LB_equal,
+                        getNegativePart(A-B)*(U-L) + (A-B)*L);
+                bounds.add(BanerjeeTest.LB_greater,
                         getNegativePart(getNegativePart(A)-B)*(U-L-N) +
-                        (A-B)*L - B*N));
-                bounds.add(BanerjeeTest.UB_any, new Long(
+                        (A-B)*L - B*N);
+                bounds.add(BanerjeeTest.UB_any,
                         (getPositivePart(A)-getNegativePart(B))*(U-L) +
-                        (A-B)*L));
-                bounds.add(BanerjeeTest.UB_less, new Long(
+                        (A-B)*L);
+                bounds.add(BanerjeeTest.UB_less,
                         getPositivePart(A-getNegativePart(B))*(U-L-N) +
-                        (A-B)*L + A*N));
-                bounds.add(BanerjeeTest.UB_equal, new Long(
-                        getPositivePart(A-B)*(U-L) + (A-B)*L));
-                bounds.add(BanerjeeTest.UB_greater, new Long(
+                        (A-B)*L + A*N);
+                bounds.add(BanerjeeTest.UB_equal,
+                        getPositivePart(A-B)*(U-L) + (A-B)*L);
+                bounds.add(BanerjeeTest.UB_greater,
                         getPositivePart(getPositivePart(A)-B)*(U-L-N) +
-                        (A-B)*L - B*N));
+                        (A-B)*L - B*N);
             }
             banerjee_bounds.put(loop, bounds);
         }        

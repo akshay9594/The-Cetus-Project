@@ -1,8 +1,10 @@
 package cetus.transforms;
 
+import cetus.analysis.DDTest;
 import cetus.analysis.LoopTools;
 import cetus.analysis.RangeAnalysis;
 import cetus.analysis.RangeDomain;
+import cetus.analysis.RangeTest;
 import cetus.exec.Driver;
 import cetus.hir.*;
 
@@ -162,7 +164,9 @@ public class ReductionTransform extends TransformPass {
         while (iter.hasNext()) {
             ForLoop loop = iter.next();
             if (loop.containsAnnotation(CetusAnnotation.class, "reduction")) {
-                if (loop.containsAnnotation(CetusAnnotation.class,"parallel")) {
+                if (loop.containsAnnotation(CetusAnnotation.class,"parallel") && 
+                       !(RangeTest.getSubSubParallelLoops().contains(loop)) ) {
+                   
                     work_list.add(loop);
                 } else {
                 // It looks more reasonable to remove reduction pragma
@@ -245,6 +249,31 @@ public class ReductionTransform extends TransformPass {
             result = transformArrayReduction(
                     loop, array_exprs, array_operators, items, mods);
         }
+        // if(result){
+        //           // Check and insert stdlib.h
+        //     TranslationUnit tu =
+        //             IRTools.getAncestorOfType(loop, TranslationUnit.class);
+        //     List<Traversable> tu_children = tu.getChildren();
+    
+        //     Boolean stdlibPresent = false;
+        //     for(Traversable ann : tu_children){
+
+        //         if(ann.toString().contains("#pragma startinclude #include <stdlib.h>")){
+        //             stdlibPresent = true;
+        //             break;
+        //         }
+
+
+        //     }
+        //     if(!stdlibPresent){
+        //           tu.addDeclarationBefore(
+        //                 (Declaration)tu_children.get(0),
+        //                 new AnnotationDeclaration(
+        //                 new CodeAnnotation("#include <stdlib.h>")));
+        //     }
+           
+        // }
+        
         if (!result) {
             PrintTools.printlnStatus(1, pass_name, LoopTools.getLoopName(loop),
                     "was not parallelized (dubious array reduction)");
@@ -425,15 +454,40 @@ public class ReductionTransform extends TransformPass {
 
         // Use copy of exprs to allow modification of exprs.
         List<Expression> exprs_copy = new LinkedList<Expression>(exprs);
-        for (int i = 0; i < exprs_copy.size(); i++) {
+        List<Expression> exprs_to_analyze = new LinkedList<>();
+
+        List<Expression> DeclaredArrays = new ArrayList<>();
+
+        for(int i =0; i< exprs_copy.size(); i++){
             Expression e = exprs_copy.get(i);
+            String op = operators.get(i);
+
+            if (!(e instanceof ArrayAccess))
+                    continue;
+
+            ArrayAccess orig_acc = (ArrayAccess)e;
+            items.get(op).remove(e);
+
+            if(!DeclaredArrays.contains(orig_acc.getArrayName())){
+                exprs_to_analyze.add(e);
+                DeclaredArrays.add(orig_acc.getArrayName());
+            }
+        }
+         //System.out.println("items: " + items +"\n");
+
+        for (int i = 0; i < exprs_to_analyze.size(); i++) {
+            Expression e = exprs_to_analyze.get(i);
             String op = operators.get(i);
             if (!(e instanceof ArrayAccess))
                 continue; // unexpected expression type.
             ArrayAccess orig_acc = (ArrayAccess)e;
+
+            // if(orig_acc.getNumIndices() > 1)
+            //     continue;
             // Computes the reduction span covered by the array access
             //   shared_span : span of array indices at each dimension
             //   private_span: size-1 span is dropped (allocation size)
+           
             List<Expression> shared_span =
                     computeReductionSpan(loop, orig_acc, variants);
             if (shared_span == null) {
@@ -442,21 +496,25 @@ public class ReductionTransform extends TransformPass {
             List<Expression> private_span =
                     new LinkedList<Expression>(shared_span);
             while (private_span.remove(one)) ;
+            
             if (private_span.contains(null)) { // span should be explicit
                 continue;
             }
             // Allocates private copy of the array.
-            Declaration private_decl =
-                    allocatePrivateCopy(loop, e, op, private_span);
+
+            Declaration private_decl =allocatePrivateCopy(loop, e, op, private_span,i);
+
             if (private_decl == null) {
                 continue;
             }
+
             Symbol private_array = (Symbol)private_decl.getChildren().get(0);
             parallel_region.addDeclaration(private_decl);
             // Prepares array accesses using the allocatd private copy for
             // the original loop, preamble, and postamble. Note that the empty
             // loop nest for preamble/postamble is created first to allocate a
             // new index variables for those loops.
+
             List<Expression> private_indices = new LinkedList<Expression>();
             ForLoop postamble =
                     createLoopNest(private_span, preg_marker, private_indices);
@@ -480,9 +538,14 @@ public class ReductionTransform extends TransformPass {
                     orig_acc_post.setIndex(j, private_index_post.clone());
                 }
             }
-            // Modifies the original loop body
-            IRTools.replaceAll(loop, orig_acc, private_acc);
-            items.get(op).remove(e);
+
+         
+               // Modifies the original loop body
+            if(orig_acc.getNumIndices() == 1)
+                IRTools.replaceAll(loop, orig_acc.getArrayName(), private_acc.getArrayName());
+            else
+                IRTools.replaceAll(loop, orig_acc, private_acc);
+            
             // Prepares and inserts a preamble (no initial values are assumed)
             ForLoop preamble = postamble.clone();
             DFIterator<CompoundStatement> iter =
@@ -494,6 +557,7 @@ public class ReductionTransform extends TransformPass {
                     new AssignmentExpression(
                     private_acc_post.clone(), AssignmentOperator.NORMAL,
                     new IntegerLiteral(op.equals("+") ? 0 : 1))));
+
             parallel_region.addStatement(preamble);
             // Prepares and inserts a postamble
             iter = new DFIterator<CompoundStatement>(postamble,
@@ -505,8 +569,18 @@ public class ReductionTransform extends TransformPass {
                     orig_acc_post, AssignmentOperator.fromString(op + "="),
                     private_acc_post)));
             critical_section.addStatement(postamble);
-            exprs.remove(e);
+           
+            for(Expression orig_exp : exprs_copy){
+                if(((ArrayAccess)orig_exp).getArrayName().equals(orig_acc.getArrayName())){
+                    exprs.remove(orig_exp);
+                }
+            }
+
+            // exprs.remove(e);
+
+            
         }
+        
         // Gives up parallelization if ARRAY_REDUCTION_COPY is forced.
         if (exprs.size() != 0 && option == ARRAY_REDUCTION_COPY) {
             for (CetusAnnotation note :
@@ -517,6 +591,7 @@ public class ReductionTransform extends TransformPass {
             }
             return false;
         }
+         
         // Prepares and inserts the enclosing parallel region if applicable
         if (exprs.size() < exprs_copy.size()) {
             parallel_region.addStatement(critical_section);
@@ -538,6 +613,9 @@ public class ReductionTransform extends TransformPass {
             }
             loop.annotate(new CetusAnnotation("for", ""));
         }
+
+        
+
         return true;
     }
 
@@ -547,7 +625,7 @@ public class ReductionTransform extends TransformPass {
      */
     @SuppressWarnings("unchecked")
     private Declaration allocatePrivateCopy(ForLoop loop, Expression e,
-            String op, List<Expression> span) {
+            String op, List<Expression> span, int num_expr) {
         Declaration ret = null;
         if (!op.equals("+") && !op.equals("*")) {
             return ret;
@@ -560,7 +638,7 @@ public class ReductionTransform extends TransformPass {
             // Discard the item since there exist "unallowed" data types.
             return ret;
         }
-        NameID private_name = SymbolTools.getNewName("reduce", loop);
+        NameID private_name = SymbolTools.getNewName("reduce"+num_expr, loop);
         if (option_dynamic_copy) {
             Identifier alloc_name = null;
             alloc_name = SymbolTools.getOrphanID("malloc");
@@ -592,19 +670,7 @@ public class ReductionTransform extends TransformPass {
             tc.setParens(false);
             vdecl.setInitializer(new Initializer(tc));
             ret = new VariableDeclaration(types, vdecl);
-            // Check and insert stdlib.h
-            TranslationUnit tu =
-                    IRTools.getAncestorOfType(loop, TranslationUnit.class);
-            Declaration first_child = (Declaration)tu.getChildren().get(0);
-            if (first_child instanceof AnnotationDeclaration &&
-                    first_child.toString().equals("#include <stdlib.h>")) {
-                ;
-            } else {
-                tu.addDeclarationBefore(
-                        first_child,
-                        new AnnotationDeclaration(
-                        new CodeAnnotation("#include <stdlib.h>")));
-            }
+          
         } else {
             ArraySpecifier aspec = new ArraySpecifier(span);
             ret = new VariableDeclaration(
@@ -725,10 +791,16 @@ public class ReductionTransform extends TransformPass {
             if (ret == null) {
                 ret = floop;
             } else {
-                ((CompoundStatement)ret.getBody()).addStatement(floop);
+               
+                //((CompoundStatement)ret.getBody()).addStatement(floop);
+                LinkedList<Loop> loops_in_nest = LoopTools.calculateInnerLoopNest(ret);
+                ForLoop innerloop = (ForLoop)loops_in_nest.get(loops_in_nest.size()-1);
+                ((CompoundStatement)innerloop.getBody()).addStatement(floop);
             }
+          
             ret_indices.add(index);
         }
+       
         return ret;
     }
 }

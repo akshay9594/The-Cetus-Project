@@ -1,0 +1,30 @@
+FC          = gfortran
+FFLAGS      = -O2 -Wall -frecursive -fno-optimize-sibling-calls -m64 -fPIC -mavx2
+FFLAGS_DRV  = -O2 -Wall -frecursive -fno-optimize-sibling-calls -m64 -fPIC -mavx2
+POPTS       = -Wall -frecursive -fno-optimize-sibling-calls -m64 -fPIC -mavx2 -pg -fno-inline
+FFLAGS_NOOPT       = -O0 -Wall -frecursive -fno-optimize-sibling-calls -m64 -fPIC -mavx2
+PNOOPT      = -Wall -frecursive -fno-optimize-sibling-calls -m64 -fPIC -mavx2 -pg -fno-inline -O0
+LDFLAGS     = -O2 -Wall -frecursive -fno-optimize-sibling-calls -m64 -fPIC -mavx2 -lm -lpthread -lgfortran
+CC          = cc
+override CFLAGS      = -O2 -DMAX_STACK_ALLOC=2048 -Wall -m64 -DF_INTERFACE_GFORT -fPIC -DSMP_SERVER -DNO_WARMUP -DMAX_CPU_NUMBER=8 -DMAX_PARALLEL_NUMBER=1 -DVERSION="0.3.10" -mavx2 -UASMNAME -UASMFNAME -UNAME -UCNAME -UCHAR_NAME -UCHAR_CNAME -DASMNAME= -DASMFNAME=_ -DNAME=_ -DCNAME= -DCHAR_NAME="_" -DCHAR_CNAME="" -DNO_AFFINITY -I. -DHAVE_LAPACK_CONFIG_H
+AR          = ar
+ARFLAGS     =  -ru
+RANLIB      = ranlib
+LAPACKLIB   = ../../libopenblas_haswellp-r0.3.10.a
+TMGLIB      = ../../../libopenblas_haswellp-r0.3.10.a
+BLASLIB     = ../../../libopenblas_haswellp-r0.3.10.a
+LAPACKELIB  = ../../../libopenblas_haswellp-r0.3.10.a
+LAPACKLIB_P = ../libopenblas_haswellp-r0.3.10_p.a
+SUFFIX      = o
+PSUFFIX     = po
+CEXTRALIB   = -lm -lpthread -lgfortran
+TIMER       = INT_ETIME
+LOADER      = gfortran -pthread
+BUILD_DEPRECATED      = 1
+LAPACKE_WITH_TMG      = 1
+SHELL = /bin/sh
+PLAT = _LINUX
+DRVOPTS  = $(NOOPT)
+#ARCHFLAGS= $(ARFLAGS) -ru
+#RANLIB   = ranlib
+

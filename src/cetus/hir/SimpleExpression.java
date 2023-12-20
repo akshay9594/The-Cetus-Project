@@ -574,9 +574,9 @@ public class SimpleExpression implements
     protected Double getValue() {
         Double ret = null;
         if (expr instanceof IntegerLiteral) {
-            return new Double(((IntegerLiteral)expr).getValue());
+            return (double)(((IntegerLiteral)expr).getValue());
         } else if (expr instanceof FloatLiteral) {
-            return new Double(((FloatLiteral)expr).getValue());
+            return ((FloatLiteral)expr).getValue();
         }
         return ret;
     }

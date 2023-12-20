@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "typeinfo": "cpp",
+        "cholmod_template.h": "c",
+        "*.tcc": "cpp",
+        "cholmod_core.h": "c",
+        "cholmod_internal.h": "c"
+    }
+}

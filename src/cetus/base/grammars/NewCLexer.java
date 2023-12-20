@@ -112,6 +112,7 @@ public void initialize()
       LITERAL_int);
   literals.put(new ANTLRHashString("_Float128", this),
      LITERAL_float);
+	 
 }
 
 LineObject lineObject = new LineObject();

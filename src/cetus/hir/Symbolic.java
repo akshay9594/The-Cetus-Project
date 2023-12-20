@@ -70,6 +70,38 @@ public class Symbolic extends SimpleExpression {
     }
 
     /**
+     * Simplifies a binary expression of the form - x*[lb:ub] and x+[lb:ub]
+     * by multiplying or adding x with lb and ub. x can be an array.
+     * @param expr_re - the input expression containing a range expression
+     * @return simplified expression
+     */
+    public static Expression simplifyBinaryRangeExpression(BinaryExpression expr_re){
+
+        List<RangeExpression> List_range_exprs = IRTools.getExpressionsOfType(expr_re, RangeExpression.class);
+        Expression simplified_lb = null;
+        Expression simplified_ub = null;
+        
+        if(List_range_exprs.size() > 1)
+            return expr_re;
+            
+        RangeExpression range_expr_opr = List_range_exprs.iterator().next();
+       
+        if(expr_re.getOperator().equals(BinaryOperator.ADD)){
+            Expression id_array = Symbolic.subtract(expr_re, range_expr_opr);
+            simplified_lb = Symbolic.add(range_expr_opr.getLB(), id_array);
+            simplified_ub = Symbolic.add(range_expr_opr.getUB(), id_array);
+        }
+        else{
+
+            Expression remainder_re_coeff = Symbolic.getExpressionCoefficient(expr_re, range_expr_opr);
+            simplified_lb = Symbolic.multiply(range_expr_opr.getLB(), remainder_re_coeff);
+            simplified_ub = Symbolic.multiply(range_expr_opr.getUB(), remainder_re_coeff);
+        }
+        
+        return new RangeExpression(simplified_lb, simplified_ub);
+    }
+
+    /**
     * Returns addition of the two expressions with simplification.
     */
     public static Expression add(Expression e1, Expression e2) {
@@ -354,6 +386,48 @@ public class Symbolic extends SimpleExpression {
             for (int i = 0; i < children.size(); i++) {
                 Expression curr = children.get(i).getExpression();
                 curr = getCoefficient(curr, id);
+                if (curr == null) {
+                    ret = null;
+                    break;
+                }
+                ret = add(ret, curr);
+            }
+        }
+        return ret;
+    }
+
+    /**
+    * Returns the symbolic coefficient of the given index array in the
+    * expression.
+    * @param e the expression to be examined.
+    * @param id the identifier.
+    * @return the symbolic coefficient of the identifier, null if the expression
+    * is too complicated.
+     */
+
+    public static Expression getExpressionCoefficient(Expression e, Expression id) {
+        SimpleExpression se = (new SimpleExpression(e)).normalize();
+        Expression expr = se.getExpression();
+        Expression ret = null;
+        if (expr.equals(id)) {
+            ret = one.clone();
+        } else if (!IRTools.containsExpression(expr, id)) {
+            ret = zero.clone();
+        } else if (se.getOP() == MUL) {
+            se.getChildren().remove(new SimpleExpression(id));
+            if (se.getChildren().size() == 1) {
+                se = se.getChild(0);
+            }
+            ret = se.getExpression();
+            if (IRTools.containsExpression(ret, id)) {
+                ret = null;
+            }
+        } else if (se.getOP() == ADD) {
+            ret = zero;
+            List<SimpleExpression> children = se.getChildren();
+            for (int i = 0; i < children.size(); i++) {
+                Expression curr = children.get(i).getExpression();
+                curr = getExpressionCoefficient(curr, id);
                 if (curr == null) {
                     ret = null;
                     break;

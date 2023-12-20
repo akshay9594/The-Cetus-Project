@@ -11,6 +11,8 @@ public final class SymbolTools {
     private SymbolTools() {
     }
 
+    private static Map<Symbol,Set<ArrayAccess>> Array_Accesses = new HashMap<>();
+    private static Map<Symbol,List<Expression>> Assigned_Values = new HashMap<>();
     /**
     * Makes links from all {@link IDExpression} objects in the program to
     * their corresponding declarators while generating warnings if there is
@@ -773,6 +775,9 @@ public final class SymbolTools {
         if (st instanceof Loop) {
             st = IRTools.getAncestorOfType(st, SymbolTable.class);
         }
+
+        Procedure ParentProc = IRTools.getParentProcedure(st);
+
         String header = (name == null) ? "_temp_" : name + "_";
         NameID id = null;
         for (int trailer = 0; id == null; ++trailer) {
@@ -781,6 +786,7 @@ public final class SymbolTools {
                 id = newid;
             }
         }
+        
         // Separate declarator/declaration specifiers.
         List declaration_specs = new ArrayList(specs.size());
         List declarator_specs = new ArrayList(specs.size());
@@ -806,6 +812,12 @@ public final class SymbolTools {
         }
         Declaration decls = new VariableDeclaration(declaration_specs, decl);
         st.addDeclaration(decls);
+
+        // if(ParentProc != null){
+        //     ParentProc.addDeclaration(decls);
+        //     System.out.println("proc:\n" + ParentProc +"\n");
+        // }
+
         return new Identifier(decl);
     }
 
@@ -1070,6 +1082,7 @@ public final class SymbolTools {
     // AccessExpression   : access symbol (list of symbols).
     // Pointer Dereference: the first symbol found in the expression tree.
     public static Symbol getSymbolOf(Expression e) {
+    
         if (e instanceof Identifier) {
             return ((Identifier)e).getSymbol();
         } else if (e instanceof ArrayAccess) {
@@ -1589,6 +1602,7 @@ public final class SymbolTools {
         addSymbols(symtab, entry);
     }
 
+   
     /**
     * Checks if the specified symbol object contains the given specifier. This
     * functionality can also be provided through
@@ -1639,5 +1653,34 @@ public final class SymbolTools {
         }
         return false;
     }
+
+    public static void CollectArrayAccesses(Symbol input_arr_sym, Set<ArrayAccess> accesses){
+        Array_Accesses.put(input_arr_sym, accesses);
+    }
+
+    public static boolean HasMultipleAccesses(Symbol input_arr){
+
+        if(Array_Accesses.get(input_arr) != null)
+            return true;
+        return false;
+    }
+
+    public static void clearAccesses(){
+        Array_Accesses.clear();
+        Assigned_Values.clear();
+    }
+
+    public static void CollectAssignedValues(Symbol input_arr_sym, List<Expression> values){
+        Assigned_Values.put(input_arr_sym, values);
+    }
+
+    public static Set<ArrayAccess> getArrayAccesses(Symbol array){
+        return Array_Accesses.get(array);
+    }
+    public static List<Expression> getAssignedValues(Symbol array){
+        return Assigned_Values.get(array);
+    }
+
+   
 
 }

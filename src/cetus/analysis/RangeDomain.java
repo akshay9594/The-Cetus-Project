@@ -58,6 +58,8 @@ public class RangeDomain implements Cloneable, Domain {
     // Set of symbolic value ranges.
     private LinkedHashMap<Symbol, Expression> ranges;
 
+    private LinkedHashMap<ArrayAccess, Expression> multi_dimen_arr_ranges;
+
     // Global comparison depth counter
     private int compare_depth;
 
@@ -75,6 +77,7 @@ public class RangeDomain implements Cloneable, Domain {
     */
     public RangeDomain() {
         ranges = new LinkedHashMap<Symbol, Expression>();
+        multi_dimen_arr_ranges = new LinkedHashMap<ArrayAccess,Expression>();
     }
 
     /**
@@ -88,6 +91,9 @@ public class RangeDomain implements Cloneable, Domain {
         if (other != null) {
             for (Symbol var : other.ranges.keySet()) {
                 setRange(var, other.getRange(var));
+            }
+            for(ArrayAccess arr : other.multi_dimen_arr_ranges.keySet()){
+                setRange(arr, other.multi_dimen_arr_ranges.get(arr));
             }
         }
     }
@@ -112,6 +118,10 @@ public class RangeDomain implements Cloneable, Domain {
         ranges.clear();
     }
 
+    public void multiDimRDclear() {
+        multi_dimen_arr_ranges.clear();
+    }
+
     /**
     * Returns the number of value ranges in the map.
     * @return  the number of value ranges.
@@ -126,11 +136,23 @@ public class RangeDomain implements Cloneable, Domain {
     * @param value  the new value range of the variable.
     */
     public void setRange(Symbol var, Expression value) {
+       
         if (isOmega(value)) {
             ranges.remove(var);
         } else {
             ranges.put(var, value);
         }
+
+    }
+
+    public void setRange(ArrayAccess var, Expression value) {
+       
+        if (isOmega(value)) {
+            multi_dimen_arr_ranges.remove(var);
+        } else {
+            multi_dimen_arr_ranges.put(var, value);
+        }
+
     }
 
     /**
@@ -142,12 +164,19 @@ public class RangeDomain implements Cloneable, Domain {
         return ranges.get(var);
     }
 
+    public Expression getRange(ArrayAccess var) {
+        return multi_dimen_arr_ranges.get(var);
+    }
+
     /**
     * Removes the value range for the specified variable.
     * @param var    the variable whose value range is being removed.
     */
     public void removeRange(Symbol var) {
         ranges.remove(var);
+    }
+    public void removeMultiDimRange(ArrayAccess var) {
+        multi_dimen_arr_ranges.remove(var);
     }
 
     /**
@@ -184,6 +213,10 @@ public class RangeDomain implements Cloneable, Domain {
         return ranges.keySet();
     }
 
+    public Set<ArrayAccess> getMultiDimArrays() {
+        return multi_dimen_arr_ranges.keySet();
+    }
+
     /**
     * Returns string for this range domain.
     * @return string representation of this object.
@@ -193,9 +226,18 @@ public class RangeDomain implements Cloneable, Domain {
         StringBuilder sb = new StringBuilder(80);
         sb.append("[");
         Map<String, Expression> ordered = new TreeMap<String, Expression>();
+        
+      
         for (Symbol var : ranges.keySet()) {
             ordered.put(var.getSymbolName(), getRange(var));
         }
+
+        if(!multi_dimen_arr_ranges.isEmpty()){
+            for(ArrayAccess arr: multi_dimen_arr_ranges.keySet()){
+                ordered.put(arr.toString(), getRange(arr));
+            }
+        }
+        
         Iterator<String> var_iter = ordered.keySet().iterator();
         if (var_iter.hasNext()) {
             String var_name = var_iter.next();
@@ -703,8 +745,8 @@ public class RangeDomain implements Cloneable, Domain {
                     continue;
                 long value = ((IntegerLiteral)o).getValue();
                 if (min == null) {
-                    min = new Long(value);
-                    max = new Long(value);
+                    min = value;
+                    max = value;
                 } else {
                     if (value < min)
                         min = value;
@@ -952,11 +994,13 @@ public class RangeDomain implements Cloneable, Domain {
         return ret;
     }
 
+
     // Remove any ranges with a self cycle, e.g., a=[0,a]
     protected void removeRecurrence() {
         for (Symbol var : new LinkedHashSet<Symbol>(ranges.keySet())) {
-            if (IRTools.containsSymbol(getRange(var), var))
+            if (IRTools.containsSymbol(getRange(var), var)){
                 removeRange(var);
+            }
         }
     }
 
@@ -1722,6 +1766,7 @@ public class RangeDomain implements Cloneable, Domain {
         }
         // Copy explicit intersections first
         for (Symbol var : other.ranges.keySet()) {
+        
             if (getRange(var) == null) {
                 setRange(var, other.getRange(var).clone());
             }
@@ -1754,15 +1799,26 @@ public class RangeDomain implements Cloneable, Domain {
             before = this.clone();
         }
         //String dmsg = tag + this + " (v) " + other;
+       
+        Expression result = null;
         for (Symbol var : new LinkedHashSet<Symbol>(ranges.keySet())) {
-            Expression result = unionRanges(getRange(var), this,
+           
+            //System.out.println("var: " + var+ ",curr range: " + getRange(var) + ",other: " + other.getRange(var) +"\n");
+            if(!getRange(var).toString().equals("\"lambda\""))
+                result = unionRanges(getRange(var), this,
                                             other.getRange(var), other);
+            else { 
+                result = other.getRange(var);
+                
+            }
+            
             if (isOmega(result)) {
                 removeRange(var);
             } else {
                 setRange(var, result);
             }
         }
+       
         PrintTools.printlnStatus(2, tag, before, "(v)", other, "=", this);
     }
 
@@ -1795,6 +1851,7 @@ public class RangeDomain implements Cloneable, Domain {
             }
         }
         affected.addAll(vars);
+        
         for (Symbol var : affected) {
             Expression result =
                 widenRange(other.getRange(var), getRange(var), this);
@@ -1979,6 +2036,7 @@ public class RangeDomain implements Cloneable, Domain {
         //                                = max(b,d)           (ACCURACY=2)
         //
         // Check if either e1/e2 is omega range, empty range, or e1==e2.
+       
         if (isOmega(e1) || isOmega(e2))
             return null;
         else if (isEmpty(e1))
@@ -2383,4 +2441,5 @@ public class RangeDomain implements Cloneable, Domain {
         ret.add(e2);
         return ret;
     }
+
 }

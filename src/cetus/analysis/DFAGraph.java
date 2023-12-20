@@ -252,7 +252,7 @@ public class DFAGraph {
             id.put(nodes.get(i), new int[2]);
         }
         ArrayList ret = new ArrayList();
-        Integer index = new Integer(1);
+        Integer index = 1;
         doSCC(root, ret, index, id);
         return ret;
     }
@@ -294,17 +294,17 @@ public class DFAGraph {
      * basically * DFS with reverse post numbering.
      */
     private void topSort(DFANode node, int order[]) {
-        node.putData("dfs-visited", new Boolean(true));
+        node.putData("dfs-visited", true);
         for (DFANode succ : node.getSuccs()) {
             if (succ.getData("dfs-visited") == null) {
                 topSort(succ, order);
             }
         }
-        node.putData("top-order", new Integer(order[0]--));
+        node.putData("top-order", order[0]--);
     }
 
     private void topSortLoopCentric(DFANode node, int order[]) {
-        node.putData("dfs-visited", new Boolean(true));
+        node.putData("dfs-visited", true);
         LinkedList<DFANode> succ_priority_order = new LinkedList<DFANode>();
         for (DFANode succ : node.getSuccs()) {
             Object tag = succ.getData("tag");
@@ -320,7 +320,7 @@ public class DFAGraph {
                 topSortLoopCentric(succ, order);
             }
         }
-        node.putData("top-order", new Integer(order[0]--));    
+        node.putData("top-order", order[0]--);    
     }
         
     /**
@@ -342,7 +342,7 @@ public class DFAGraph {
         for (int i = 0; i < nodes_size; i++) {
             DFANode node = nodes.get(i);
             if (node.getData("dfs-visited") == null) {
-                node.putData("top-order", new Integer(-1));
+                node.putData("top-order", -1);
                 // -1 for unreachable nodes.
             } else {
                 node.removeData("dfs-visited");
@@ -373,7 +373,7 @@ public class DFAGraph {
         for (int i = 0; i < nodes_size; i++) {
             DFANode node = nodes.get(i);
             if (node.getData("dfs-visited") == null) {
-                node.putData("top-order", new Integer(-1));
+                node.putData("top-order", -1);
                 // -1 for unreachable nodes.
             } else {
                 node.removeData("dfs-visited");

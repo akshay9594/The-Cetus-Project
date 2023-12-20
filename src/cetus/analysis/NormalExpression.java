@@ -963,7 +963,7 @@ public class NormalExpression implements Comparable,
 
     // Returns double value of a literal expression
     private Double toDouble() {
-        return new Double(list.get(0).toString());
+        return Double.parseDouble(list.get(0).toString());
     }
 
     // Sorts the child expressions if reordering is safe using the comparator
@@ -1352,8 +1352,8 @@ public class NormalExpression implements Comparable,
         BinaryOperator op = e.getOperator();
         Expression ret = e;
         if (lhs instanceof IntegerLiteral && rhs instanceof IntegerLiteral) {
-            long lhs_value = (new Long(lhs.toString())).longValue();
-            long rhs_value = (new Long(rhs.toString())).longValue();
+            long lhs_value = Long.parseLong(lhs.toString());
+            long rhs_value = Long.parseLong(rhs.toString());
             if (op == BinaryOperator.BITWISE_AND) {
                 ret = new IntegerLiteral(lhs_value & rhs_value);
             } else if (op == BinaryOperator.BITWISE_EXCLUSIVE_OR) {
@@ -1395,12 +1395,12 @@ public class NormalExpression implements Comparable,
         // Separate literals and symbolic expressions.
         for (Object child : unique_children) {
             if (child instanceof IntegerLiteral) {
-                literal_map.put(new Long(child.toString()), child);
+                literal_map.put(Long.parseLong(child.toString()), child);
             } else if (child instanceof InfExpression) {
                 //long inf = ((InfExpression)child).isMinus()?
                 long inf = (((InfExpression)child).sign() < 0) ?
                         Long.MIN_VALUE : Long.MAX_VALUE;
-                literal_map.put(new Long(inf), child);
+                literal_map.put(inf, child);
             } else {
                 ret.add((Expression)child);
             }
@@ -1653,9 +1653,9 @@ public class NormalExpression implements Comparable,
         Expression e1 = ret.get(0).getExpression(),
                    e2 = ret.get(1).getExpression();
         Integer num1 = (e1 instanceof IntegerLiteral) ?
-                        new Integer(e1.toString()) : null,
+                        Integer.parseInt(e1.toString()) : null,
                 num2 = (e2 instanceof IntegerLiteral) ?
-                        new Integer(e2.toString()) : null;
+                        Integer.parseInt(e2.toString()) : null;
         // Leave it with that if no change is required
         if (num1 == null && num2 == null || num2 != null &&
             num2.intValue() == 0) {
@@ -1815,9 +1815,9 @@ public class NormalExpression implements Comparable,
         ret.add(ne2);
         Expression e1 = ne1.getExpression(), e2 = ne2.getExpression();
         Integer num1 = (e1 instanceof IntegerLiteral) ?
-                        new Integer(e1.toString()) : null,
+                        Integer.parseInt(e1.toString()) : null,
                 num2 = (e2 instanceof IntegerLiteral) ?
-                        new Integer(e2.toString()) : null;
+                        Integer.parseInt(e2.toString()) : null;
         // Float numbers
         if (e1 instanceof FloatLiteral || e2 instanceof FloatLiteral) {
             return ret;

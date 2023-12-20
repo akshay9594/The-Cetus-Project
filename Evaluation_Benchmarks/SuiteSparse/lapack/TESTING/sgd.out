@@ -1,0 +1,161 @@
+
+ Tests of the Generalized Nonsymmetric Eigenvalue Problem Driver SGGES
+
+ LAPACK VERSION 3.9.0
+
+ The following parameter values will be used:
+    M:         2     6    10    12    20
+    N:         2     6    10    12    20
+    NB:        1
+    NBMIN:     1
+    NX:        1
+    NS:        2
+    MAXB:      1
+
+ Relative machine underflow is taken to be    0.117549E-37
+ Relative machine overflow  is taken to be    0.340282E+39
+ Relative machine precision is taken to be    0.596046E-07
+
+ Routines pass computational tests if test ratio is less than   10.00
+
+
+ SGS routines passed the tests of the error exits (108 tests done)
+
+ All tests for SGS drivers  passed the threshold (   1560 tests run)
+
+ All tests for SGS drivers  passed the threshold (   1560 tests run)
+
+ -----------------------------------------------------------------------
+
+ Tests of the Generalized Nonsymmetric Eigenvalue Problem Driver SGGEV
+
+ LAPACK VERSION 3.9.0
+
+ The following parameter values will be used:
+    M:         2     6     8    10    15    20
+    N:         2     6     8    10    15    20
+    NB:        1
+    NBMIN:     1
+    NX:        1
+    NS:        2
+    MAXB:      1
+
+ Relative machine underflow is taken to be    0.117549E-37
+ Relative machine overflow  is taken to be    0.340282E+39
+ Relative machine precision is taken to be    0.596046E-07
+
+ Routines pass computational tests if test ratio is less than   10.00
+
+
+ SGV routines passed the tests of the error exits (108 tests done)
+
+ All tests for SGV drivers  passed the threshold (   1092 tests run)
+
+ All tests for SGV drivers  passed the threshold (   1092 tests run)
+
+ -----------------------------------------------------------------------
+
+ Tests of the Generalized Nonsymmetric Eigenvalue Problem Expert Driver SGGESX
+
+ LAPACK VERSION 3.9.0
+
+ The following parameter values will be used:
+    N:         2
+    NB:        1
+    NBMIN:     1
+    NX:        1
+    NS:        2
+    MAXB:      1
+
+ Relative machine underflow is taken to be    0.117549E-37
+ Relative machine overflow  is taken to be    0.340282E+39
+ Relative machine precision is taken to be    0.596046E-07
+
+ Routines pass computational tests if test ratio is less than   10.00
+
+
+ SGX routines passed the tests of the error exits (108 tests done)
+
+ All tests for SGX drivers  passed the threshold (    150 tests run)
+
+ -----------------------------------------------------------------------
+
+ Tests of the Generalized Nonsymmetric Eigenvalue Problem Expert Driver SGGESX
+
+ LAPACK VERSION 3.9.0
+
+ The following parameter values will be used:
+    N:         0
+    NB:        1
+    NBMIN:     1
+    NX:        1
+    NS:        2
+    MAXB:      1
+
+ Relative machine underflow is taken to be    0.117549E-37
+ Relative machine overflow  is taken to be    0.340282E+39
+ Relative machine precision is taken to be    0.596046E-07
+
+ Routines pass computational tests if test ratio is less than   10.00
+
+
+ SGX routines passed the tests of the error exits (108 tests done)
+
+ All tests for SGX drivers  passed the threshold (     20 tests run)
+
+ -----------------------------------------------------------------------
+
+ Tests of the Generalized Nonsymmetric Eigenvalue Problem Expert Driver SGGEVX
+
+ LAPACK VERSION 3.9.0
+
+ The following parameter values will be used:
+    N:         5
+    NB:        1
+    NBMIN:     1
+    NX:        1
+    NS:        2
+    MAXB:      1
+
+ Relative machine underflow is taken to be    0.117549E-37
+ Relative machine overflow  is taken to be    0.340282E+39
+ Relative machine precision is taken to be    0.596046E-07
+
+ Routines pass computational tests if test ratio is less than   10.00
+
+
+ SXV routines passed the tests of the error exits (108 tests done)
+
+ All tests for SXV drivers  passed the threshold (   5000 tests run)
+
+ -----------------------------------------------------------------------
+
+ Tests of the Generalized Nonsymmetric Eigenvalue Problem Expert Driver SGGEVX
+
+ LAPACK VERSION 3.9.0
+
+ The following parameter values will be used:
+    N:         0
+    NB:        1
+    NBMIN:     1
+    NX:        1
+    NS:        2
+    MAXB:      1
+
+ Relative machine underflow is taken to be    0.117549E-37
+ Relative machine overflow  is taken to be    0.340282E+39
+ Relative machine precision is taken to be    0.596046E-07
+
+ Routines pass computational tests if test ratio is less than   10.00
+
+
+ SXV routines passed the tests of the error exits (108 tests done)
+
+ All tests for SXV drivers  passed the threshold (      8 tests run)
+
+ -----------------------------------------------------------------------
+
+
+ End of tests
+ Total time used =         0.11 seconds
+

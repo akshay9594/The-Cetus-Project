@@ -33,8 +33,6 @@ public abstract class TransformPass {
         disable_invalidation = false;
     }
 
-    public static boolean loop_interchange_pass = false; 
-
     /** Returns the name of the transform pass */
     public abstract String getPassName();
 
@@ -45,12 +43,6 @@ public abstract class TransformPass {
     public static void run(TransformPass pass) {
         double timer = Tools.getTime();
         PrintTools.println(pass.getPassName() + " begin", 0);
-
-        if(pass.getPassName().equals("[LoopInterchange]")){
-            loop_interchange_pass = true;
-            LoopsNottoParallelize = new ArrayList<ForLoop>();
-        }
-
 
         pass.start();
         PrintTools.println(pass.getPassName() + " end in " +

@@ -123,7 +123,6 @@ public class DDTestWrapper {
             int dimensions = access1.getNumIndices();
             subscriptPairs = new ArrayList<SubscriptPair>(dimensions);
 
-            
             for (int dim = 0; dim < dimensions; dim++) {
 
                 SubscriptPair pair = new SubscriptPair(
@@ -133,6 +132,7 @@ public class DDTestWrapper {
                         stmt2,
                         loop_nest,
                         loop_info);
+
                 subscriptPairs.add(dim, pair);
 
             }
@@ -269,12 +269,12 @@ public class DDTestWrapper {
                                   List<DependenceVector> dvs) {
         boolean ret = false;
         List<DependenceVector> dv = new ArrayList<DependenceVector>();
+
         for (int i = 0; i < partition.size(); i++) {
             SubscriptPair pair = partition.get(i);
 
             List<DependenceVector> dv2 = new ArrayList<DependenceVector>();
             int complexity = pair.getComplexity();
-
             if (complexity == 0) {
                 PrintTools.printlnStatus(2, "** calling testZIV");
                 ret |= testZIV(pair, dv2);
@@ -382,7 +382,6 @@ public class DDTestWrapper {
         DDTest ddtest = null;
         ArrayList<DependenceVector> new_dv;
 
-
         if (ddtest_type == DDTEST_OMEGA) {
             // ERROR, how did we get here?
             PrintTools.println("Error in data dependence testing", 0);
@@ -422,11 +421,10 @@ public class DDTestWrapper {
         //create vector dv=(*,...,*);
         DependenceVector dv = new DependenceVector(loop_nest); 
         // test dependence vector tree starting at (*,*,*,....) vector
-
+        
         if (ddtest.testDependence(dv)) {
             // Test entire tree only if dependence exists in the any(*)
             // direction
-
             testTree(ddtest, dv, 0, dv_list);
         }
         return dv_list;
@@ -477,7 +475,7 @@ public class DDTestWrapper {
         for (int dir = DependenceVector.less;
                 dir <= DependenceVector.greater; dir++) {
             Loop loop = loop_nest.get(pos);
-
+            
             dv.setDirection(loop, dir);
             if (ddtest.testDependence(dv)) {
                 DependenceVector dv_clone = new DependenceVector(dv);
@@ -498,6 +496,7 @@ public class DDTestWrapper {
                 }
             }
             dv.setDirection(loop, DependenceVector.any);
+            
         }
 
         return;

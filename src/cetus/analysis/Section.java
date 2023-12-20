@@ -528,6 +528,7 @@ public class Section extends ArrayList<Section.ELEMENT> implements Cloneable {
     private static Expression
             unionBound(Expression e1, Expression e2, RangeDomain rd) {
         Expression intersected = intersectBound(e1, e2, rd);
+
         //System.out.println("intersected = "+intersected);
         if (intersected == null) {  // Either it has no intersection or unknown.
             return null;            // Merging i,i+1 => i:i+1 is disregarded
@@ -536,6 +537,7 @@ public class Section extends ArrayList<Section.ELEMENT> implements Cloneable {
         RangeExpression re2 = RangeExpression.toRange(e2);
         Expression lb = null, ub = null;
 
+       
         //If the RangeExpression's stride is an Expression, assume it stride is 1
         if(!(re1.getStride() instanceof IntegerLiteral)){
             re1 = (RangeExpression) re1.clone();
@@ -545,7 +547,17 @@ public class Section extends ArrayList<Section.ELEMENT> implements Cloneable {
             re2 = (RangeExpression) re2.clone();
             re2.setStride(new IntegerLiteral(1));
         }
-
+        if(e1.equals(e2)){
+            Expression range = rd.getRange(SymbolTools.getSymbolOf(e2));
+            if(range!=null & range instanceof ArrayAccess){
+                ArrayAccess arr = ((ArrayAccess)range);
+                if(rd.getRange(SymbolTools.getSymbolOf(arr)) !=null){
+                    re1 = (RangeExpression)rd.getRange(SymbolTools.getSymbolOf(arr));
+                    re2 = re1;
+                }
+            }
+        }
+        
         //if((re1.getStride() instanceof IntegerLiteral) &&
         //        (re2.getStride() instanceof IntegerLiteral) &&
         //        (((IntegerLiteral)re1.getStride()).getValue() == 1) &&
@@ -961,6 +973,7 @@ public class Section extends ArrayList<Section.ELEMENT> implements Cloneable {
             MAP ret = new MAP();
             Set<Symbol> vars = new HashSet<Symbol>(keySet());
             vars.addAll(other.keySet());
+    
             for (Symbol var : vars) {
                 Section s1 = this.get(var);
                 Section s2 = other.get(var);
@@ -968,7 +981,12 @@ public class Section extends ArrayList<Section.ELEMENT> implements Cloneable {
                     continue;
                 }
                 if (s1 == null) {
-                    ret.put(var, s2.clone());
+                    //Following line added to handle array tmp in subscripted subscript loop from UA 
+                    Section unioned = s2.unionWith(s2, rd);
+                    if(unioned != null && !(s2.equals(unioned)))
+                        ret.put(var, unioned);
+                    else
+                        ret.put(var, s2.clone());
                 } else if (s2 == null) {
                     ret.put(var, s1.clone());
                 } else if (s1.isScalar() && s2.isScalar()) {

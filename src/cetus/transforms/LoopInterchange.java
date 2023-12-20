@@ -71,7 +71,8 @@ public class LoopInterchange extends TransformPass {
                 loopMap.put(l, "NegativeIncrement");
                 outer_loops.remove(l);
             }
-
+            CetusAnnotation annotation = l.getAnnotation(CetusAnnotation.class, "private");
+            l.getAnnotations().remove(annotation);
         }
 
         for (i = outer_loops.size() - 1; i >= 0; i--) {
@@ -170,8 +171,16 @@ public class LoopInterchange extends TransformPass {
 
         }
 
-        if (loopMap.isEmpty())
+
+        if(loopMap.isEmpty())
             System.out.println("[LoopInterchange] No loops have been interchanged\n");
+
+        //Running Array privatization to get the correct cetus private pragma for the loop
+
+        AnalysisPass.run( new DDTDriver(program));
+
+        AnalysisPass.run(new ArrayPrivatization(program));
+
 
         return;
     }
@@ -1386,3 +1395,5 @@ public class LoopInterchange extends TransformPass {
     }
 
 }
+
+

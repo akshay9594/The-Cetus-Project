@@ -32,4 +32,6 @@ public interface DDTest {
 	 * @return the collected list of loops.
 	 */
 	LinkedList<Loop> getCommonEnclosingLoops();
+	
+
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 cetus_output
 /resources/examples/**.exe
 /out
@@ -7,3 +8,14 @@ cetus_output
 bin/**
 class/**
 lib/cetus.jar
+=======
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/tasks.json
+bin/
+cetus_output/
+class/
+cppinput**
+lib/cetus.jar
+out/
+>>>>>>> SubSub_Analysis

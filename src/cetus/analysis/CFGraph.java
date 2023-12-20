@@ -351,6 +351,11 @@ public class CFGraph extends DFAGraph {
         do {
             node = getNode(i++);
             Object o = getIR(node);
+            // if(node.getData("ir") != null)
+            // System.out.println(" node: " + node.getData("ir") +"\n");
+            // else
+            // System.out.println(" node: " + node.getData("tag")+"\n");
+
             if (o instanceof Traversable &&
                 IRTools.containsClass((Traversable)o, FunctionCall.class)) {
                 continue;
@@ -411,6 +416,8 @@ public class CFGraph extends DFAGraph {
         } while (last != node);
     }
 
+    
+
     /**
     * Builds a control flow graph for a traversable object.
     */
@@ -427,6 +434,7 @@ public class CFGraph extends DFAGraph {
         } else if (t instanceof DoLoop) {
             ret = buildDoLoop((DoLoop)t);
         } else if (t instanceof ForLoop) {
+           // System.out.println("Building for loop graph");
             ret = buildForLoop((ForLoop)t);
         } else if (t instanceof IfStatement) {
             ret = buildIf((IfStatement)t);
@@ -934,6 +942,7 @@ public class CFGraph extends DFAGraph {
     // graph.
     protected DFAGraph expandExpression(DFANode node) {
         Object o = node.getData("ir");
+
         // Other types of statements does not carry side effects.
         if (!(o instanceof Expression || o instanceof ExpressionStatement)) {
             return null;
@@ -942,6 +951,7 @@ public class CFGraph extends DFAGraph {
         if (isUnsafeExpansion((Traversable)o)) {
             return null;
         }
+
         // Build a compound statement for this node.
         CompoundStatement stmts = new CompoundStatement();
         Traversable t = null;
@@ -950,6 +960,7 @@ public class CFGraph extends DFAGraph {
         } else {
             t = ((Statement)o).clone();
         }
+       // System.out.println("o: " + o + ",t: " + t +"\n");
         stmts.addStatement((Statement)t);
         Class before = t.getChildren().get(0).getClass();
         expandExpression(stmts, t);

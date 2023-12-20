@@ -185,6 +185,7 @@ public class LoopNormalization extends TransformPass {
     * </pre>
     */
     private void normalizeLoop(ForLoop loop) {
+    
         List<Expression> space = collectIterationSpace(loop);
         // space[0] => loop index
         // space[1] => initial value
@@ -203,16 +204,23 @@ public class LoopNormalization extends TransformPass {
                     LoopTools.toControlString(loop));
             return;
         }
+
+      
         // Attach comment.
         CommentAnnotation comment = new CommentAnnotation("Normalized Loop");
         comment.setOneLiner(true);
         loop.annotateBefore(comment);
+
+        CompoundStatement parent1 = IRTools.getAncestorOfType(
+                            loop, CompoundStatement.class);
+                    
         // Modifies the iteration space.
         Identifier index = SymbolTools.getTemp(
-                loop.getParent(), Specifier.INT, space.get(0).toString());
+                loop.getProcedure().getBody(), Specifier.INT, space.get(0).toString());
         Statement init_stmt = new ExpressionStatement(
                 new AssignmentExpression(
-                        index, AssignmentOperator.NORMAL, zero.clone()));
+                        index, AssignmentOperator.NORMAL, zero.clone()));        
+
         Expression condition = Symbolic.subtract(space.get(2), space.get(1));
         condition = Symbolic.add(condition, space.get(3));
         condition = Symbolic.divide(condition, space.get(3));
@@ -224,6 +232,7 @@ public class LoopNormalization extends TransformPass {
         loop.setInitialStatement(init_stmt);
         loop.setCondition(condition);
         loop.setStep(step);
+     
         // Modifies the loop body by substituting new expression for the
         // original index.
         Expression subst = Symbolic.multiply(index, space.get(3));
@@ -236,6 +245,8 @@ public class LoopNormalization extends TransformPass {
                         space.get(0).clone(), AssignmentOperator.NORMAL,subst));
         CompoundStatement parent = IRTools.getAncestorOfType(
                 loop, CompoundStatement.class);
+    
+        
         parent.addStatementAfter(loop, last_assign);
     }
 }

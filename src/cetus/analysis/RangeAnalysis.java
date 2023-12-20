@@ -1,5 +1,6 @@
 package cetus.analysis;
 
+import cetus.application.DataFlowAnalysis;
 import cetus.exec.Driver;
 import cetus.hir.*;
 
@@ -182,6 +183,7 @@ public class RangeAnalysis extends AnalysisPass
             Procedure procedure = iter.next();
             Map<Statement, RangeDomain> ranges = getRanges(procedure);
             addAssertions(procedure, ranges);
+            
             // Test codes for tools with range information.
             //testSubstituteForward((Procedure)o, range_map);
         }
@@ -551,7 +553,7 @@ public class RangeAnalysis extends AnalysisPass
             if (ret != null) {
                 if (debug >= 2) {
                     System.err.println(
-                            toPrettyRanges(symtab, ret, new Integer(0)));
+                            toPrettyRanges(symtab, ret, 0));
                 }
                 return ret;
             }
@@ -569,9 +571,9 @@ public class RangeAnalysis extends AnalysisPass
         if (debug >= 3) {
             System.err.println(cfg.toDot("top-order,ranges,ir,tag", 3));
         }
-
+      
         ret = getRangeMap(symtab, cfg);
-
+    
         // Inserts an empty range if there is no associated range domain.
         RangeDomain empty = new RangeDomain();
         DFIterator<Statement> iter =
@@ -582,11 +584,15 @@ public class RangeAnalysis extends AnalysisPass
                 ret.put(stmt, empty);
             }
         }
+
+      
         if (debug >= 2) {
-            System.err.println(toPrettyRanges(symtab, ret, new Integer(0)));
+            System.err.println(toPrettyRanges(symtab, ret, 0));
         }
         return ret;
     }
+
+    
 
     /**
     * Returns the fine-grain result of range analysis with the given
@@ -632,7 +638,7 @@ public class RangeAnalysis extends AnalysisPass
             }
         }
         if (debug >= 2) {
-            System.err.println(toPrettyRanges(proc, ret, new Integer(0)));
+            System.err.println(toPrettyRanges(proc, ret, 0));
         }
         return ret;
     }
@@ -648,9 +654,9 @@ public class RangeAnalysis extends AnalysisPass
         CFGraph cfg = new CFGraph(stmt);
         cfg.normalize();
         cfg.topologicalSort(cfg.getNodeWith("stmt", "ENTRY"));
-        DFANode last = cfg.getNodeWith("top-order", new Integer(cfg.size()-1));
+        DFANode last = cfg.getNodeWith("top-order", cfg.size()-1);
         DFANode exit = new DFANode("stmt", "EXIT");
-        exit.putData("top-order", new Integer(cfg.size()));
+        exit.putData("top-order", cfg.size());
         cfg.addEdge(last, exit);
         // Exit node is necessary because Range Analysis computes only in-range.
         // Maybe CFGraph needs flow exit always but it breaks the range
@@ -689,7 +695,7 @@ public class RangeAnalysis extends AnalysisPass
         int my_order = (Integer)node.getData("top-order");
         for (DFANode pred : node.getPreds()) {
             if (my_order < (Integer)pred.getData("top-order")) {
-                node.putData("has-backedge", new Boolean(true));
+                node.putData("has-backedge", true);
                 break;
             }
         }
@@ -704,6 +710,7 @@ public class RangeAnalysis extends AnalysisPass
             if (entry.getData("ranges") == null)
                 entry.putData("ranges", new RangeDomain());
             work_list.put((Integer) entry.getData("top-order"), entry);
+           
         } else {
         // Add the widened nodes to the work list for narrowing phase.
             for (int i = 0; i < g.size(); ++i) {
@@ -719,12 +726,12 @@ public class RangeAnalysis extends AnalysisPass
             Integer node_num = work_list.firstKey();
             DFANode node = work_list.remove(node_num);
             // Record number of iterations for each node.
-            Integer visits = node.getData("num-visits");
+            Integer visits = node.getData("num-visits");     
             if (visits == null) {
-                node.putData("num-visits", new Integer(1));
+                node.putData("num-visits", 1);
                 setBackedge(node);
             } else {
-                node.putData("num-visits", new Integer(visits + 1));
+                node.putData("num-visits", visits + 1);
             }
             PrintTools.printlnStatus(3, tag, "Visited Node#", node_num);
             PrintTools.printlnStatus(3, tag, "  IR =",CFGraph.getIR(node));
@@ -752,9 +759,9 @@ public class RangeAnalysis extends AnalysisPass
                     Set<Symbol> widener = node.getData("loop-variants");
                     // Selective widening only with loop-variant symbols.
                     if (widener != null && widener.size() > 0) {
-                        curr_ranges.widenAffectedRanges(prev_ranges, widener);
+                        curr_ranges.widenAffectedRanges(prev_ranges, widener);    
                     } else {
-                        curr_ranges.widenRanges(prev_ranges);
+                        curr_ranges.widenRanges(prev_ranges); 
                     }
                 } else {
                     curr_ranges.narrowRanges(prev_ranges);
@@ -770,6 +777,7 @@ public class RangeAnalysis extends AnalysisPass
                 // Examine "constraint" data for tighter ranges.
                 // Use of constraint is safe only if there is one predecessor.
                 if (curr_ranges != null && node.getPreds().size() == 1) {
+
                     curr_ranges.intersectRanges(
                             extractRangesFromConstraint(curr_ranges, node));
                 }
@@ -781,13 +789,13 @@ public class RangeAnalysis extends AnalysisPass
                     // Keep the IPA result for the entry node.
                     node.putData("ranges", curr_ranges);
                 }
-                // Apply state changes due to the execution of the node.
+                // Apply state changes due to the execution of the node.      
                 updateRanges(node);
                 // Clean up after exiting a scope.
                 exitScope(node);
                 // Process successors.
                 for (DFANode succ : node.getSuccs()) {
-                    // Do not add successors for infeasible paths
+                    // Do not add successors for infeasible paths 
                     if (succ.getPredData(node) != null) {
                         work_list.put((Integer)succ.getData("top-order"), succ);
                         PrintTools.printlnStatus(3, tag, "  OUT#",
@@ -800,7 +808,7 @@ public class RangeAnalysis extends AnalysisPass
     }
 
     // Add intialized values from the declarations.
-    private static void enterScope(DFANode node, RangeDomain ranges) {
+    public static void enterScope(DFANode node, RangeDomain ranges) {
         SymbolTable st = node.getData("symbol-entry");
         if (st == null) {
             return;
@@ -831,10 +839,11 @@ public class RangeAnalysis extends AnalysisPass
                 ranges.setRange(var, new_range);
             }
         }
+       
     }
 
     // Clean up variables that are not present in the scope.
-    private static void exitScope(DFANode node) {
+    public static void exitScope(DFANode node) {
         List<SymbolTable> symbol_exits = node.getData("symbol-exit");
         if (symbol_exits != null) {
             // symbol-exit assumed to be list of symbol tables
@@ -903,7 +912,7 @@ public class RangeAnalysis extends AnalysisPass
     }
 
     // Methods for updating edges to successors.
-    private static void updateRanges(DFANode node) {
+    public static void updateRanges(DFANode node) {
         Object o = CFGraph.getIR(node);
         if (o instanceof ExpressionStatement) {
             o = ((ExpressionStatement)o).getExpression();
@@ -911,6 +920,7 @@ public class RangeAnalysis extends AnalysisPass
         // Side-effect node
         if (o instanceof Traversable) {
             Traversable t = (Traversable)o;
+         
             if (IRTools.containsClass(t, VaArgExpression.class)) {
                 updateUnsafeNode(node);
                 return;
@@ -919,11 +929,14 @@ public class RangeAnalysis extends AnalysisPass
                 if (ip_node == null) {
                     updateFunctionCall(node);
                 } else {
+                   
                     updateFunctionCallWithIPA(node);
                 }
                 return;
             }
+           
         }
+
         // Assignments
         if (o instanceof AssignmentExpression) {
             updateAssignment(node, (AssignmentExpression)o);
@@ -933,7 +946,8 @@ public class RangeAnalysis extends AnalysisPass
         } else if (o instanceof SwitchStatement) {
             // Switch statements
             updateSwitch(node, (SwitchStatement) o);
-        } else {
+        } 
+        else {
             // Side-effect-free node
             updateSafeNode(node);
         }
@@ -1034,11 +1048,14 @@ public class RangeAnalysis extends AnalysisPass
     // Update assignments.
     private static void
             updateAssignment(DFANode node, AssignmentExpression e) {
+
         // Compute invariant information and cache it.
         if ((Integer)node.getData("num-visits") < 2) {
+
             Expression to = e.getLHS();
             Expression from = Symbolic.simplify(e.getRHS());
             String direction = "nochange";
+           
             // Case 1. Dereference is treated conservatively.
             if (IRTools.containsUnary(to, UnaryOperator.DEREFERENCE)) {
                 List types = SymbolTools.getExactExpressionType(to);
@@ -1113,10 +1130,33 @@ public class RangeAnalysis extends AnalysisPass
                 }
                 node.putData("assign-to", to);
                 node.putData("assign-from", from);
-            } else {
-                node.putData("assign-to", to);
-                direction = "kill";
+                
+            } 
+            else if (to instanceof ArrayAccess ) {
+
+                // Check for array variables on the LHS. 
+                // IF the RHS does not contain LHS (the array being modified) no self-output dependence
+                //System.out.println("LHS : " + to + " , RHS: " + from +"\n");
+
+                node.putData("assign-to", to);                      // LHS and RHS data added to node
+                node.putData("assign-from", from);                          
+                
+                if(!IRTools.containsExpression(from, to))
+                    direction = "normal";
+                else if(invertExpression(to,from) == null)
+                    direction = "recurrence";
+                else
+                    direction = "kill";
+               
             }
+            else{
+
+                node.putData("assign-to", to);                    
+                //node.putData("assign-from", from); 
+                direction = "kill";       
+
+            }
+            //System.out.println("to: "+ to+ ", direction: "+ direction +"\n");
             // Case 7. Lvalue is not simple; no source of information.
             node.putData("assign-direction", direction);
         }
@@ -1138,28 +1178,81 @@ public class RangeAnalysis extends AnalysisPass
                     ranges_out.removeRangeWith((Symbol) var);
                 }
             }
-        } else if (!((node_data = node.getData("assign-to"))
-                    instanceof Identifier)) {
-            // Kills ranges containing non-identifiers that modified at this
-            // node.
+        } else if (((node_data = node.getData("assign-to"))
+                    instanceof ArrayAccess )) {                                                       // Handling of 1D array modification in a node
+
+
+            Object RHS = node.getData("assign-from");
+            Object LHS = node.getData("assign-to");
+
+            ArrayAccess ModifiedArray = (ArrayAccess)LHS;
+                
+            Expression arr_exp = ModifiedArray.getArrayName();
+    
+            Symbol sym = SymbolTools.getSymbolOf(arr_exp);
+
+            if(direction.equals("kill")){
             ranges_out.removeRangeWith(
                     SymbolTools.getSymbolOf((Expression)node_data));
-        } else if (!direction.equals("nochange")) {
+            }
+
+            else if(ModifiedArray.getIndices().size() > 1 &&
+                    direction.equals("normal")){
+                    ranges_out.setRange(ModifiedArray, (Expression)RHS);
+            }
+            //Check if the array has been previously assigned values.
+            //Individual array elements can be explicitly assigned values
+            //and not inside a loop.
+            else if((ranges_out.getRange(sym) instanceof IntegerLiteral) &&
+                    (RHS instanceof IntegerLiteral)){
+                
+                ranges_out.setRange(sym , (Expression)RHS);  
+                ranges_out.unionRanges(ranges_in);
+            }
+             //If node is an assignment statement with a 1D array being modified and
+            //no dependence
+            else if(direction.equals("normal") || direction.equals("recurrence")){       
+                //Handling certain types of array expressions
+                ranges_out.setRange(sym , (Expression)RHS);     
+            
+            }
+
+        
+        }
+        //Would need to handle the case where node_data is NameID
+        else if (!((node_data = node.getData("assign-to"))
+                    instanceof Identifier)) {                                                       
+            // Kills ranges containing non-identifiers that are modified at this
+            // node.
+
+            if(direction.equals("kill")){
+                ranges_out.removeRangeWith( SymbolTools.getSymbolOf((Expression)node_data));
+            }
+        
+        }
+        
+        else if (!direction.equals("nochange")) {
+        
             // Cases where identifiers are modified.
             Symbol var = ((Identifier)node.getData("assign-to")).getSymbol();
             // Preprocess the range to avoid replacement in array subscripts.
             ranges_out.killArraysWith(var);
+
             Expression replace_with =
                 (direction.equals("invertible")) ?
                     (Expression)node.getData("invertible") :
                     ranges_out.getRange(var);
             Expression from = node.getData("assign-from");
+            //System.out.println("replace with: " + replace_with + " , from: " + from +"\n");
             // Expand expressions that contain the killed symbol.
             if (direction.equals("invertible") ||
                 direction.equals("recurrence")) {
-                from = ranges_out.expandSymbol(from, var);
-                ranges_out.expandSymbol(var);
+               
+               from = ranges_out.expandSymbol(from, var);
+               ranges_out.expandSymbol(var);
+    
             }
+
             // Eliminate the assigned symbol in the range.
             ranges_out.replaceSymbol(var, replace_with);
             // Postprocess the range by discarding cyclic ranges.
@@ -1167,9 +1260,10 @@ public class RangeAnalysis extends AnalysisPass
             // Remove or keep the range for the assigned symbol.
             if (direction.equals("kill")) {
                 ranges_out.removeRange(var);
-            } else {
+            } else {         
                 ranges_out.setRange(var, from);
             }
+
             // Add additional ranges from the equality condition -- disable if
             // there is any problem.
             /*
@@ -1180,10 +1274,14 @@ public class RangeAnalysis extends AnalysisPass
                if ( ranges_out.getRange(eq_var) == null )
                ranges_out.setRange(eq_var, eq_range.getRange(eq_var));
              */
+            //System.out.println("ranges out " + ranges_out + " , in !no-change " +"\n");
         }
         // Update successors.
+        //System.out.println("ranges out: " + ranges_out +"\n");
+      
         for (DFANode succ : node.getSuccs()) {
             succ.putPredData(node, ranges_out);
+            //System.out.println("update: "+succ.getData("ir") + ", ranges: " + succ.getPredData(node));
         }
     }
 
@@ -1193,6 +1291,8 @@ public class RangeAnalysis extends AnalysisPass
         // expression. Only safe evaluation is taken out of any expressions
         // used in conditional branches, and there should be a checking
         // mechanism that detects unsafe evaluations.
+
+       
         if (IRTools.containsSideEffect(e)) {
             updateUnsafeNode(node);
             return;
@@ -1201,6 +1301,7 @@ public class RangeAnalysis extends AnalysisPass
             updateSafeNode(node);
             return;
         }
+        
         // Compute or retrieve the ranges from the conditional expression.
         if ((Integer)node.getData("num-visits") < 2) {
             DFANode true_succ = node.getData("true");
@@ -1212,21 +1313,28 @@ public class RangeAnalysis extends AnalysisPass
                 true_succ.putData("constraint", e);
                 false_succ.putData("constraint", negated);
             }
+            
+           
             node.putSuccData(true_succ, true_range);
             node.putSuccData(false_succ, false_range);
         }
+       
         RangeDomain ranges_in = node.getData("ranges");
         BinaryOperator op = ((BinaryExpression)e).getOperator();
         boolean needs_subst = (
                 op == BinaryOperator.COMPARE_EQ ||
                 op == BinaryOperator.COMPARE_NE);
+       
+       
         for (DFANode succ : node.getSuccs()) {
+           
             RangeDomain ranges_out = new RangeDomain(ranges_in);
             RangeDomain update_ranges = (RangeDomain)node.getSuccData(succ);
             if (needs_subst) {
                 update_ranges =
                         ranges_out.substituteForwardRange(update_ranges);
             }
+           
             ranges_out.intersectRanges(update_ranges);
             // Infeasible path detected, so remove the data
             if (ranges_in.size() > ranges_out.size()) {
@@ -1275,7 +1383,7 @@ public class RangeAnalysis extends AnalysisPass
     * @param node the node to be analyzed.
     * @return the resulting range.
     */
-    private static RangeDomain
+    public static RangeDomain
             extractRangesFromConstraint(RangeDomain ranges, DFANode node) {
         RangeDomain ret = new RangeDomain();
         Expression constraint = node.getData("constraint");
@@ -1439,6 +1547,7 @@ public class RangeAnalysis extends AnalysisPass
     * @return the associated range domain.
     */
     public static RangeDomain query(Statement stmt) {
+        
         RangeDomain ret = range_domains.get(stmt);
         if (ret == null) {
             Procedure proc = stmt.getProcedure();
@@ -1451,9 +1560,33 @@ public class RangeAnalysis extends AnalysisPass
                         "Invoking range analysis for", proc.getName());
                 range_domains.putAll(getRanges(proc));
                 ret = range_domains.get(stmt);
+                
             }
         }
+     
         return ret;
+    }
+
+    /**
+     * Querying Range Analysis for information about Subscript arrays.
+     * It returns the properties, aggregated subscripts and aggregated
+     * range expressions for subscript arrays on a per procedure basis.
+     * @param loop
+     * @param info_type
+     * @return
+     */
+
+    public static Map query(ForLoop loop, String info_type){
+
+        Procedure Loop_Proc = loop.getProcedure();
+
+        if(info_type.equals("Properties")){
+            return ProcInfo.getProcedureProps(Loop_Proc);
+        }
+        else if (info_type.equals("Aggregate Subscripts"))
+            return ProcInfo.getProcedureSubRanges(Loop_Proc);
+        else
+            return ProcInfo.getProcedureAggRangeVals(Loop_Proc);
     }
 
     /**
@@ -1475,4 +1608,11 @@ public class RangeAnalysis extends AnalysisPass
             safe_functions.add(n);
         }
     }
+
+    
+
+   
+
+
+
 }

@@ -14,8 +14,14 @@ public abstract class LoopAnalysisPass extends AnalysisPass {
 
     public void start() {
         DFIterator<Loop> iter = new DFIterator<Loop>(program, Loop.class);
+
+        
         while (iter.hasNext()) {
+
             analyzeLoop(iter.next());
         }
     }
 }
+
+
+ 
