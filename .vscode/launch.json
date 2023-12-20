@@ -6,7 +6,11 @@
             "name": "Launch Driver",
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
-            "args": "./resources/examples/tiling/MatrixVectorMultiplication/NonTiled.c"
+            "args": "-paw-tiling=0 -tiling-level=2 -alias=2 /home/mgltorsa/workspace/Polybench-4.2/linear-algebra/kernels/3mm/3mm.c",
+            "env": {
+                "CETUS_LIBS": "",
+                "CETUS_INCLUDES": "/home/mgltorsa/workspace/Polybench-4.2/linear-algebra/kernels/3mm;/home/mgltorsa/workspace/Polybench-4.2/utilities;/home/mgltorsa/workspace/Polybench-4.2/utilities/polybench.h;/home/mgltorsa/workspace/Polybench-4.2/utilities/polybench.c",
+            }
         },
         {
             "type": "java",
@@ -76,7 +80,7 @@
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "args": "-outputFile=out/logs.txt -verbosity=1 -paw-tiling=0 -tiling-level=2 ./resources/examples/JacobiExample.c"
-        }, 
+        },
         {
             "type": "java",
             "name": "Launch Driver LoopInter + PawTiling Lv1 Jacobi example test",
@@ -90,7 +94,7 @@
             "request": "launch",
             "mainClass": "cetus.exec.Driver",
             "args": "-outputFile=out/logs.txt -verbosity=1 -loop_interchange -paw-tiling=0 -tiling-level=2 ./resources/examples/JacobiExample.c"
-        }, 
+        },
         {
             "type": "java",
             "name": "Launch Driver LoopInter Matrix Mult",

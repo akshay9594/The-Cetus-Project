@@ -17,6 +17,7 @@ import cetus.utils.LoggingUtils;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
@@ -163,16 +164,19 @@ public class Driver {
         options.add(options.TRANSFORM,
                 "normalize-loops",
                 "Normalize for loops so they begin at 0 and have a step of 1");
+
+        String libs = getLibsArgs();
+        String includes = getIncludesArgs();
         if ((System.getProperty("os.name").toLowerCase()).indexOf("win") >= 0)
             options.add(options.UTILITY,
                     "preprocessor",
-                    "cpp.exe -E",
+                    "cpp.exe -E " + libs + " " + includes,
                     "command",
                     "Set the preprocessor command to use");
         else
             options.add(options.UTILITY,
                     "preprocessor",
-                    "cpp -C -I.",
+                    "cpp -C -I. " + libs + " " + includes,
                     "command",
                     "Set the preprocessor command to use");
         options.add(options.ANALYSIS,
@@ -374,6 +378,34 @@ public class Driver {
 
         options.add(options.TRANSFORM, ParallelAwareTilingPass.NTH_ORDER_PARAM, null,
                 "" + ParallelAwareTilingPass.DEFAULT_NTH_ORDER, "N", "To define the level of tiling");
+    }
+
+    private static List<String> getEnvList(String env) {
+        List<String> envList = new ArrayList<>();
+        String envValue = System.getenv(env);
+        if (envValue == null) {
+            return envList;
+        }
+        String[] splittedEnvList = envValue.split(";");
+        Collections.addAll(envList, splittedEnvList);
+        return envList;
+    }
+
+    private static String getIncludesArgs() {
+
+        String envArgs = getEnvList("CETUS_INCLUDES")
+                .stream()
+                .takeWhile(e -> !e.isBlank() && !e.isEmpty())
+                .reduce("", (acc, envItem) -> acc + " -I " + envItem);
+        return envArgs;
+    }
+
+    private static String getLibsArgs() {
+        String envArgs = getEnvList("CETUS_LIBS")
+                .stream()
+                .takeWhile(e -> !e.isBlank() && !e.isEmpty())
+                .reduce("", (acc, envItem) -> acc + " -L " + envItem);
+        return envArgs;
     }
 
     /**

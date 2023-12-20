@@ -35,7 +35,7 @@ public class NthGuidedChooserProvider implements VersionChooserProvider {
     public NthGuidedChooserProvider(CommandLineOptionSet commandLineOptions) {
 
         this(commandLineOptions.getValue(ParallelAwareTilingPass.NTH_ORDER_PARAM) == null
-                && commandLineOptions.getValue(ParallelAwareTilingPass.NTH_ORDER_PARAM).equals("")
+                || commandLineOptions.getValue(ParallelAwareTilingPass.NTH_ORDER_PARAM).equals("")
                         ? ParallelAwareTilingPass.DEFAULT_NTH_ORDER
                         : Integer.parseInt(commandLineOptions.getValue(ParallelAwareTilingPass.NTH_ORDER_PARAM)));
 
