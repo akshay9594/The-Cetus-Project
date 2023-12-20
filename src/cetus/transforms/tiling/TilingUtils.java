@@ -70,7 +70,7 @@ public class TilingUtils {
             throw new Exception("LHS is not a symbol");
         }
 
-        Expression stripCondition = Symbolic.subtract(stripExpr, new IntegerLiteral(1));
+        Expression stripCondition = stripExpr;
         stripCondition = Symbolic.add(stripCondition, newIndexVariable);
         Expression minExp = new ConditionalExpression(
                 new BinaryExpression(stripCondition.clone(), BinaryOperator.COMPARE_LT, condRHS.clone()),

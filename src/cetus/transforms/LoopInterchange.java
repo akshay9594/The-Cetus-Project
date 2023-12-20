@@ -1,7 +1,10 @@
 
 package cetus.transforms;
 
+import cetus.analysis.AnalysisPass;
+import cetus.analysis.ArrayPrivatization;
 import cetus.analysis.DDGraph;
+import cetus.analysis.DDTDriver;
 import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
 import cetus.hir.*;

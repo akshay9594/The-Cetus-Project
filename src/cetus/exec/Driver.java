@@ -425,7 +425,7 @@ public class Driver {
                 null,
                 "" + ParallelAwareTilingPass.DEFAULT_CACHE_SIZE,
                 "N",
-                "To define cache size");
+                "To define cache size in KB");
 
         options.add(options.TRANSFORM, ParallelAwareTilingPass.NTH_ORDER_PARAM, null,
                 "" + ParallelAwareTilingPass.DEFAULT_NTH_ORDER, "N", "To define the level of tiling");
@@ -904,9 +904,7 @@ public class Driver {
             AnalysisPass.run(new SubscriptedSubscriptAnalysis(program));
         }
       
-        if (getOptionValue("ddt") != null && !getOptionValue("ddt").equals("0")) {
-            AnalysisPass.run(new DDTDriver(program));
-        }
+
         if (getOptionValue("reduction") != null && !getOptionValue("reduction").equals("0")) {
             AnalysisPass.run(new Reduction(program));
         }
