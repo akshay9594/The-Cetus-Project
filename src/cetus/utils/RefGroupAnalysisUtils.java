@@ -179,8 +179,12 @@ public final class RefGroupAnalysisUtils {
 
             Object o = LoopIterMap.get(e);
 
+            //TODO: Need to be analyzed through examples
+            if(o instanceof ArrayAccess || o instanceof Expression) {
+                return true;
+            }
             if (o instanceof IntegerLiteral ||
-                    o instanceof Long || o instanceof ArrayAccess) {
+                    o instanceof Long) {
 
                 return false;
             }

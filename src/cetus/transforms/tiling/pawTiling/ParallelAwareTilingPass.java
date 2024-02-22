@@ -161,7 +161,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         if (verbosity) {
             logger.setLevel(Level.ALL);
-            logger.log(Level.INFO,"VERBOSITY_SET=ALL");
+            logger.log(Level.INFO, "VERBOSITY_SET=ALL");
         } else {
             logger.setLevel(Level.INFO);
         }
@@ -356,9 +356,21 @@ public class ParallelAwareTilingPass extends TransformPass {
                 cacheCond.clone());
 
         IfStatement ifStm = new IfStatement(condition, trueClause, falseClause);
+        Expression exp = Symbolic.simplify(maxOfInstructions);
+        if (!(maxOfInstructions instanceof IntegerLiteral)
+                || !(cache instanceof Identifier)
+                || !(dataFullSize instanceof IntegerLiteral)) {
+            return ifStm;
 
-        return ifStm;
-
+        } else {
+            long inst = ((IntegerLiteral) maxOfInstructions).getValue();
+            long fullSizeData = ((IntegerLiteral) dataFullSize).getValue();
+            if (inst <= MAX_ITERATIONS_TO_PARALLELIZE && cacheSize > fullSizeData) {
+                return trueClause.clone();
+            } else {
+                return falseClause.clone();
+            }
+        }
     }
 
     private List<Declaration> filterValidDeclarations(CompoundStatement variableDeclarations,
@@ -464,29 +476,29 @@ public class ParallelAwareTilingPass extends TransformPass {
      */
     private Expression computeFullDataSize(Loop loop) {
 
-        //Accessing only using loop bounds
+        // Accessing only using loop bounds
         Expression upperBound = LoopTools.getUpperBoundExpression(loop);
 
         return Symbolic.multiply(upperBound, new IntegerLiteral(cacheAlignment));
 
-        //Full matrices
+        // Full matrices
         // List<ArrayAccess> arrayAccesses = new ArrayList<>();
 
         // Set<String> alreadyAdded = new HashSet<>();
-        // new DFIterator<ArrayAccess>(loop, ArrayAccess.class).forEachRemaining(access -> {
-        //     String accessName = access.getArrayName().toString();
-        //     if (!alreadyAdded.contains(accessName)) {
-        //         arrayAccesses.add(access);
-        //         alreadyAdded.add(accessName);
+        // new DFIterator<ArrayAccess>(loop, ArrayAccess.class).forEachRemaining(access
+        // -> {
+        // String accessName = access.getArrayName().toString();
+        // if (!alreadyAdded.contains(accessName)) {
+        // arrayAccesses.add(access);
+        // alreadyAdded.add(accessName);
 
-        //     }
+        // }
         // });
-        
-        
 
         // return CacheUtils.getRawBlockSize(cache, arrayAccesses);
-        // return ArrayUtils.getFullSizeInBytes(VariableDeclarationUtils.getVariableDeclarationSpace(loop.getParent()),
-        //         arrayAccesses);
+        // return
+        // ArrayUtils.getFullSizeInBytes(VariableDeclarationUtils.getVariableDeclarationSpace(loop.getParent()),
+        // arrayAccesses);
 
     }
 

@@ -1,25 +1,13 @@
 
 #include <stdio.h>
 
+#define N 1000000
 
 int main(int argc, char const *argv[])
 {
 
-    int n, m;
+    int n=N, m=N;
 
-    if(argc == 0) {
-        n=20;
-    }
-
-    if(argc >0) {
-        n=argv[0];        
-    }
-    
-    m=n;
-
-    if(argc >1) {
-        m=argv[1];
-    }
 
 
     float a[n][n], b[n][m], d[n][m];

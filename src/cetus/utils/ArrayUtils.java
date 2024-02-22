@@ -65,7 +65,7 @@ public class ArrayUtils {
         }
 
         type = (Specifier) types.get(0);
-
+    
         if (type == Specifier.BOOL)
             typeSize = 1;
         else if (type == Specifier.CHAR)

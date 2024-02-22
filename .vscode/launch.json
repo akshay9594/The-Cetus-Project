@@ -4,13 +4,12 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Launch Driver LLM USE CASES",
+      "name": "Launch Driver BT_exact_rhs",
       "request": "launch",
       "mainClass": "cetus.exec.Driver",
-      "args": "-paw-tiling=2 C:/workspace/ud-masters/research-ideas/LLM/use-cases/src/cache_misses.c",
+      "args": "-paw-tiling -cacheSize=8192 -cores=4 C:/workspace/ud-masters/research-ideas/LLM/use-cases/src/NPB-3.3/BT/exact_rhs.c",
       "env": {
-        "CETUS_PATH": "c:/workspace/ud-masters/research-ideas/LLM/use-cases/benchmarks;c:/workspace/ud-masters/research-ideas/LLM/use-cases/benchmarks/polybench", 
-        "CETUS_LIBS": ""
+        "CPATH": "/d/workspace/ud-masters/benchmarks/NPB3.3-SER-C/common:/c/workspace/ud-masters/benchmarks/NPB3.3-SER-C/BT",
       },
       "console": "integratedTerminal",
     },
@@ -21,8 +20,7 @@
       "mainClass": "cetus.exec.Driver",
       "args": "-paw-tiling ${workspaceFolder}/../polybench-c-4.2.1-beta/linear-algebra/kernels/3mm/3mm.c",
       "env": {
-        "CETUS_PATH": "${workspaceFolder}/../polybench-c-4.2.1-beta/utilities;${workspaceFolder}/../polybench-c-4.2.1-beta/linear-algebra/kernels/3mm;",
-        "CETUS_LIBS": "${workspaceFolder}/../polybench-c-4.2.1-beta/utilities"
+        "CPATH": "/c/workspace/ud-masters/benchmarks/NPB3.3-SER-C/common:/c/workspace/ud-masters/benchmarks/NPB3.3-SER-C/BT",
       },
       "console": "integratedTerminal",
       "javaExec": "/usr/bin/java"
