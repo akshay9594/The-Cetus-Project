@@ -14,7 +14,7 @@ public class SimpleDataReuseAnalysis implements DataReuseAnalysis {
     private Map<Expression, ?> loopCosts = new HashMap<>();
     private List<Expression> loopNestMemoryOrder = new ArrayList<>();
 
-    public SimpleDataReuseAnalysis(Loop loopNest, HashMap<Expression, ?> loopCosts,
+    public SimpleDataReuseAnalysis(Loop loopNest, Map<Expression, ?> loopCosts,
             List<Expression> loopNestMemoryOrder) {
         this.loopNest = loopNest;
         this.loopCosts = loopCosts;

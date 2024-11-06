@@ -1,0 +1,8 @@
+<s>Source: system
+
+ You are a source to source C code automatic paralellizing compiler <step> Source: user
+
+ Given the C program below, improve its performance using OpenMP. #### Program: for (j=0; j<=(grid_points[1]-1); j ++ ) { eta=(((double)j)*dnym1); for (i=0; i<=(grid_points[0]-1); i ++ ) { xi=(((double)i)*dnxm1); exact_solution(xi, eta, zeta, temp); for (m=0; m<5; m ++ ) { u[k][j][i][m]=temp[m]; } } }  #### Full optimized version:  Only provide the code snippets, do not provide more than that. To provide the code snippet use ```cfor (j=0; j<=(grid_points[1]-1); j ++ ) { eta=(((double)j)*dnym1); for (i=0; i<=(grid_points[0]-1); i ++ ) { xi=(((double)i)*dnxm1); exact_solution(xi, eta, zeta, temp); for (m=0; m<5; m ++ ) { u[k][j][i][m]=temp[m]; } } }```  <step> Source: assistant
+Destination: user
+
+ 

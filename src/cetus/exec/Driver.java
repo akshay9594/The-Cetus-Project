@@ -635,6 +635,7 @@ public class Driver {
         program = new Program();
         Class class_parser;
         try {
+
             class_parser = getClass().getClassLoader().loadClass(
                     getOptionValue("parser"));
             CetusParser cparser = (CetusParser) class_parser.getConstructor().newInstance();

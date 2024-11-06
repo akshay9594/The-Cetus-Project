@@ -26,7 +26,7 @@ import cetus.utils.RefGroupAnalysisUtils;
 import cetus.utils.reuseAnalysis.data.DataReuseAnalysis;
 import cetus.utils.reuseAnalysis.data.SimpleDataReuseAnalysis;
 
-public class SimpleReuseAnalysis implements ReuseAnalysis {
+public class SimpleReuseAnalysis implements ReuseAnalyzer {
 
     private static final int DEFAULT_CACHE_SIZE = 64;
 

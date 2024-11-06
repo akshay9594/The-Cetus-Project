@@ -13,7 +13,6 @@ import cetus.hir.Initializer;
 import cetus.hir.Literal;
 import cetus.hir.NameID;
 import cetus.hir.Procedure;
-import cetus.hir.Program;
 import cetus.hir.Specifier;
 import cetus.hir.Symbol;
 import cetus.hir.SymbolTable;
@@ -52,18 +51,6 @@ public class VariableDeclarationUtils {
             }
         }
         return null;
-    }
-
-    public static SymbolTable getVariableDeclarationSpace(Program program, IDExpression idExpression) {
-
-        SymbolTable declarationSpace = null;
-        DFIterator<Traversable> traversables = new DFIterator<>(program);
-        while (traversables.hasNext()) {
-           Traversable t = traversables.next();
-
-        }
-
-        return declarationSpace;
     }
 
     public static SymbolTable getVariableDeclarationSpace(Traversable traversable) {

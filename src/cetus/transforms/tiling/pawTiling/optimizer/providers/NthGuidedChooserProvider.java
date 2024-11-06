@@ -1,7 +1,6 @@
 package cetus.transforms.tiling.pawTiling.optimizer.providers;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -9,8 +8,6 @@ import cetus.analysis.DependenceVector;
 import cetus.analysis.LoopTools;
 import cetus.analysis.exceptions.IllegalDependenceVector;
 import cetus.exec.CommandLineOptionSet;
-import cetus.hir.AssignmentExpression;
-import cetus.hir.AssignmentOperator;
 import cetus.hir.CodeAnnotation;
 import cetus.hir.DFIterator;
 import cetus.hir.Expression;
@@ -105,10 +102,7 @@ public class NthGuidedChooserProvider implements VersionChooserProvider {
 
         TiledLoop curLoop = new TiledLoop(((ForLoop) loopNest), dvs);
         List<DependenceVector> curDvs = dvs;
-        int i = 1;
-        if(loops.size() <= 2 ){
-            i=0;
-        }
+        int i = 0;
         for (; i < loops.size() && maxTilingLvl > 0; i++) {
             int targetLoopPos = getLoopPosByIndex(curLoop, reusableOrder.get(i));
 

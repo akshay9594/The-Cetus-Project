@@ -1,11 +1,9 @@
 package cetus.transforms.tiling.pawTiling;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -28,7 +26,6 @@ import cetus.exec.Driver;
 import cetus.hir.Annotation;
 import cetus.hir.ArrayAccess;
 import cetus.hir.AssignmentExpression;
-import cetus.hir.AssignmentOperator;
 import cetus.hir.BinaryExpression;
 import cetus.hir.BinaryOperator;
 import cetus.hir.CodeAnnotation;
@@ -65,11 +62,9 @@ import cetus.utils.ArrayUtils;
 import cetus.utils.CacheUtils;
 import cetus.utils.DataReuseAnalysisUtils;
 import cetus.utils.VariableDeclarationUtils;
-import cetus.utils.reuseAnalysis.algorithm.ReuseAnalysis;
-import cetus.utils.reuseAnalysis.algorithm.SimpleReuseAnalysis;
-import cetus.utils.reuseAnalysis.algorithm.TemporalReuseAnalysis;
+import cetus.utils.reuseAnalysis.algorithm.ReuseAnalyzer;
+import cetus.utils.reuseAnalysis.algorithm.TemporalReuseAnalyzer;
 import cetus.utils.reuseAnalysis.data.DataReuseAnalysis;
-
 
 public class ParallelAwareTilingPass extends TransformPass {
 
@@ -102,7 +97,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     private PawAnalysisUtils pawAnalysisUtils = new PawAnalysisUtils();
 
-    private ReuseAnalysis reuseAnalysisFactory;
+    private ReuseAnalyzer reuseAnalyzer;
 
     private VersionChooserProvider chooserProvider;
 
@@ -111,11 +106,11 @@ public class ParallelAwareTilingPass extends TransformPass {
     }
 
     public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions) {
-        this(program, commandLineOptions, new TemporalReuseAnalysis());
+        this(program, commandLineOptions, new TemporalReuseAnalyzer());
     }
 
     public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions,
-            ReuseAnalysis reuseAnalysisFactory) {
+            ReuseAnalyzer reuseAnalysisFactory) {
 
         this(program, commandLineOptions, reuseAnalysisFactory,
                 commandLineOptions.getValue(PAW_TILING) != null && commandLineOptions.getValue(PAW_TILING).equals("1")
@@ -124,7 +119,7 @@ public class ParallelAwareTilingPass extends TransformPass {
     }
 
     public ParallelAwareTilingPass(Program program, CommandLineOptionSet commandLineOptions,
-            ReuseAnalysis reuseAnalysisFactory, VersionChooserProvider chooserFactory) {
+            ReuseAnalyzer reuseAnalysisFactory, VersionChooserProvider chooserFactory) {
         super(program);
 
         if (commandLineOptions.getValue("verbosity").equals("1")) {
@@ -140,7 +135,7 @@ public class ParallelAwareTilingPass extends TransformPass {
             logger.info("Depth-first provider selected");
         }
 
-        this.reuseAnalysisFactory = reuseAnalysisFactory;
+        this.reuseAnalyzer = reuseAnalysisFactory;
         this.chooserProvider = chooserFactory;
 
         try {
@@ -184,7 +179,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     @Override
     public void start() {
-        
+
         prepare();
 
         List<Loop> outermostLoops = LoopTools.getOutermostLoops(program);
@@ -237,7 +232,7 @@ public class ParallelAwareTilingPass extends TransformPass {
     }
 
     private void prepare() {
-    //    TransformPass.run(new LoopInterchange(program));
+        // TransformPass.run(new LoopInterchange(program));
     }
 
     public void reRunPasses() {
@@ -333,7 +328,6 @@ public class ParallelAwareTilingPass extends TransformPass {
 
         ForLoop newLoopNest = loopNest.clone(false);
 
-        
         logger.log(Level.FINE, "DATA_FULL_SIZE_IN_KB", rowSize.toString());
 
         Expression cacheValueInElements = new IntegerLiteral(cacheInElements);
@@ -416,10 +410,10 @@ public class ParallelAwareTilingPass extends TransformPass {
         CompoundStatement leastCostVersionStm = new CompoundStatement();
         leastCostVersionStm.addStatement(tiledCode);
 
-        IfStatement ifStm = new IfStatement(condition, noTiledCode, leastCostVersionStm);
         if (!(maxOfInstructions instanceof Literal)
                 || !(cache instanceof Literal)
                 || !(dataFullSize instanceof Literal)) {
+            IfStatement ifStm = new IfStatement(condition, noTiledCode, leastCostVersionStm);
             return ifStm;
 
         } else {
@@ -444,11 +438,11 @@ public class ParallelAwareTilingPass extends TransformPass {
                 isEnoughCache = cacheSize > fullSizeData;
 
             }
-            // if (isProfitableParallelIterations) {
+            if (isProfitableParallelIterations && isEnoughCache) {
                 return tiledCode.clone();
-            // } else {
-            //     return noTiledCode.clone();
-            // }
+            } else {
+                return noTiledCode.clone();
+            }
         }
     }
 
@@ -623,7 +617,7 @@ public class ParallelAwareTilingPass extends TransformPass {
 
     private DataReuseAnalysis runReuseAnalysis(Loop loopNest) {
 
-        DataReuseAnalysis reuseAnalysis = reuseAnalysisFactory.getReuseAnalysis(loopNest);
+        DataReuseAnalysis reuseAnalysis = reuseAnalyzer.getReuseAnalysis(loopNest);
         List<Expression> memoryOrder = reuseAnalysis.getLoopNestMemoryOrder();
 
         logger.log(Level.FINE, "### REUSE ANALYSIS ###");
