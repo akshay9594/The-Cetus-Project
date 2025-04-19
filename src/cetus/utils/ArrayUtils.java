@@ -2,6 +2,8 @@ package cetus.utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import cetus.hir.ArrayAccess;
 import cetus.hir.ArraySpecifier;
@@ -53,8 +55,8 @@ public class ArrayUtils {
                     .stream()
                     .filter(children -> children instanceof Identifier)
                     .map(identifier -> ((Identifier) identifier).getSymbol())
-                    .flatMap(symbol -> ((Symbol) symbol).getTypeSpecifiers().stream())
-                    .toList();
+                    .flatMap(symbol -> (Stream<Specifier>) ((Symbol) symbol).getTypeSpecifiers().stream())
+                    .collect(Collectors.toList());
 
         }
 
@@ -138,7 +140,8 @@ public class ArrayUtils {
                 List<Traversable> ids = arrayName.getChildren()
                         .stream()
                         .filter(name -> name instanceof Identifier)
-                        .toList();
+                        .collect(Collectors.toList());
+
                 if (ids.isEmpty()) {
                     return new IntegerLiteral(dataSize);
                 }
@@ -210,7 +213,8 @@ public class ArrayUtils {
             List<Traversable> ids = arrayName.getChildren()
                     .stream()
                     .filter(name -> name instanceof Identifier)
-                    .toList();
+                    .collect(Collectors.toList());
+
             if (ids.isEmpty()) {
                 return size;
             }

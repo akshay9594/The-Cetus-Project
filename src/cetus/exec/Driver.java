@@ -901,9 +901,9 @@ public class Driver {
             AnalysisPass.run(new ArrayPrivatization(program));
         }
 
-        if (getOptionValue("subsub_analysis") != null) {
-            AnalysisPass.run(new SubscriptedSubscriptAnalysis(program));
-        }
+        // if (getOptionValue("subsub_analysis") != null) {
+        //     AnalysisPass.run(new SubscriptedSubscriptAnalysis(program));
+        // }
 
         if (getOptionValue("reduction") != null && !getOptionValue("reduction").equals("0")) {
             AnalysisPass.run(new Reduction(program));
